@@ -1,0 +1,278 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Tutor LMS SSO 1.0.0\n"
+"Report-Msgid-Bugs-To: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Domain: tutor-sso\n"
+
+msgid "Access Token URL"
+msgstr ""
+
+msgid "Alignment"
+msgstr ""
+
+msgid "Are you sure you want to unenroll from this course?"
+msgstr ""
+
+msgid "Authorize Endpoint"
+msgstr ""
+
+msgid "Background Color"
+msgstr ""
+
+msgid "Base URL the \"Go to Course\" link points at. Leave empty to fall back to the LMS Base URL."
+msgstr ""
+
+msgid "Border Radius"
+msgstr ""
+
+msgid "Button"
+msgstr ""
+
+msgid "Center"
+msgstr ""
+
+msgid "Client ID"
+msgstr ""
+
+msgid "Client Secret"
+msgstr ""
+
+msgid "Could not create or retrieve your WordPress account. Please contact the site administrator."
+msgstr ""
+
+msgid "Could not determine enrollment status from the LMS."
+msgstr ""
+
+msgid "Could not obtain a CSRF token from the LMS."
+msgstr ""
+
+msgid "Could not parse the id_token payload. Please contact the site administrator."
+msgstr ""
+
+msgid "Course Dashboard URL (optional)"
+msgstr ""
+
+msgid "Course Enrollment"
+msgstr ""
+
+msgid "Course ID"
+msgstr ""
+
+msgid "Enroll"
+msgstr ""
+
+msgid "Enroll Button"
+msgstr ""
+
+msgid "Enroll Course"
+msgstr ""
+
+msgid "Enroll Label"
+msgstr ""
+
+msgid "Enroll Success Message"
+msgstr ""
+
+msgid "Enrolled"
+msgstr ""
+
+msgid "Enrolling…"
+msgstr ""
+
+msgid "Enrollment"
+msgstr ""
+
+msgid "Failed to create the WordPress user account."
+msgstr ""
+
+msgid "Go to Course"
+msgstr ""
+
+msgid "Go to Course Button"
+msgstr ""
+
+msgid "Go to Course Label"
+msgstr ""
+
+msgid "Hover"
+msgstr ""
+
+msgid "Invalid or missing state parameter. This may indicate a CSRF attack — please try logging in again."
+msgstr ""
+
+msgid "Invalid response from the LMS token endpoint. Please contact the site administrator."
+msgstr ""
+
+msgid "Invalid response: neither id_token nor access_token was present. Contact your administrator."
+msgstr ""
+
+msgid "Invalid security token. Please refresh and try again."
+msgstr ""
+
+msgid "Invalid token received. Please contact the site administrator."
+msgstr ""
+
+msgid "LMS Base URL"
+msgstr ""
+
+msgid "LMS Base URL is not configured."
+msgstr ""
+
+msgid "LMS Endpoints"
+msgstr ""
+
+msgid "Leave blank to use the ACF field \"openedx_course_id\" from the current post."
+msgstr ""
+
+msgid "Left"
+msgstr ""
+
+msgid "Log In Label"
+msgstr ""
+
+msgid "Log in to Enroll"
+msgstr ""
+
+msgid "Log in with LMS"
+msgstr ""
+
+msgid "Malformed id_token (expected three dot-separated segments). Please contact the site administrator."
+msgstr ""
+
+msgid "Missing course identifier."
+msgstr ""
+
+msgid "No"
+msgstr ""
+
+msgid "No active LMS session was found. Please log in to the LMS and try again."
+msgstr ""
+
+msgid "Normal"
+msgstr ""
+
+msgid "OAuth 2.0 authorization endpoint — where WordPress sends users to log in."
+msgstr ""
+
+msgid "OAuth 2.0 client ID from your LMS."
+msgstr ""
+
+msgid "OAuth 2.0 client secret. Stored in the WordPress database — restrict database access accordingly."
+msgstr ""
+
+msgid "OAuth 2.0 token endpoint — where WordPress exchanges the authorization code for tokens."
+msgstr ""
+
+msgid "OAuth Callback URL"
+msgstr ""
+
+msgid "OAuth Credentials"
+msgstr ""
+
+msgid "Open edX / Tutor LMS OAuth 2.0 endpoints."
+msgstr ""
+
+msgid "Padding"
+msgstr ""
+
+msgid "Please contact the site administrator."
+msgstr ""
+
+msgid "Please log in to continue."
+msgstr ""
+
+msgid "Post Sign-In Redirect URL"
+msgstr ""
+
+msgid "Redirect URLs"
+msgstr ""
+
+msgid "Required fields (preferred_username, email) are missing from the token payload. Please contact the site administrator."
+msgstr ""
+
+msgid "Result Messages"
+msgstr ""
+
+msgid "Right"
+msgstr ""
+
+msgid "Root URL of your Tutor / Open edX instance (no trailing slash). Used to build the logout redirect."
+msgstr ""
+
+msgid "Set a Course ID, or add an \"openedx_course_id\" ACF value to this post."
+msgstr ""
+
+msgid "Settings"
+msgstr ""
+
+msgid "Show \"Go to Course\" Button"
+msgstr ""
+
+msgid "Show Unenroll Button"
+msgstr ""
+
+msgid "Shown after a successful enroll. Leave blank to use the default."
+msgstr ""
+
+msgid "Shown after a successful unenroll. Leave blank to use the default."
+msgstr ""
+
+msgid "Shown to logged-out visitors; clicking starts the SSO login."
+msgstr ""
+
+msgid "Something went wrong. Please try again."
+msgstr ""
+
+msgid "Text Color"
+msgstr ""
+
+msgid "The WordPress URL the LMS redirects back to with the authorization code. Must match the redirect URI registered in your LMS OAuth application. Typically %s."
+msgstr ""
+
+msgid "The request failed. Please try again later."
+msgstr ""
+
+msgid "Tutor LMS SSO"
+msgstr ""
+
+msgid "Tutor LMS SSO Settings"
+msgstr ""
+
+msgid "Unenroll"
+msgstr ""
+
+msgid "Unenroll Button"
+msgstr ""
+
+msgid "Unenroll Label"
+msgstr ""
+
+msgid "Unenroll Success Message"
+msgstr ""
+
+msgid "Unenrolling…"
+msgstr ""
+
+msgid "Where to send users after a successful SSO login. Leave empty to use the site home URL."
+msgstr ""
+
+msgid "Where to send users during and after the login flow."
+msgstr ""
+
+msgid "Yes"
+msgstr ""
+
+msgid "You are already enrolled in this course."
+msgstr ""
+
+msgid "You have been enrolled successfully."
+msgstr ""
+
+msgid "You have been unenrolled from this course."
+msgstr ""
+
+msgid "Your LMS session could not be verified. Please make sure you are logged in to the LMS, then reload this page and try again."
+msgstr ""

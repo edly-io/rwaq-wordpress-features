@@ -1,0 +1,280 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Tutor LMS SSO 1.0.0\n"
+"Report-Msgid-Bugs-To: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ar\n"
+"Plural-Forms: nplurals=6; plural=(n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 ? 4 : 5);\n"
+"X-Domain: tutor-sso\n"
+
+msgid "Access Token URL"
+msgstr "رابط رمز الوصول (Access Token URL)"
+
+msgid "Alignment"
+msgstr "المحاذاة"
+
+msgid "Are you sure you want to unenroll from this course?"
+msgstr "هل أنت متأكد أنك تريد إلغاء التسجيل في هذه الدورة؟"
+
+msgid "Authorize Endpoint"
+msgstr "نقطة نهاية التفويض (Authorize Endpoint)"
+
+msgid "Background Color"
+msgstr "لون الخلفية"
+
+msgid "Base URL the \"Go to Course\" link points at. Leave empty to fall back to the LMS Base URL."
+msgstr "الرابط الأساسي الذي يشير إليه زر «الذهاب إلى الدورة». اتركه فارغًا لاستخدام الرابط الأساسي لنظام إدارة التعلم."
+
+msgid "Border Radius"
+msgstr "نصف قطر الحدود"
+
+msgid "Button"
+msgstr "الزر"
+
+msgid "Center"
+msgstr "توسيط"
+
+msgid "Client ID"
+msgstr "معرّف العميل (Client ID)"
+
+msgid "Client Secret"
+msgstr "كلمة سر العميل (Client Secret)"
+
+msgid "Could not create or retrieve your WordPress account. Please contact the site administrator."
+msgstr "تعذّر إنشاء أو استرجاع حساب ووردبريس الخاص بك. يُرجى التواصل مع مدير الموقع."
+
+msgid "Could not determine enrollment status from the LMS."
+msgstr "تعذّر تحديد حالة التسجيل من نظام إدارة التعلم."
+
+msgid "Could not obtain a CSRF token from the LMS."
+msgstr "تعذّر الحصول على رمز CSRF من نظام إدارة التعلم."
+
+msgid "Could not parse the id_token payload. Please contact the site administrator."
+msgstr "تعذّر تحليل محتوى الرمز (id_token). يُرجى التواصل مع مدير الموقع."
+
+msgid "Course Dashboard URL (optional)"
+msgstr "رابط لوحة الدورة (اختياري)"
+
+msgid "Course Enrollment"
+msgstr "التسجيل في الدورة"
+
+msgid "Course ID"
+msgstr "معرّف الدورة"
+
+msgid "Enroll"
+msgstr "التسجيل"
+
+msgid "Enroll Button"
+msgstr "زر التسجيل"
+
+msgid "Enroll Course"
+msgstr "تسجيل في دورة"
+
+msgid "Enroll Label"
+msgstr "نص زر التسجيل"
+
+msgid "Enroll Success Message"
+msgstr "رسالة نجاح التسجيل"
+
+msgid "Enrolled"
+msgstr "مُسجَّل"
+
+msgid "Enrolling…"
+msgstr "جارٍ التسجيل…"
+
+msgid "Enrollment"
+msgstr "التسجيل"
+
+msgid "Failed to create the WordPress user account."
+msgstr "فشل إنشاء حساب مستخدم ووردبريس."
+
+msgid "Go to Course"
+msgstr "الذهاب إلى الدورة"
+
+msgid "Go to Course Button"
+msgstr "زر الذهاب إلى الدورة"
+
+msgid "Go to Course Label"
+msgstr "نص زر الذهاب إلى الدورة"
+
+msgid "Hover"
+msgstr "التمرير"
+
+msgid "Invalid or missing state parameter. This may indicate a CSRF attack — please try logging in again."
+msgstr "مُعامل الحالة (state) غير صالح أو مفقود. قد يشير ذلك إلى هجوم CSRF — يُرجى محاولة تسجيل الدخول مرة أخرى."
+
+msgid "Invalid response from the LMS token endpoint. Please contact the site administrator."
+msgstr "استجابة غير صالحة من نقطة نهاية الرموز في نظام إدارة التعلم. يُرجى التواصل مع مدير الموقع."
+
+msgid "Invalid response: neither id_token nor access_token was present. Contact your administrator."
+msgstr "استجابة غير صالحة: لم يُوجد id_token ولا access_token. يُرجى التواصل مع المدير."
+
+msgid "Invalid security token. Please refresh and try again."
+msgstr "رمز الأمان غير صالح. يُرجى تحديث الصفحة والمحاولة مرة أخرى."
+
+msgid "Invalid token received. Please contact the site administrator."
+msgstr "تم استلام رمز غير صالح. يُرجى التواصل مع مدير الموقع."
+
+msgid "LMS Base URL"
+msgstr "الرابط الأساسي لنظام إدارة التعلم"
+
+msgid "LMS Base URL is not configured."
+msgstr "لم يتم ضبط الرابط الأساسي لنظام إدارة التعلم."
+
+msgid "LMS Endpoints"
+msgstr "نقاط نهاية نظام إدارة التعلم"
+
+msgid "Leave blank to use the ACF field \"openedx_course_id\" from the current post."
+msgstr "اتركه فارغًا لاستخدام حقل ACF «openedx_course_id» من المنشور الحالي."
+
+msgid "Left"
+msgstr "يسار"
+
+msgid "Log In Label"
+msgstr "نص زر تسجيل الدخول"
+
+msgid "Log in to Enroll"
+msgstr "سجّل الدخول للتسجيل"
+
+msgid "Log in with LMS"
+msgstr "تسجيل الدخول عبر نظام إدارة التعلم"
+
+msgid "Malformed id_token (expected three dot-separated segments). Please contact the site administrator."
+msgstr "رمز id_token مُشوَّه (يجب أن يتكوّن من ثلاثة أجزاء مفصولة بنقاط). يُرجى التواصل مع مدير الموقع."
+
+msgid "Missing course identifier."
+msgstr "معرّف الدورة مفقود."
+
+msgid "No"
+msgstr "لا"
+
+msgid "No active LMS session was found. Please log in to the LMS and try again."
+msgstr "لم يتم العثور على جلسة نشطة في نظام إدارة التعلم. يُرجى تسجيل الدخول إلى النظام والمحاولة مرة أخرى."
+
+msgid "Normal"
+msgstr "عادي"
+
+msgid "OAuth 2.0 authorization endpoint — where WordPress sends users to log in."
+msgstr "نقطة نهاية تفويض OAuth 2.0 — حيث يُرسل ووردبريس المستخدمين لتسجيل الدخول."
+
+msgid "OAuth 2.0 client ID from your LMS."
+msgstr "معرّف عميل OAuth 2.0 من نظام إدارة التعلم."
+
+msgid "OAuth 2.0 client secret. Stored in the WordPress database — restrict database access accordingly."
+msgstr "كلمة سر عميل OAuth 2.0. تُخزَّن في قاعدة بيانات ووردبريس — قيّد الوصول إلى قاعدة البيانات وفقًا لذلك."
+
+msgid "OAuth 2.0 token endpoint — where WordPress exchanges the authorization code for tokens."
+msgstr "نقطة نهاية رموز OAuth 2.0 — حيث يستبدل ووردبريس رمز التفويض بالرموز."
+
+msgid "OAuth Callback URL"
+msgstr "رابط استدعاء OAuth"
+
+msgid "OAuth Credentials"
+msgstr "بيانات اعتماد OAuth"
+
+msgid "Open edX / Tutor LMS OAuth 2.0 endpoints."
+msgstr "نقاط نهاية OAuth 2.0 الخاصة بـ Open edX / Tutor LMS."
+
+msgid "Padding"
+msgstr "التباعد الداخلي"
+
+msgid "Please contact the site administrator."
+msgstr "يُرجى التواصل مع مدير الموقع."
+
+msgid "Please log in to continue."
+msgstr "يُرجى تسجيل الدخول للمتابعة."
+
+msgid "Post Sign-In Redirect URL"
+msgstr "رابط إعادة التوجيه بعد تسجيل الدخول"
+
+msgid "Redirect URLs"
+msgstr "روابط إعادة التوجيه"
+
+msgid "Required fields (preferred_username, email) are missing from the token payload. Please contact the site administrator."
+msgstr "الحقول المطلوبة (preferred_username، email) مفقودة من محتوى الرمز. يُرجى التواصل مع مدير الموقع."
+
+msgid "Result Messages"
+msgstr "رسائل النتيجة"
+
+msgid "Right"
+msgstr "يمين"
+
+msgid "Root URL of your Tutor / Open edX instance (no trailing slash). Used to build the logout redirect."
+msgstr "الرابط الجذري لمنصة Tutor / Open edX (بدون شرطة مائلة في النهاية). يُستخدم لبناء رابط إعادة التوجيه عند تسجيل الخروج."
+
+msgid "Set a Course ID, or add an \"openedx_course_id\" ACF value to this post."
+msgstr "حدّد معرّف دورة، أو أضف قيمة ACF «openedx_course_id» إلى هذا المنشور."
+
+msgid "Settings"
+msgstr "الإعدادات"
+
+msgid "Show \"Go to Course\" Button"
+msgstr "إظهار زر «الذهاب إلى الدورة»"
+
+msgid "Show Unenroll Button"
+msgstr "إظهار زر إلغاء التسجيل"
+
+msgid "Shown after a successful enroll. Leave blank to use the default."
+msgstr "يظهر بعد التسجيل بنجاح. اتركه فارغًا لاستخدام النص الافتراضي."
+
+msgid "Shown after a successful unenroll. Leave blank to use the default."
+msgstr "يظهر بعد إلغاء التسجيل بنجاح. اتركه فارغًا لاستخدام النص الافتراضي."
+
+msgid "Shown to logged-out visitors; clicking starts the SSO login."
+msgstr "يظهر للزوّار غير المسجّلين؛ النقر يبدأ تسجيل الدخول الموحّد (SSO)."
+
+msgid "Something went wrong. Please try again."
+msgstr "حدث خطأ ما. يُرجى المحاولة مرة أخرى."
+
+msgid "Text Color"
+msgstr "لون النص"
+
+msgid "The WordPress URL the LMS redirects back to with the authorization code. Must match the redirect URI registered in your LMS OAuth application. Typically %s."
+msgstr "رابط ووردبريس الذي يعيد نظام إدارة التعلم التوجيه إليه مع رمز التفويض. يجب أن يطابق رابط إعادة التوجيه المسجّل في تطبيق OAuth لديك. عادةً %s."
+
+msgid "The request failed. Please try again later."
+msgstr "فشل الطلب. يُرجى المحاولة لاحقًا."
+
+msgid "Tutor LMS SSO"
+msgstr "تسجيل الدخول الموحّد لـ Tutor LMS"
+
+msgid "Tutor LMS SSO Settings"
+msgstr "إعدادات تسجيل الدخول الموحّد لـ Tutor LMS"
+
+msgid "Unenroll"
+msgstr "إلغاء التسجيل"
+
+msgid "Unenroll Button"
+msgstr "زر إلغاء التسجيل"
+
+msgid "Unenroll Label"
+msgstr "نص زر إلغاء التسجيل"
+
+msgid "Unenroll Success Message"
+msgstr "رسالة نجاح إلغاء التسجيل"
+
+msgid "Unenrolling…"
+msgstr "جارٍ إلغاء التسجيل…"
+
+msgid "Where to send users after a successful SSO login. Leave empty to use the site home URL."
+msgstr "إلى أين يتم توجيه المستخدمين بعد تسجيل الدخول الموحّد بنجاح. اتركه فارغًا لاستخدام الصفحة الرئيسية للموقع."
+
+msgid "Where to send users during and after the login flow."
+msgstr "إلى أين يتم توجيه المستخدمين أثناء عملية تسجيل الدخول وبعدها."
+
+msgid "Yes"
+msgstr "نعم"
+
+msgid "You are already enrolled in this course."
+msgstr "أنت مسجَّل بالفعل في هذه الدورة."
+
+msgid "You have been enrolled successfully."
+msgstr "تم تسجيلك بنجاح."
+
+msgid "You have been unenrolled from this course."
+msgstr "تم إلغاء تسجيلك من هذه الدورة."
+
+msgid "Your LMS session could not be verified. Please make sure you are logged in to the LMS, then reload this page and try again."
+msgstr "تعذّر التحقق من جلستك في نظام إدارة التعلم. يُرجى التأكد من تسجيل دخولك إلى النظام، ثم أعد تحميل الصفحة وحاول مرة أخرى."

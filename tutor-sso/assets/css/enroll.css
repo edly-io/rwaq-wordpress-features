@@ -1,0 +1,73 @@
+.tutor-sso-enroll-wrap {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px;
+}
+
+.tutor-sso-enroll-btn {
+	display: inline-block;
+	padding: 10px 22px;
+	border: none;
+	border-radius: 6px;
+	font-size: 15px;
+	font-weight: 600;
+	line-height: 1.4;
+	text-decoration: none;
+	cursor: pointer;
+	transition: opacity 0.15s ease, background-color 0.15s ease;
+}
+
+.tutor-sso-enroll-btn--enroll,
+.tutor-sso-enroll-btn--login {
+	background-color: #565199;
+	color: #ffffff;
+}
+
+.tutor-sso-enroll-btn--enroll:hover,
+.tutor-sso-enroll-btn--login:hover {
+	background-color: #474293;
+	color: #ffffff;
+}
+
+.tutor-sso-enroll-btn--goto {
+	background-color: #565199;
+	color: #ffffff;
+}
+
+.tutor-sso-enroll-btn--goto:hover {
+	background-color: #474293;
+	color: #ffffff;
+}
+
+.tutor-sso-enroll-btn--unenroll {
+	background-color: #ffffff;
+	color: #242424;
+	border: 1px solid #D1D1D1;
+}
+
+.tutor-sso-enroll-btn--unenroll:hover {
+	background-color: #f5f5f5;
+	color: #242424;
+}
+
+.tutor-sso-enroll-btn[disabled] {
+	opacity: 0.75;
+	cursor: default;
+}
+
+.tutor-sso-enroll-message {
+	width: 100%;
+	font-size: 13px;
+	color: #4b5563;
+}
+
+.tutor-sso-login-btn {
+	display: inline-block;
+	padding: 10px 22px;
+	border-radius: 6px;
+	background-color: #2563eb;
+	color: #fff;
+	font-weight: 600;
+	text-decoration: none;
+}
