@@ -33,6 +33,7 @@ require_once TUTOR_SSO_PATH . 'includes/enrollment-api.php';
 require_once TUTOR_SSO_PATH . 'includes/enrollment-ajax.php';
 require_once TUTOR_SSO_PATH . 'includes/enrollment-shortcode.php';
 require_once TUTOR_SSO_PATH . 'includes/elementor/elementor-widget-loader.php';
+require_once TUTOR_SSO_PATH . 'includes/partner-logo-shortcode.php';
 
 // Boot the admin settings UI.
 add_action( 'plugins_loaded', function () {
