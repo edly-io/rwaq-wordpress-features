@@ -47,6 +47,17 @@ function sso_option( $key, $default = '' ) {
  */
 function validate_sso_login() {
 
+	// ── LMS-side OAuth error (no code, but error param present) ─────────────
+	if ( isset( $_GET['error'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+		$error             = sanitize_text_field( wp_unslash( $_GET['error'] ) ); // phpcs:ignore WordPress.Security.NonceVerification
+		$error_description = isset( $_GET['error_description'] ) // phpcs:ignore WordPress.Security.NonceVerification
+			? sanitize_text_field( wp_unslash( $_GET['error_description'] ) ) // phpcs:ignore WordPress.Security.NonceVerification
+			: '';
+		error_log( sprintf( '[tutor-sso] LMS OAuth error: %s — %s', $error, $error_description ) );
+		wp_safe_redirect( get_site_url() );
+		exit;
+	}
+
 	if ( empty( $_GET['code'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
 		return;
 	}
@@ -58,9 +69,9 @@ function validate_sso_login() {
 		: '';
 
 	if ( empty( $state ) || ! get_transient( 'tutor_sso_state_' . $state ) ) {
-		wp_die(
-			esc_html__( 'Invalid or missing state parameter. This may indicate a CSRF attack — please try logging in again.', 'tutor-sso' )
-		);
+		error_log( '[tutor-sso] State validation failed — state param missing or transient not found.' );
+		wp_safe_redirect( get_site_url() );
+		exit;
 	}
 
 	// One-time use: delete immediately after the check.
