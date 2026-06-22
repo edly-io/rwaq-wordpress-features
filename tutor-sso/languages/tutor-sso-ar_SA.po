@@ -141,6 +141,9 @@ msgstr "سجّل الدخول للتسجيل"
 msgid "Log in with LMS"
 msgstr "تسجيل الدخول عبر نظام إدارة التعلم"
 
+msgid "Log out"
+msgstr "تسجيل الخروج"
+
 msgid "Malformed id_token (expected three dot-separated segments). Please contact the site administrator."
 msgstr "رمز id_token مُشوَّه (يجب أن يتكوّن من ثلاثة أجزاء مفصولة بنقاط). يُرجى التواصل مع مدير الموقع."
 
@@ -227,6 +230,9 @@ msgstr "يظهر للزوّار غير المسجّلين؛ النقر يبدأ 
 
 msgid "Something went wrong. Please try again."
 msgstr "حدث خطأ ما. يُرجى المحاولة مرة أخرى."
+
+msgid "Start learning"
+msgstr "ابدأ التعلم"
 
 msgid "Text Color"
 msgstr "لون النص"

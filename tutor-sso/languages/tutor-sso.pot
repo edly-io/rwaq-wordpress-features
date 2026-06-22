@@ -139,6 +139,9 @@ msgstr ""
 msgid "Log in with LMS"
 msgstr ""
 
+msgid "Log out"
+msgstr ""
+
 msgid "Malformed id_token (expected three dot-separated segments). Please contact the site administrator."
 msgstr ""
 
@@ -224,6 +227,9 @@ msgid "Shown to logged-out visitors; clicking starts the SSO login."
 msgstr ""
 
 msgid "Something went wrong. Please try again."
+msgstr ""
+
+msgid "Start learning"
 msgstr ""
 
 msgid "Text Color"
