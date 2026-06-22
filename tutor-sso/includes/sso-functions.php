@@ -348,24 +348,89 @@ function link_user_to_blog( $user_id, $blog_id, $role = 'subscriber' ) {
 // SSO users should be handled by revoke_session_on_lms_logout() above.
 add_filter( 'wp_auth_check_load', '__return_false' );
 
-// ── 10. Login button shortcode ────────────────────────────────────────────────
+// ── 10. Login / logout button shortcode ──────────────────────────────────────
+
+/**
+ * Render a login button for logged-out visitors and a logout button for
+ * logged-in users from a single shortcode.
+ *
+ * Attributes:
+ *   label        - Text for the login button   (default "Log in with LMS").
+ *   logout_label - Text for the logout button  (default "Log out").
+ *
+ * Backward compatible: [tutor_sso_login label="…"] still works exactly as
+ * before for logged-out visitors; logged-in users now see a logout button
+ * instead of nothing.
+ */
 add_shortcode( 'tutor_sso_login', function ( $atts ) {
-    if ( is_user_logged_in() ) {
-        return '';
-    }
 
     $atts = shortcode_atts(
         [
-            'label' => __( 'Log in with LMS', 'tutor-sso' ),
+            'label'        => __( 'Log in with LMS', 'tutor-sso' ),
+            'logout_label' => __( 'Log out', 'tutor-sso' ),
         ],
         $atts,
         'tutor_sso_login'
     );
 
+    if ( is_user_logged_in() ) {
+        return sprintf(
+            '<a href="%s" class="tutor-sso-logout-btn">%s</a>',
+            esc_url( wp_logout_url() ),
+            esc_html( $atts['logout_label'] )
+        );
+    }
+
     $url = \TutorSSO\get_lms_login_url();
 
     return sprintf(
         '<a href="%s" class="tutor-sso-login-btn">%s</a>',
+        esc_url( $url ),
+        esc_html( $atts['label'] )
+    );
+} );
+
+// ── 11. Start-learning button shortcode ───────────────────────────────────────
+
+/**
+ * Render a "Start learning" button that links to the LMS dashboard.
+ *
+ * Attributes:
+ *   label - Button text. Default "Start learning".
+ *   url   - Destination URL. Defaults to the configured course dashboard URL
+ *           (tutor_sso_course_dashboard_url), then the LMS base URL.
+ *
+ * Only rendered for logged-in users.
+ *
+ * Example: [tutor_sso_start_learning label="ابدأ التعلم" url="https://lms.example.com/dashboard"]
+ */
+add_shortcode( 'tutor_sso_start_learning', function ( $atts ) {
+
+    if ( ! is_user_logged_in() ) {
+        return '';
+    }
+
+    $atts = shortcode_atts(
+        [
+            'label' => __( 'Start learning', 'tutor-sso' ),
+            'url'   => '',
+        ],
+        $atts,
+        'tutor_sso_start_learning'
+    );
+
+    $url = $atts['url'];
+
+    if ( empty( $url ) ) {
+        $url = sso_option( 'course_dashboard_url' ) ?: sso_option( 'lms_base_url' );
+    }
+
+    if ( empty( $url ) ) {
+        return '';
+    }
+
+    return sprintf(
+        '<a href="%s" class="tutor-sso-start-learning-btn">%s</a>',
         esc_url( $url ),
         esc_html( $atts['label'] )
     );
