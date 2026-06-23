@@ -1,0 +1,126 @@
+/* ── Email-confirmation notice modal ──────────────────────────────────────── */
+
+.tutor-sso-ecm-overlay {
+	display: none;
+	position: fixed;
+	inset: 0;
+	z-index: 99999;
+	background: rgba(0, 0, 0, 0.55);
+	align-items: center;
+	justify-content: center;
+}
+
+.tutor-sso-ecm-overlay.is-visible {
+	display: flex;
+}
+
+.tutor-sso-ecm-modal {
+	background: #fff;
+	border-radius: 8px;
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+	max-width: 580px;
+	width: 90%;
+	padding: 3rem 2.5rem 2.5rem;
+	position: relative;
+	text-align: center;
+}
+
+/* Close (×) icon button — top-right corner */
+.tutor-sso-ecm-close {
+	position: absolute;
+	top: 0.75rem;
+	right: 0.75rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 2rem;
+	height: 2rem;
+	background: transparent;
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+	color: #888;
+	padding: 0;
+	transition: color 0.15s, background 0.15s;
+}
+
+.tutor-sso-ecm-close:hover,
+.tutor-sso-ecm-close:focus {
+	color: #111;
+	background: #f0f0f0;
+	outline: none;
+}
+
+.tutor-sso-ecm-close svg {
+	display: block;
+}
+
+/* Title wrapper centers the inline-block highlight */
+.tutor-sso-ecm-title-wrap {
+	margin: 0 0 1.25rem;
+}
+
+.tutor-sso-ecm-title {
+	display: inline;
+	font-family: "IBM Plex Sans Arabic", sans-serif;
+	font-size: 32px;
+	font-weight: 600;
+	line-height: 40px;
+	color: #111;
+	padding: 0 0.2em;
+	-webkit-box-decoration-break: clone;
+	box-decoration-break: clone;
+}
+
+.tutor-sso-ecm-body {
+	font-family: "IBM Plex Sans Arabic", sans-serif;
+	font-size: 16px;
+	font-weight: 400;
+	line-height: 28px;
+	color: #444;
+	margin-bottom: 2rem;
+}
+
+.tutor-sso-ecm-body p:last-child {
+	margin-bottom: 0;
+}
+
+/* Confirm button */
+.tutor-sso-ecm-confirm {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	background: #b94040;
+	color: #fff;
+	border: none;
+	border-radius: 6px;
+	font-family: "IBM Plex Sans Arabic", sans-serif;
+	font-size: 16px;
+	font-weight: 500;
+	line-height: 1.4;
+	padding: 0.8rem 2.5rem;
+	cursor: pointer;
+	transition: background 0.15s;
+	min-width: 220px;
+}
+
+.tutor-sso-ecm-confirm:hover,
+.tutor-sso-ecm-confirm:focus {
+	background: #9e3535;
+	outline: none;
+}
+
+.tutor-sso-ecm-confirm:disabled {
+	opacity: 0.65;
+	cursor: not-allowed;
+}
+
+/* RTL support */
+[dir="rtl"] .tutor-sso-ecm-close {
+	right: auto;
+	left: 0.75rem;
+}
+
+[dir="rtl"] .tutor-sso-ecm-modal {
+	text-align: center;
+}
