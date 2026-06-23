@@ -141,6 +141,10 @@ function validate_sso_login() {
 		}
 	);
 
+	// Clear the cached email-verification state so the first page after a fresh
+	// login re-checks the API (handles account switches and newly verified emails).
+	setcookie( 'edxemailverified', '', time() - DAY_IN_SECONDS, '/', '', is_ssl(), false );
+
 	wp_safe_redirect( $redirect_url );
 	exit;
 }
