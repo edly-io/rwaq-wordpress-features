@@ -235,7 +235,7 @@ function enroll_change_enrollment( $course_id, $action ) {
 				'Accept'           => 'application/json, text/plain, */*',
 				'Content-Type'     => 'application/x-www-form-urlencoded; charset=UTF-8',
 				'Origin'           => $base,
-				'Referer'          => $base . '/courses/' . $course_id . '/about',
+				'Referer'          => $base . '/course/' . $course_id . '/home',
 				'X-CSRFToken'      => $csrf,
 				'X-Requested-With' => 'XMLHttpRequest',
 				'Cookie'           => $cookie_header,
@@ -353,7 +353,7 @@ function enroll_course_url( $course_id ) {
 		return '';
 	}
 
-	$url = $base . '/courses/' . rawurlencode( $course_id ) . '/course/';
+	$url = $base . '/learning/course/' . rawurlencode( $course_id ) . '/home';
 
 	/**
 	 * Filter the resolved course URL.

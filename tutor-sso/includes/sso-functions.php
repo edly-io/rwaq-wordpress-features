@@ -413,7 +413,8 @@ add_shortcode( 'tutor_sso_login', function ( $atts ) {
  * Attributes:
  *   label - Button text. Default "Start learning".
  *   url   - Destination URL. Defaults to the configured course dashboard URL
- *           (tutor_sso_course_dashboard_url), then the LMS base URL.
+ *           (tutor_sso_course_dashboard_url), then the LMS base URL, with
+ *           /learner-dashboard/ appended.
  *
  * Only rendered for logged-in users.
  *
@@ -437,7 +438,9 @@ add_shortcode( 'tutor_sso_start_learning', function ( $atts ) {
     $url = $atts['url'];
 
     if ( empty( $url ) ) {
-        $url = sso_option( 'course_dashboard_url' ) ?: sso_option( 'lms_base_url' );
+        $base = sso_option( 'course_dashboard_url' ) ?: sso_option( 'lms_base_url' );
+        $base = rtrim( (string) $base, '/' );
+        $url  = $base ? $base . '/learner-dashboard/' : '';
     }
 
     if ( empty( $url ) ) {
