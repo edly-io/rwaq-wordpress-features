@@ -66,6 +66,7 @@ class Settings_Page {
 			'tutor_sso_client_id'           => 'sanitize_text_field',
 			'tutor_sso_client_secret'       => 'sanitize_text_field',
 			'tutor_sso_course_dashboard_url' => 'esc_url_raw',
+			'tutor_sso_jwt_auth_secret_key' => 'sanitize_text_field',
 		);
 
 		foreach ( $options as $name => $cb ) {
@@ -196,6 +197,35 @@ class Settings_Page {
 			'tutor_sso_section_enrollment',
 			get_site_url(),
 			__( 'Base URL the "Go to Course" link points at. Leave empty to fall back to the LMS Base URL.', 'tutor-sso' )
+		);
+
+		// ── Section 5: Programs API ──────────────────────────────────────────
+		add_settings_section(
+			'tutor_sso_section_programs_api',
+			__( 'Programs API', 'tutor-sso' ),
+			function () {
+				echo '<p>' . esc_html__(
+					'JWT signing secret used to authenticate the programs REST endpoint (POST /wp-json/rwaq/v1/programs). Requires the "JWT Authentication for WP REST API" plugin.',
+					'tutor-sso'
+				) . '</p>';
+			},
+			self::PAGE_SLUG
+		);
+
+		$jwt_in_config = defined( 'JWT_AUTH_SECRET_KEY' ) && ! get_option( 'tutor_sso_jwt_auth_secret_key' );
+
+		add_settings_field(
+			'tutor_sso_jwt_auth_secret_key',
+			__( 'JWT Secret Key', 'tutor-sso' ),
+			array( $this, 'render_password_field' ),
+			self::PAGE_SLUG,
+			'tutor_sso_section_programs_api',
+			array(
+				'option_name' => 'tutor_sso_jwt_auth_secret_key',
+				'description' => $jwt_in_config
+					? __( 'JWT_AUTH_SECRET_KEY is already defined in wp-config.php, which always takes precedence, this field is ignored.', 'tutor-sso' )
+					: __( 'A long random string (e.g. from the WordPress salt generator). Used to sign JWTs. Defining JWT_AUTH_SECRET_KEY in wp-config.php,  overrides this field.', 'tutor-sso' ),
+			)
 		);
 	}
 
