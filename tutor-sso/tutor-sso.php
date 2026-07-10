@@ -37,6 +37,9 @@ require_once TUTOR_SSO_PATH . 'includes/elementor/elementor-widget-loader.php';
 require_once TUTOR_SSO_PATH . 'includes/partner-logo-shortcode.php';
 require_once TUTOR_SSO_PATH . 'includes/partner-name-shortcode.php';
 require_once TUTOR_SSO_PATH . 'includes/programs/programs-api.php';
+require_once TUTOR_SSO_PATH . 'api/programs/programs-api.php';
+require_once TUTOR_SSO_PATH . 'includes/programs/programs-shortcode.php';
+require_once TUTOR_SSO_PATH . 'includes/programs/programs-ajax.php';
 
 // Boot the admin settings UI.
 add_action( 'plugins_loaded', function () {

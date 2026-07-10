@@ -341,7 +341,215 @@ class Settings_Page {
 				submit_button();
 				?>
 			</form>
+
+			<?php $this->render_shortcodes_reference(); ?>
 		</div>
+		<?php
+	}
+
+	// ── Shortcode reference ─────────────────────────────────────────────────────
+
+	/**
+	 * The shortcodes shipped by this plugin, for the admin reference.
+	 *
+	 * Extensible via the `tutor_sso_admin_shortcodes` filter so new shortcodes
+	 * can self-document without editing this class.
+	 *
+	 * @return array<int,array> Each: { tag, title, example, description, attributes[] }.
+	 */
+	private function get_shortcode_reference() {
+		$shortcodes = array(
+			array(
+				'tag'         => 'rwaq_programs',
+				'title'       => __( 'Programs Catalog', 'tutor-sso' ),
+				'example'     => '[rwaq_programs per_page="6" columns="3" detail_base="program" title="البرامج"]',
+				'description' => __( 'Published-programs catalog with a filter sidebar (program type, organization, featured), search, sorting, active-filter chips, and AJAX infinite scroll.', 'tutor-sso' ),
+				'attributes'  => array(
+					'per_page'    => __( 'Programs per page. Default: 6.', 'tutor-sso' ),
+					'columns'     => __( 'Grid column count. Default: 3.', 'tutor-sso' ),
+					'detail_base' => __( 'Path segment before the program slug; detail links become {site}/{detail_base}/{slug}/. Default: "program".', 'tutor-sso' ),
+					'title'       => __( 'Header title shown above the catalog. Leave blank to hide the header. Default: "البرامج".', 'tutor-sso' ),
+				),
+			),
+			array(
+				'tag'         => 'tutor_enroll_button',
+				'title'       => __( 'Enroll Button', 'tutor-sso' ),
+				'example'     => '[tutor_enroll_button course_id="course-v1:Org+Course+Run"]',
+				'description' => __( 'Enroll / unenroll button for a course. Falls back to the ACF field "openedx_course_id" on the current post when no course_id is given.', 'tutor-sso' ),
+				'attributes'  => array(
+					'course_id'      => __( 'edX course id. Optional if the post has an "openedx_course_id" field.', 'tutor-sso' ),
+					'enroll_label'   => __( 'Override the "Enroll" button text.', 'tutor-sso' ),
+					'unenroll_label' => __( 'Override the "Unenroll" button text.', 'tutor-sso' ),
+					'goto_label'     => __( 'Override the "Go to Course" button text.', 'tutor-sso' ),
+					'login_label'    => __( 'Override the logged-out "Log in to Enroll" text.', 'tutor-sso' ),
+				),
+			),
+			array(
+				'tag'         => 'tutor_sso_login',
+				'title'       => __( 'Login / Logout Button', 'tutor-sso' ),
+				'example'     => '[tutor_sso_login label="Log in with LMS"]',
+				'description' => __( 'SSO login link for logged-out visitors; a logout link for logged-in users.', 'tutor-sso' ),
+				'attributes'  => array(
+					'label'        => __( 'Logged-out button text. Default: "Log in with LMS".', 'tutor-sso' ),
+					'logout_label' => __( 'Logged-in button text. Default: "Log out".', 'tutor-sso' ),
+				),
+			),
+			array(
+				'tag'         => 'tutor_sso_start_learning',
+				'title'       => __( 'Start Learning Button', 'tutor-sso' ),
+				'example'     => '[tutor_sso_start_learning label="Start learning"]',
+				'description' => __( 'Button linking to the LMS dashboard. Only rendered for logged-in users.', 'tutor-sso' ),
+				'attributes'  => array(
+					'label' => __( 'Button text. Default: "Start learning".', 'tutor-sso' ),
+					'url'   => __( 'Destination URL. Defaults to the configured Course Dashboard / LMS URL.', 'tutor-sso' ),
+				),
+			),
+			array(
+				'tag'         => 'tutor_sso_email_confirm',
+				'title'       => __( 'Email Confirmation Modal', 'tutor-sso' ),
+				'example'     => '[tutor_sso_email_confirm title="Check your inbox"]Message body[/tutor_sso_email_confirm]',
+				'description' => __( 'Hidden modal toggled by JS. Inner content (between the tags) takes precedence over the content attribute.', 'tutor-sso' ),
+				'attributes'  => array(
+					'title'        => __( 'Modal heading.', 'tutor-sso' ),
+					'content'      => __( 'Modal body (alternative to inner content).', 'tutor-sso' ),
+					'button_label' => __( 'Close button text. Default: "Close".', 'tutor-sso' ),
+				),
+			),
+			array(
+				'tag'         => 'partner_name',
+				'title'       => __( 'Partner Name', 'tutor-sso' ),
+				'example'     => '[partner_name]',
+				'description' => __( 'Outputs the current post\'s course-partner name (ACF field "partner_name"). Requires ACF and a "course-partner" term.', 'tutor-sso' ),
+				'attributes'  => array(),
+			),
+			array(
+				'tag'         => 'partner_logo',
+				'title'       => __( 'Partner Logo', 'tutor-sso' ),
+				'example'     => '[partner_logo]',
+				'description' => __( 'Outputs the current post\'s course-partner logo (ACF field "partner_logo"). Requires ACF and a "course-partner" term.', 'tutor-sso' ),
+				'attributes'  => array(),
+			),
+		);
+
+		/**
+		 * Filter the shortcodes listed in the admin reference.
+		 *
+		 * @param array $shortcodes List of shortcode definitions.
+		 */
+		return apply_filters( 'tutor_sso_admin_shortcodes', $shortcodes );
+	}
+
+	/**
+	 * Render the read-only "Available Shortcodes" reference with copy buttons.
+	 */
+	private function render_shortcodes_reference() {
+		$shortcodes = $this->get_shortcode_reference();
+
+		if ( empty( $shortcodes ) ) {
+			return;
+		}
+		?>
+		<hr />
+		<h2><?php esc_html_e( 'Available Shortcodes', 'tutor-sso' ); ?></h2>
+		<p class="description"><?php esc_html_e( 'Copy a shortcode and paste it into any page, post, or widget.', 'tutor-sso' ); ?></p>
+
+		<div class="tutor-sso-shortcodes">
+			<?php foreach ( $shortcodes as $sc ) : ?>
+				<?php
+				$tag     = isset( $sc['tag'] ) ? (string) $sc['tag'] : '';
+				$title   = isset( $sc['title'] ) ? (string) $sc['title'] : $tag;
+				$example = isset( $sc['example'] ) ? (string) $sc['example'] : '[' . $tag . ']';
+				$desc    = isset( $sc['description'] ) ? (string) $sc['description'] : '';
+				$attrs   = ( isset( $sc['attributes'] ) && is_array( $sc['attributes'] ) ) ? $sc['attributes'] : array();
+				?>
+				<div class="tutor-sso-shortcode card">
+					<h3 class="tutor-sso-shortcode__title"><?php echo esc_html( $title ); ?></h3>
+
+					<?php if ( $desc ) : ?>
+						<p class="tutor-sso-shortcode__desc"><?php echo esc_html( $desc ); ?></p>
+					<?php endif; ?>
+
+					<div class="tutor-sso-shortcode__code">
+						<code><?php echo esc_html( $example ); ?></code>
+						<button
+							type="button"
+							class="button button-secondary tutor-sso-copy"
+							data-clipboard="<?php echo esc_attr( $example ); ?>"
+						>
+							<?php esc_html_e( 'Copy', 'tutor-sso' ); ?>
+						</button>
+					</div>
+
+					<?php if ( ! empty( $attrs ) ) : ?>
+						<table class="tutor-sso-shortcode__attrs widefat striped">
+							<thead>
+								<tr>
+									<th scope="col"><?php esc_html_e( 'Attribute', 'tutor-sso' ); ?></th>
+									<th scope="col"><?php esc_html_e( 'Description', 'tutor-sso' ); ?></th>
+								</tr>
+							</thead>
+							<tbody>
+								<?php foreach ( $attrs as $name => $attr_desc ) : ?>
+									<tr>
+										<td><code><?php echo esc_html( $name ); ?></code></td>
+										<td><?php echo esc_html( $attr_desc ); ?></td>
+									</tr>
+								<?php endforeach; ?>
+							</tbody>
+						</table>
+					<?php endif; ?>
+				</div>
+			<?php endforeach; ?>
+		</div>
+
+		<style>
+			.tutor-sso-shortcodes { display: grid; gap: 16px; max-width: 900px; margin-top: 12px; }
+			.tutor-sso-shortcode.card { padding: 16px 20px; max-width: none; }
+			.tutor-sso-shortcode__title { margin: 0 0 4px; }
+			.tutor-sso-shortcode__desc { margin: 0 0 12px; color: #50575e; }
+			.tutor-sso-shortcode__code { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+			.tutor-sso-shortcode__code code { flex: 1 1 auto; padding: 8px 12px; background: #f6f7f7; border: 1px solid #dcdcde; border-radius: 4px; word-break: break-all; }
+			.tutor-sso-shortcode__attrs { margin-top: 4px; }
+			.tutor-sso-shortcode__attrs td:first-child { width: 160px; white-space: nowrap; }
+			.tutor-sso-copy.is-copied { color: #007017; }
+		</style>
+
+		<script>
+			( function () {
+				document.querySelectorAll( '.tutor-sso-copy' ).forEach( function ( btn ) {
+					btn.addEventListener( 'click', function () {
+						var text = btn.getAttribute( 'data-clipboard' ) || '';
+						var done = function () {
+							var original = btn.textContent;
+							btn.textContent = '<?php echo esc_js( __( 'Copied!', 'tutor-sso' ) ); ?>';
+							btn.classList.add( 'is-copied' );
+							window.setTimeout( function () {
+								btn.textContent = original;
+								btn.classList.remove( 'is-copied' );
+							}, 1500 );
+						};
+
+						if ( navigator.clipboard && navigator.clipboard.writeText ) {
+							navigator.clipboard.writeText( text ).then( done ).catch( fallback );
+						} else {
+							fallback();
+						}
+
+						function fallback() {
+							var ta = document.createElement( 'textarea' );
+							ta.value = text;
+							ta.setAttribute( 'readonly', '' );
+							ta.style.position = 'absolute';
+							ta.style.left = '-9999px';
+							document.body.appendChild( ta );
+							ta.select();
+							try { document.execCommand( 'copy' ); done(); } catch ( e ) {}
+							document.body.removeChild( ta );
+						}
+					} );
+				} );
+			} )();
+		</script>
 		<?php
 	}
 
