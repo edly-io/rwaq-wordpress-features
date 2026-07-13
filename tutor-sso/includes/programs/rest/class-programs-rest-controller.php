@@ -423,7 +423,9 @@ class Programs_REST_Controller extends \WP_REST_Controller {
 	/**
 	 * Download an image URL into the media library and set it as the post's
 	 * featured image. Skips the download when the same source URL is already
-	 * the featured image.
+	 * the featured image, and reuses an existing attachment when the same URL
+	 * was already downloaded (by any program or course) instead of storing a
+	 * duplicate copy.
 	 *
 	 * @param int    $post_id Post ID.
 	 * @param string $url     Image URL.
@@ -436,11 +438,7 @@ class Programs_REST_Controller extends \WP_REST_Controller {
 			return (int) get_post_thumbnail_id( $post_id );
 		}
 
-		require_once ABSPATH . 'wp-admin/includes/media.php';
-		require_once ABSPATH . 'wp-admin/includes/file.php';
-		require_once ABSPATH . 'wp-admin/includes/image.php';
-
-		$attachment_id = media_sideload_image( $url, $post_id, null, 'id' );
+		$attachment_id = \TutorSSO\sideload_image_deduped( $url, $post_id );
 
 		if ( is_wp_error( $attachment_id ) ) {
 			return $attachment_id;

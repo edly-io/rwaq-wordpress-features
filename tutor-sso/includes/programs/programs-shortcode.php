@@ -3,7 +3,7 @@
  * Programs catalog: helpers, shortcode, search / sort / filters.
  *
  * Renders the published-programs catalog pulled from the LMS public API (see
- * api/programs/programs-api.php): a filter sidebar (program type, organization,
+ * programs-client.php): a filter sidebar (program type, organization,
  * featured) with per-option counts, a search box, a sort dropdown,
  * active-filter chips, and a grid of program cards. Page 1 is rendered
  * server-side (SEO + no-JS baseline); further pages load via AJAX on scroll,
