@@ -564,18 +564,16 @@ class Courses_REST_Controller extends \WP_REST_Controller {
 	}
 
 	/**
-	 * Sideload an image URL into the media library.
+	 * Sideload an image URL into the media library, reusing an existing
+	 * attachment when the same URL was already downloaded (by any course or
+	 * program) rather than storing a duplicate copy.
 	 *
-	 * @param int    $post_id Post to attach the media to.
+	 * @param int    $post_id Post to attach a freshly-downloaded image to.
 	 * @param string $url     Image URL.
 	 * @return int|\WP_Error Attachment ID or WP_Error.
 	 */
 	protected function sideload_image( $post_id, $url ) {
-		require_once ABSPATH . 'wp-admin/includes/media.php';
-		require_once ABSPATH . 'wp-admin/includes/file.php';
-		require_once ABSPATH . 'wp-admin/includes/image.php';
-
-		return media_sideload_image( $url, $post_id, null, 'id' );
+		return \TutorSSO\sideload_image_deduped( $url, $post_id );
 	}
 
 	/**

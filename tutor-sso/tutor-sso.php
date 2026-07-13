@@ -29,6 +29,7 @@ define( 'TUTOR_SSO_BASENAME', plugin_basename( __FILE__ ) );
 require_once TUTOR_SSO_PATH . 'admin/class-settings-page.php';
 require_once TUTOR_SSO_PATH . 'includes/class-oauth-handler.php';
 require_once TUTOR_SSO_PATH . 'includes/sso-functions.php';
+require_once TUTOR_SSO_PATH . 'includes/media-helpers.php';
 require_once TUTOR_SSO_PATH . 'includes/enrollment-api.php';
 require_once TUTOR_SSO_PATH . 'includes/enrollment-ajax.php';
 require_once TUTOR_SSO_PATH . 'includes/enrollment-shortcode.php';
