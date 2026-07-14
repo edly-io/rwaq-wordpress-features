@@ -108,7 +108,7 @@ class Courses_REST_Controller extends \WP_REST_Controller {
 	 * @return string[] request field names.
 	 */
 	protected function required_on_create() {
-		return array( 'title', 'slug', 'short_description', 'course_start_date', 'course_end_date' );
+		return array( 'title', 'slug', 'course_start_date' );
 	}
 
 	/**
