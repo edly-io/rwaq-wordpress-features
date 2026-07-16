@@ -40,8 +40,9 @@ require_once TUTOR_SSO_PATH . 'includes/partner-name-shortcode.php';
 require_once TUTOR_SSO_PATH . 'includes/programs/rest/routes.php';
 require_once TUTOR_SSO_PATH . 'includes/programs/programs-client.php';
 require_once TUTOR_SSO_PATH . 'includes/courses/rest/routes.php';
-require_once TUTOR_SSO_PATH . 'includes/programs/programs-shortcode.php';
+require_once TUTOR_SSO_PATH . 'includes/programs/programs-catalog.php';
 require_once TUTOR_SSO_PATH . 'includes/programs/programs-ajax.php';
+require_once TUTOR_SSO_PATH . 'includes/programs/programs-archive.php';
 
 // Boot the admin settings UI.
 add_action( 'plugins_loaded', function () {
@@ -63,6 +64,25 @@ function tutor_sso_load_textdomain() {
 	);
 }
 add_action( 'init', 'tutor_sso_load_textdomain' );
+
+/**
+ * Register and enqueue the IBM Plex Sans Arabic webfont globally.
+ *
+ * Loaded on every front-end page (not just where the programs catalog runs) so
+ * it is available to the catalog and any other pages that use it. The programs
+ * catalog stylesheet lists 'tutor-sso-programs-font' as a dependency, so it is
+ * always loaded before it.
+ */
+function tutor_sso_register_font_assets() {
+	wp_register_style(
+		'tutor-sso-programs-font',
+		'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap',
+		array(),
+		null
+	);
+	wp_enqueue_style( 'tutor-sso-programs-font' );
+}
+add_action( 'wp_enqueue_scripts', 'tutor_sso_register_font_assets' );
 
 /**
  * Register front-end enrollment assets. They are only enqueued when a button is

@@ -1,17 +1,54 @@
 /**
- * Programs catalog — minimal baseline styles.
+ * Programs catalog styles.
  *
- * Intentionally simple: it lays out the grid, cards and pagination so the
- * shortcode is usable out of the box. Theme/brand styling can layer on top of
- * the BEM-ish classes (.rwaq-programs, .rwaq-program-card, …).
+ * Visual design ported from the "البرامج" (programs) listing mockup: purple
+ * accent, IBM Plex Sans Arabic, rounded cards, custom checkbox / radio controls,
+ * a custom sort dropdown and collapsible filter groups. Structural class names
+ * (.rwaq-programs, .rwaq-program-card, …) are the plugin's stable contract shared
+ * with programs-catalog.php and programs.js — only the styling changed.
+ *
+ * The catalog targets Arabic (RTL) pages; layout uses flex/grid so it follows
+ * the page direction. A few text alignments assume RTL, matching the mockup.
+ *
+ * The IBM Plex Sans Arabic webfont is enqueued separately (see
+ * programs_register_assets() in programs-catalog.php), not @imported here.
  */
 
 .rwaq-programs {
-	margin: 0 0 2rem;
+	--rwaq-primary: #565199;
+	--rwaq-primary-soft: #EFEEFA;
+	--rwaq-text: #242424;
+	--rwaq-heading: #242424;
+	--rwaq-carrot: #242424;
+	--rwaq-muted: #616161;
+	--rwaq-placeholder: #9E9E9E;
+	--rwaq-icon: #616161;
+	--rwaq-border: #D1D1D1;
+	--rwaq-divider: #EDEDED;
+	--rwaq-featured: #F2B07F;
+
 	position: relative;
+	margin: 0 0 2rem;
+	color: var(--rwaq-text);
+	font-family: 'IBM Plex Sans Arabic', sans-serif;
+	-webkit-font-smoothing: antialiased;
 }
 
-/* Overlay shown while a search / sort reloads the whole list. */
+.rwaq-programs *,
+.rwaq-programs *::before,
+.rwaq-programs *::after {
+	box-sizing: border-box;
+}
+
+/* Width-constrained wrapper used by the /programs/ archive template
+   (templates/archive-program.php). Matches the site's Elementor content width. */
+.rwaq-programs-archive {
+	max-width: 1280px;
+	margin-inline: auto;
+	padding: 25px 15px;
+}
+
+/* Overlay shown while a search / sort / filter reloads the whole list. */
 .rwaq-programs__overlay {
 	position: absolute;
 	inset: 0;
@@ -28,73 +65,108 @@
 }
 
 .rwaq-programs__overlay .rwaq-programs__spinner {
-	width: 1rem;
-	height: 1rem;
 	position: sticky;
 	top: 40%;
+	width: 2rem;
+	height: 2rem;
 }
 
-/* Header: title + total badge */
+/* ---- Header: title + total badge ---- */
 .rwaq-programs__header {
 	display: flex;
 	align-items: center;
-	justify-content: space-between;
-	gap: 1rem;
-	margin-bottom: 1rem;
+	gap: 16px;
+	margin-bottom: 22px;
 }
 
 .rwaq-programs__title {
 	margin: 0;
-	font-size: 1.6rem;
-	font-weight: 700;
+	font-size: 32px;
+	line-height: 40px;
+	font-weight: 600;
+	color: var(--rwaq-heading);
 }
 
 .rwaq-programs__total-badge {
 	display: inline-flex;
 	align-items: center;
-	gap: 0.35rem;
-	background: #f3f0ff;
-	color: #565199;
-	font-size: 0.85rem;
-	font-weight: 600;
-	padding: 0.35rem 0.75rem;
+	gap: 8px;
+	background: var(--rwaq-primary-soft);
+	color: var(--rwaq-primary);
 	border-radius: 999px;
+	padding: 6px 14px;
+	font-size: 14px;
+	line-height: 20px;
+	font-weight: 600;
 	white-space: nowrap;
 }
 
-/* Search bar */
+/* ---- Search bar ----
+   The border lives on the <input> itself (so :focus can highlight it); the
+   icon is absolutely positioned over the input's start (right in RTL). */
 .rwaq-programs__searchbar {
-	margin-bottom: 1.25rem;
+	position: relative;
+	margin-bottom: 34px;
 }
 
-.rwaq-programs__search-input {
+.rwaq-programs__search-icon {
+	position: absolute;
+	inset-inline-start: 20px;
+	top: 50%;
+	transform: translateY(-50%);
+	display: inline-flex;
+	color: var(--rwaq-icon);
+	pointer-events: none;
+}
+
+/* Compound selector + input element keep these winning over theme / Elementor
+   input styles. */
+.rwaq-programs input.rwaq-programs__search-input {
 	width: 100%;
-	padding: 0.75rem 1rem;
-	border: 1px solid #e4e4e7;
-	border-radius: 10px;
-	font-size: 1rem;
-	background: #fff;
-	color: #3f3f46;
-}
-
-.rwaq-programs__search-input:focus {
+	height: 56px;
+	border: 1px solid var(--rwaq-border);
+	border-radius: 14px;
 	outline: none;
-	border-color: #565199;
-	box-shadow: 0 0 0 3px rgba(86, 81, 153, 0.15);
+	box-shadow: none;
+	background: #fff;
+	font-family: inherit;
+	font-size: 16px;
+	font-weight: 400;
+	color: var(--rwaq-text);
+	/* Leave room for the absolutely-positioned icon on the start side. */
+	padding-inline-start: 52px;
+	padding-inline-end: 20px;
+	transition: border-color 0.15s, box-shadow 0.15s;
 }
 
-/* Layout: filter sidebar + results */
+.rwaq-programs input.rwaq-programs__search-input:focus {
+	border-color: var(--rwaq-primary);
+}
+
+.rwaq-programs__search-input::placeholder {
+	color: var(--rwaq-placeholder);
+}
+
+/* Hide the browser's native type="search" clear (×) button and decoration. */
+.rwaq-programs__search-input::-webkit-search-cancel-button,
+.rwaq-programs__search-input::-webkit-search-decoration {
+	-webkit-appearance: none;
+	appearance: none;
+}
+
+/* ---- Layout: filter sidebar + results ---- */
 .rwaq-programs__layout {
 	display: flex;
-	gap: 1.5rem;
+	gap: 24px;
 	align-items: flex-start;
 }
 
 .rwaq-programs__sidebar {
-	flex: 0 0 260px;
-	border: 1px solid #e4e4e7;
-	border-radius: 12px;
-	padding: 1rem 1.25rem;
+	flex: 0 0 280px;
+	width: 280px;
+	border: 1px solid var(--rwaq-border);
+	border-radius: 18px;
+	padding: 22px 22px 26px;
 }
 
 .rwaq-programs__main {
@@ -102,73 +174,94 @@
 	min-width: 0;
 }
 
-@media (max-width: 768px) {
-	.rwaq-programs__layout {
-		flex-direction: column;
-	}
-
-	.rwaq-programs__sidebar {
-		flex-basis: auto;
-		width: 100%;
-	}
-}
-
 /* Sidebar head */
 .rwaq-programs__sidebar-head {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	margin-bottom: 1rem;
+	margin-bottom: 24px;
 }
 
 .rwaq-programs__sidebar-title {
-	font-weight: 700;
-	font-size: 1.05rem;
+	display: flex;
+	align-items: center;
+	gap: 9px;
+	font-size: 16px;
+	line-height: 22px;
+	font-weight: 600;
+	color: var(--rwaq-text);
 }
 
 .rwaq-programs__clear {
 	background: none;
 	border: none;
-	color: #565199;
-	font-size: 0.85rem;
+	font-family: inherit;
+	color: var(--rwaq-primary);
+	font-size: 14px;
+	line-height: 20px;
 	font-weight: 600;
 	cursor: pointer;
 	padding: 0;
 }
 
-.rwaq-programs__clear:hover {
-	text-decoration: underline;
+/* Keep transparent on hover / focus (override theme / Elementor button styles). */
+.rwaq-programs .rwaq-programs__clear:hover,
+.rwaq-programs .rwaq-programs__clear:focus {
+	background: none;
+	color: var(--rwaq-primary);
 }
 
 /* Filter groups */
 .rwaq-programs__filter-group {
-	padding: 1rem 0;
-	border-top: 1px solid #f0f0f2;
-}
-
-.rwaq-programs__filter-group:first-of-type {
-	border-top: none;
-	padding-top: 0;
+	margin-top: 17px;
+	padding-top: 17px;
+	border-top: 1px solid var(--rwaq-divider);
 }
 
 .rwaq-programs__filter-title {
-	margin: 0 0 0.6rem;
-	font-size: 0.95rem;
-	font-weight: 700;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin: 0;
+	font-size: 14px;
+	font-weight:600;
+	line-height: 20px;
+	color: var(--rwaq-text);
+	cursor: pointer;
+	user-select: none;
+}
+
+.rwaq-programs__filter-chevron {
+	display: inline-flex;
+	color: var(--rwaq-carrot);
+	transition: transform 0.18s ease;
+}
+
+/* Collapsed state: hide options + the "show more" toggle, flip the chevron. */
+.rwaq-programs__filter-group.is-collapsed .rwaq-programs__filter-options,
+.rwaq-programs__filter-group.is-collapsed .rwaq-programs__show-more {
+	display: none;
+}
+
+.rwaq-programs__filter-group.is-collapsed .rwaq-programs__filter-chevron {
+	transform: rotate(180deg);
 }
 
 .rwaq-programs__filter-options {
 	display: flex;
 	flex-direction: column;
-	gap: 0.55rem;
+	gap: 14px;
+	margin-top: 14px;
 }
 
 .rwaq-programs__filter-option {
 	display: flex;
 	align-items: center;
-	gap: 0.5rem;
-	font-size: 0.9rem;
-	color: #3f3f46;
+	gap: 11px;
+	font-size: 14px;
+	font-weight: 400;
+	line-height: 22px;
+	color: var(--rwaq-text);
 	cursor: pointer;
 }
 
@@ -178,11 +271,69 @@
 	display: none;
 }
 
+/* Visually hide the native control while keeping it accessible / focusable. */
 .rwaq-programs__filter-input {
-	accent-color: #565199;
-	width: 1rem;
-	height: 1rem;
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	opacity: 0;
+	pointer-events: none;
+}
+
+/* Custom checkbox / radio box */
+.rwaq-programs__filter-box {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 	flex: 0 0 auto;
+	width: 20px;
+	height: 20px;
+	border: 1.5px solid var(--rwaq-border);
+	border-radius: 6px;
+	background: #fff;
+	transition: background 0.12s, border-color 0.12s;
+}
+
+.rwaq-programs__filter-box svg {
+	opacity: 0;
+}
+
+.rwaq-programs__filter-input:checked + .rwaq-programs__filter-box {
+	background: var(--rwaq-primary);
+	border-color: var(--rwaq-primary);
+}
+
+.rwaq-programs__filter-input:checked + .rwaq-programs__filter-box svg {
+	opacity: 1;
+}
+
+/* Focus ring on the custom box when the hidden input is focused via keyboard. */
+.rwaq-programs__filter-input:focus-visible + .rwaq-programs__filter-box {
+	box-shadow: 0 0 0 3px rgba(108, 93, 211, 0.25);
+}
+
+/* Radio variant */
+.rwaq-programs__filter-box--radio {
+	border-radius: 50%;
+}
+
+.rwaq-programs__filter-box--radio::after {
+	content: "";
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	background: var(--rwaq-primary);
+	opacity: 0;
+	transition: opacity 0.12s;
+}
+
+.rwaq-programs__filter-input:checked + .rwaq-programs__filter-box--radio {
+	background: #fff;
+	border-color: var(--rwaq-primary);
+}
+
+.rwaq-programs__filter-input:checked + .rwaq-programs__filter-box--radio::after {
+	opacity: 1;
 }
 
 .rwaq-programs__filter-label {
@@ -191,68 +342,40 @@
 
 .rwaq-programs__filter-count {
 	flex: 0 0 auto;
-	color: #a1a1aa;
-	font-size: 0.8rem;
+	color: var(--rwaq-muted);
+	font-size: 12px;
+	line-height: 16px;
+	font-weight: 400;
 	font-variant-numeric: tabular-nums;
 }
 
 .rwaq-programs__show-more {
-	margin-top: 0.7rem;
+	margin-top: 14px;
 	background: none;
 	border: none;
-	color: #565199;
-	font-size: 0.85rem;
+	font-family: inherit;
+	color: var(--rwaq-primary);
+	font-size: 14px;
 	font-weight: 600;
+	line-height: 20px;
 	cursor: pointer;
 	padding: 0;
 }
 
-.rwaq-programs__show-more:hover {
-	text-decoration: underline;
+/* Keep transparent on hover / focus (override theme / Elementor button styles). */
+.rwaq-programs .rwaq-programs__show-more:hover,
+.rwaq-programs .rwaq-programs__show-more:focus {
+	background: none;
+	color: var(--rwaq-primary);
 }
 
-/* Controls: sort + result count */
-.rwaq-programs__controls {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 1rem;
-	margin-bottom: 1rem;
-	flex-wrap: wrap;
-}
-
-.rwaq-programs__result-count {
-	font-size: 0.9rem;
-	color: #52525b;
-	font-weight: 600;
-}
-
-.rwaq-programs__sort {
-	display: flex;
-	align-items: center;
-	gap: 0.4rem;
-}
-
-.rwaq-programs__sort-caption {
-	font-size: 0.85rem;
-	color: #71717a;
-}
-
-.rwaq-programs__sort-select {
-	padding: 0.45rem 0.7rem;
-	border: 1px solid #e4e4e7;
-	border-radius: 8px;
-	font-size: 0.9rem;
-	background: #fff;
-	color: #3f3f46;
-}
-
-/* Active filter chips */
+/* ---- Active filter chips ---- */
 .rwaq-programs__chips {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 0.5rem;
-	margin-bottom: 1rem;
+	gap: 12px;
+	margin-bottom: 4px;
+	min-height: 32px;
 }
 
 .rwaq-programs__chips:empty {
@@ -262,64 +385,183 @@
 .rwaq-programs__chip {
 	display: inline-flex;
 	align-items: center;
-	gap: 0.4rem;
+	gap: 8px;
+	height: 32px;
+	padding: 0 12px;
 	background: #fff;
-	border: 1px solid #e4e4e7;
-	border-radius: 999px;
-	padding: 0.3rem 0.75rem;
-	font-size: 0.85rem;
-	color: #3f3f46;
+	border: 1px solid var(--rwaq-border);
+	border-radius: 8px;
+	font-family: inherit;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 20px;
+	color: var(--rwaq-muted);
 	cursor: pointer;
 }
 
-.rwaq-programs__chip:hover {
-	border-color: #565199;
+/* Keep the same background on hover (override theme / Elementor button hover). */
+.rwaq-programs .rwaq-programs__chip:hover,
+.rwaq-programs .rwaq-programs__chip:focus {
+	background: #fff;
+	color: var(--rwaq-muted);
+	border-color: var(--rwaq-border);
 }
 
 .rwaq-programs__chip-x {
-	color: #a1a1aa;
-	font-size: 1rem;
+	display: inline-flex;
+	color: #6b7280;
 	line-height: 1;
 }
 
+/* ---- Controls: result count + sort ---- */
+.rwaq-programs__controls {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	margin: 20px 0 24px;
+	flex-wrap: wrap;
+}
+
+.rwaq-programs__result-count {
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 20px;
+	color: var(--rwaq-text);
+}
+
+/* ---- Sort control (custom dropdown backed by a hidden native <select>) ---- */
+.rwaq-programs__sort {
+	position: relative;
+}
+
+.rwaq-programs__sort-select {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	opacity: 0;
+	pointer-events: none;
+}
+
+.rwaq-programs__sort-trigger {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	border: 1px solid var(--rwaq-border);
+	border-radius: 12px;
+	padding: 10px 16px;
+	background: #fff;
+	font-family: inherit;
+	font-size: 14px;
+	cursor: pointer;
+}
+
+/* Keep the same background on hover (override theme / Elementor button hover). */
+.rwaq-programs .rwaq-programs__sort-trigger:hover,
+.rwaq-programs .rwaq-programs__sort-trigger:focus {
+	background: #fff;
+	color: inherit;
+}
+
+.rwaq-programs__sort-caption {
+	color: var(--rwaq-muted);
+	font-weight: 400;
+}
+
+.rwaq-programs__sort-value {
+	min-width: 92px;
+	font-weight: 600;
+	color: var(--rwaq-text);
+	text-align: right;
+}
+
+.rwaq-programs__sort-chevron {
+	display: inline-flex;
+	color: #242424;
+	transition: transform 0.15s;
+}
+
+.rwaq-programs__sort.is-open .rwaq-programs__sort-chevron {
+	transform: rotate(180deg);
+}
+
+.rwaq-programs__sort-menu {
+	position: absolute;
+	top: calc(100% + 8px);
+	inset-inline-start: 0;
+	width: 240px;
+	max-width: 80vw;
+	background: #fff;
+	border: 1px solid #e5e5e5;
+	border-radius: 12px;
+	box-shadow: 0 12px 28px rgba(16, 24, 40, 0.14);
+	padding: 8px;
+	z-index: 20;
+	display: none;
+}
+
+.rwaq-programs__sort.is-open .rwaq-programs__sort-menu {
+	display: block;
+}
+
+.rwaq-programs__sort-option {
+	padding: 10px 14px;
+	border-radius: 8px;
+	font-size: 15px;
+	color: var(--rwaq-text);
+	text-align: right;
+	cursor: pointer;
+}
+
+.rwaq-programs__sort-option:hover {
+	background: #f4f4f6;
+}
+
+.rwaq-programs__sort-option.is-selected {
+	font-weight: 700;
+	background: #f4f4f6;
+}
+
+/* ---- Cards grid (flexbox: N per row, wrapping) ---- */
 .rwaq-programs__grid {
-	display: grid;
-	grid-template-columns: repeat(var(--rwaq-programs-columns, 3), 1fr);
-	gap: 1.5rem;
+	--rwaq-programs-gap: 15px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--rwaq-programs-gap);
 }
 
-@media (max-width: 900px) {
-	.rwaq-programs__grid {
-		grid-template-columns: repeat(2, 1fr);
-	}
-}
-
-@media (max-width: 600px) {
-	.rwaq-programs__grid {
-		grid-template-columns: 1fr;
-	}
-}
-
+/* ---- Card ---- */
 .rwaq-program-card {
+	/* N columns per row (from the shortcode's `columns` attribute, default 3),
+	   accounting for the gaps between them. */
+	flex: 0 0 calc(
+		(100% - (var(--rwaq-programs-columns, 3) - 1) * var(--rwaq-programs-gap, 15px))
+		/ var(--rwaq-programs-columns, 3)
+	);
+	min-width: 0;
 	display: flex;
 	flex-direction: column;
-	border: 1px solid #e4e4e7;
-	border-radius: 10px;
-	overflow: hidden;
+	border: 1px solid var(--rwaq-border);
+	border-radius: 18px;
+	padding: 16px;
 	background: #fff;
+	box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
 	transition: box-shadow 0.15s ease, transform 0.15s ease;
 }
 
 .rwaq-program-card:hover {
-	box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+	box-shadow: 0 8px 22px rgba(16, 24, 40, 0.1);
 	transform: translateY(-2px);
 }
 
 .rwaq-program-card__media {
-	display: block;
-	aspect-ratio: 16 / 9;
-	background: #f4f4f5;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 145px;
+	border-radius: 12px;
 	overflow: hidden;
+	color: #b6bccb;
 }
 
 .rwaq-program-card__image {
@@ -329,39 +571,50 @@
 	display: block;
 }
 
+.rwaq-program-card__placeholder {
+	display: inline-flex;
+}
+
 .rwaq-program-card__body {
 	display: flex;
 	flex-direction: column;
-	gap: 0.5rem;
-	padding: 1rem 1.25rem 1.25rem;
 	flex: 1;
+	padding: 0;
 }
 
 /* Organization row */
 .rwaq-program-card__org {
 	display: flex;
 	align-items: center;
-	gap: 0.5rem;
+	gap: 8px;
+	margin-top: 16px;
+}
+
+.rwaq-program-card__logo {
+	display: inline-flex;
+	align-items: center;
+	flex-shrink: 0;
 }
 
 .rwaq-program-card__org-logo {
-	height: 20px;
+	height: 22px;
 	width: auto;
 	max-width: 90px;
 	object-fit: contain;
 }
 
 .rwaq-program-card__org-name {
-	font-size: 0.8rem;
-	color: #71717a;
+	font-size: 14px;
 	font-weight: 600;
+	color: #5b6472;
 }
 
 .rwaq-program-card__title {
-	margin: 0;
-	font-size: 1.05rem;
-	line-height: 1.4;
-	font-weight: 700;
+	margin: 12px 0 0;
+	font-size: 16px;
+	font-weight: 600;
+	line-height: 22px;
+	color: var(--rwaq-heading);
 }
 
 .rwaq-program-card__title a {
@@ -370,17 +623,17 @@
 }
 
 .rwaq-program-card__title a:hover {
-	text-decoration: underline;
+	color: var(--rwaq-primary);
 }
 
-/* Meta list (courses count, etc.) */
+/* Meta list */
 .rwaq-program-card__meta {
 	list-style: none;
-	margin: 0;
+	margin: 16px 0 0;
 	padding: 0;
 	display: flex;
 	flex-direction: column;
-	gap: 0.35rem;
+	gap: 11px;
 }
 
 .rwaq-program-card__meta:empty {
@@ -390,61 +643,63 @@
 .rwaq-program-card__meta-item {
 	display: flex;
 	align-items: center;
-	gap: 0.4rem;
-	font-size: 0.85rem;
-	color: #52525b;
+	gap: 9px;
+	font-size: 12px;
+	font-weight: 400;
+	line-height: 16px;
+	color: var(--rwaq-muted);
 }
 
 .rwaq-program-card__meta-item .rwaq-icon {
 	flex: 0 0 auto;
-	color: #a1a1aa;
+	color: var(--rwaq-placeholder);
 }
 
 /* Footer badges */
 .rwaq-program-card__badges {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 0.4rem;
-	margin-top: auto;
-	padding-top: 0.4rem;
+	gap: 10px;
+	margin-top: 18px;
 }
 
 .rwaq-program-card__type {
-	font-size: 0.75rem;
+	border: 1px solid var(--rwaq-border);
+	border-radius: 9px;
+	padding: 7px 16px;
+	font-size: 12px;
 	font-weight: 600;
-	color: #3f3f46;
+	line-height: 20px;
+	color: var(--rwaq-text);
 	background: #fff;
-	border: 1px solid #e4e4e7;
-	padding: 0.2rem 0.6rem;
-	border-radius: 6px;
 }
 
 .rwaq-program-card__featured {
-	font-size: 0.75rem;
+	border: none;
+	border-radius: 9px;
+	padding: 7px 16px;
+	font-size: 12px;
 	font-weight: 600;
-	color: #fff;
-	background: #e08a2b;
-	padding: 0.2rem 0.6rem;
-	border-radius: 6px;
+	line-height: 20px;
+	color: var(--rwaq-text);
+	background: var(--rwaq-featured);
 }
 
-/* AJAX loader (spinner) */
+/* ---- AJAX loader (append spinner on scroll) ---- */
 .rwaq-programs__loader {
 	display: flex;
 	justify-content: center;
 	padding: 1.5rem 0;
 }
 
-/* Honor the `hidden` attribute the JS toggles — a class selector otherwise
-   beats the browser's built-in [hidden] { display: none } rule. */
 .rwaq-programs__loader[hidden] {
 	display: none;
 }
 
 .rwaq-programs__spinner {
-	width: 1rem;
-	height: 1rem;
-	fill: #565199;
+	width: 2rem;
+	height: 2rem;
+	fill: var(--rwaq-primary);
 	animation: rwaq-programs-spin 0.9s linear infinite;
 }
 
@@ -469,7 +724,7 @@
 .rwaq-programs__status {
 	text-align: center;
 	color: #52525b;
-	font-size: 0.9rem;
+	font-size: 0.95rem;
 	margin-top: 1rem;
 }
 
@@ -490,4 +745,85 @@
 .rwaq-programs--error {
 	border-color: #fca5a5;
 	color: #b91c1c;
+}
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+
+/* Tablet: stack the filters panel above the results. */
+@media (max-width: 900px) {
+	.rwaq-programs__layout {
+		flex-direction: column;
+		gap: 24px;
+	}
+
+	.rwaq-programs__sidebar {
+		flex: 0 0 auto;
+		width: 100%;
+	}
+}
+
+/* Small screens: one card per row (full width). */
+@media (max-width: 767px) {
+	.rwaq-program-card {
+		flex: 0 0 100%;
+	}
+}
+
+/* Landscape phone / small tablet. */
+@media (max-width: 680px) {
+	.rwaq-programs__header {
+		flex-wrap: wrap;
+		gap: 12px;
+	}
+
+	.rwaq-programs__title {
+		font-size: 26px;
+	}
+
+	.rwaq-programs__controls {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 14px;
+	}
+
+	.rwaq-programs__sort {
+		width: 100%;
+	}
+
+	.rwaq-programs__sort-trigger {
+		width: 100%;
+		justify-content: flex-start;
+	}
+
+	.rwaq-programs__sort-value {
+		min-width: 0;
+		flex: 1;
+	}
+
+	.rwaq-programs__sort-menu {
+		width: 100%;
+		max-width: none;
+	}
+}
+
+/* Phone. */
+@media (max-width: 460px) {
+	.rwaq-programs__search-icon {
+		inset-inline-start: 14px;
+	}
+
+	.rwaq-programs input.rwaq-programs__search-input {
+		padding-inline-start: 44px;
+		padding-inline-end: 14px;
+	}
+
+	.rwaq-programs__sidebar {
+		padding: 18px 16px 22px;
+	}
+
+	.rwaq-program-card__title {
+		font-size: 17px;
+	}
 }

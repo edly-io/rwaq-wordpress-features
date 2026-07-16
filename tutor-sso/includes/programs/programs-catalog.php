@@ -32,10 +32,13 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Register the (lazily enqueued) catalog assets.
  */
 function programs_register_assets() {
+	// The IBM Plex Sans Arabic webfont ('tutor-sso-programs-font') is registered
+	// and enqueued globally in tutor-sso.php. It is listed as a dependency here so
+	// it is guaranteed to load before the catalog stylesheet that uses it.
 	wp_register_style(
 		'tutor-sso-programs',
 		TUTOR_SSO_URL . 'assets/css/programs.css',
-		array(),
+		array( 'tutor-sso-programs-font' ),
 		TUTOR_SSO_VERSION
 	);
 
@@ -66,6 +69,11 @@ function programs_enqueue_assets() {
 		array(
 			'ajaxurl' => admin_url( 'admin-ajax.php' ),
 			'nonce'   => wp_create_nonce( 'tutor_sso_programs' ),
+			'icons'   => array(
+				// SVG for the active-filter chip remove button (chips are rendered
+				// client-side, so the markup is passed through to programs.js).
+				'removeChip' => programs_icon( 'close' ),
+			),
 			'i18n'    => array(
 				'error'        => __( 'حدث خطأ أثناء تحميل البرامج. يرجى المحاولة مرة أخرى.', 'tutor-sso' ),
 				'noResults'    => __( 'لا توجد برامج مطابقة.', 'tutor-sso' ),
@@ -100,6 +108,25 @@ function programs_sort_options() {
  */
 function programs_default_sort() {
 	return 'newest';
+}
+
+/**
+ * Site-wide default "programs per page", from the settings page.
+ *
+ * Used as the shortcode's per_page default (and thus by the /programs/ archive)
+ * so the page size is managed centrally. Clamped to 1–48 (matching the AJAX
+ * handler's ceiling); falls back to 6.
+ *
+ * @return int
+ */
+function programs_default_per_page() {
+	$value = (int) sso_option( 'programs_per_page', 6 );
+
+	if ( $value < 1 ) {
+		$value = 6;
+	}
+
+	return min( $value, 48 );
 }
 
 /**
@@ -175,7 +202,7 @@ function programs_org_label( $org ) {
 		return (string) $org;
 	}
 
-	foreach ( array( 'arabic_name', 'org_arabic_name', 'name', 'short_name' ) as $key ) {
+	foreach ( array( 'organization_arabic_name', 'name', 'short_name' ) as $key ) {
 		if ( ! empty( $org[ $key ] ) ) {
 			return (string) $org[ $key ];
 		}
@@ -196,6 +223,8 @@ function programs_org_value( $org ) {
 		return (string) $org;
 	}
 
+	// The `org` query param matches the organization's actual name, so never use
+	// the Arabic display name here (that is only for programs_org_label()).
 	foreach ( array( 'name', 'short_name' ) as $key ) {
 		if ( ! empty( $org[ $key ] ) ) {
 			return (string) $org[ $key ];
@@ -220,15 +249,32 @@ function programs_count_badge( $count ) {
 }
 
 /**
- * Small inline icon set used on cards.
+ * Small inline icon set used across the catalog UI.
  *
- * @param string $name Icon name (calendar | courses).
+ * @param string $name Icon name.
  * @return string SVG markup.
  */
 function programs_icon( $name ) {
 	$icons = array(
-		'calendar' => '<svg class="rwaq-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg>',
-		'courses'  => '<svg class="rwaq-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 5.5A2 2 0 0 1 6 4h5v16H6a2 2 0 0 0-2 1.5zM20 5.5A2 2 0 0 0 18 4h-5v16h5a2 2 0 0 1 2 1.5z"/></svg>',
+		// Card meta.
+		'calendar' => '<svg class="rwaq-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M5.33325 1.33331V3.99998" stroke="#616161" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.6667 1.33331V3.99998" stroke="#616161" stroke-linecap="round" stroke-linejoin="round"/><path d="M12.6667 2.66669H3.33333C2.59695 2.66669 2 3.26364 2 4.00002V13.3334C2 14.0697 2.59695 14.6667 3.33333 14.6667H12.6667C13.403 14.6667 14 14.0697 14 13.3334V4.00002C14 3.26364 13.403 2.66669 12.6667 2.66669Z" stroke="#616161" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 6.66669H14" stroke="#616161" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+		'courses'  => '<svg class="rwaq-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 11.75V4.25C4 3.91848 4.1317 3.60054 4.36612 3.36612C4.60054 3.1317 4.91848 3 5.25 3H11.5C11.6326 3 11.7598 3.05268 11.8536 3.14645C11.9473 3.24021 12 3.36739 12 3.5V12.5C12 12.6326 11.9473 12.7598 11.8536 12.8536C11.7598 12.9473 11.6326 13 11.5 13H5.25C4.91848 13 4.60054 12.8683 4.36612 12.6339C4.1317 12.3995 4 12.0815 4 11.75ZM4 11.75C4 11.4185 4.1317 11.1005 4.36612 10.8661C4.60054 10.6317 4.91848 10.5 5.25 10.5H12" stroke="#616161" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+		// Card thumbnail placeholder (when no card image).
+		'thumb'    => '<svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-4.5-4.5L6 21"/></svg>',
+		// Header total badge.
+		'bookmark' => '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2.66675 13V3C2.66675 2.55797 2.84234 2.13405 3.1549 1.82149C3.46746 1.50893 3.89139 1.33333 4.33341 1.33333H13.3334V14.6667H4.33341C3.89139 14.6667 3.46746 14.4911 3.1549 14.1785C2.84234 13.866 2.66675 13.442 2.66675 13ZM2.66675 13C2.66675 12.558 2.84234 12.134 3.1549 11.8215C3.46746 11.5089 3.89139 11.3333 4.33341 11.3333H13.3334" stroke="#565199" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+		// Search bar.
+		'search'   => '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M9.16667 15.8333C12.8486 15.8333 15.8333 12.8486 15.8333 9.16667C15.8333 5.48477 12.8486 2.5 9.16667 2.5C5.48477 2.5 2.5 5.48477 2.5 9.16667C2.5 12.8486 5.48477 15.8333 9.16667 15.8333Z" stroke="#616161" stroke-width="1.66667" stroke-linecap="round" stroke-linejoin="round"/><path d="M17.5001 17.5L13.9167 13.9167" stroke="#616161" stroke-width="1.66667" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+		// Sidebar.
+		'filter'   => '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M14.6666 2H1.33325L6.66659 8.30667V12.6667L9.33325 14V8.30667L14.6666 2Z" stroke="#242424" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+		// Collapsible group chevron (points up when expanded).
+		'chevron'  => '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M10.5 8.75L7 5.25L3.5 8.75" stroke="#242424" stroke-width="1.16667" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+		// Sort dropdown chevron (points down).
+		'caret'    => '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>',
+		// Custom checkbox check mark.
+		'check'    => '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4 10-10"/></svg>',
+		// Active-filter chip remove.
+		'close'    => '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4.08859 4.21569L4.14645 4.14645C4.32001 3.97288 4.58944 3.9536 4.78431 4.08859L4.85355 4.14645L10 9.293L15.1464 4.14645C15.32 3.97288 15.5894 3.9536 15.7843 4.08859L15.8536 4.14645C16.0271 4.32001 16.0464 4.58944 15.9114 4.78431L15.8536 4.85355L10.707 10L15.8536 15.1464C16.0271 15.32 16.0464 15.5894 15.9114 15.7843L15.8536 15.8536C15.68 16.0271 15.4106 16.0464 15.2157 15.9114L15.1464 15.8536L10 10.707L4.85355 15.8536C4.67999 16.0271 4.41056 16.0464 4.21569 15.9114L4.14645 15.8536C3.97288 15.68 3.9536 15.4106 4.08859 15.2157L4.14645 15.1464L9.293 10L4.14645 4.85355C3.97288 4.67999 3.9536 4.41056 4.08859 4.21569L4.14645 4.14645L4.08859 4.21569Z" fill="#616161"/></svg>',
 	);
 
 	return isset( $icons[ $name ] ) ? $icons[ $name ] : '';
@@ -252,6 +298,10 @@ function program_detail_url( $program, $detail_base = 'program' ) {
 	if ( '' === $slug ) {
 		return '';
 	}
+
+	// Normalize the slug to lowercase so detail URLs are consistent
+	// (e.g. "Test-Program-Cert-1" -> "test-program-cert-1").
+	$slug = strtolower( $slug );
 
 	$detail_base = trim( (string) $detail_base, '/' );
 	$path        = '/' . ( '' !== $detail_base ? $detail_base . '/' : '' ) . rawurlencode( $slug ) . '/';
@@ -285,8 +335,8 @@ function programs_start_date_text( $program ) {
 /**
  * Render a single program card.
  *
- * Consumes org_logo / total_courses when present (added on the LMS side) and
- * degrades gracefully when they are absent.
+ * Consumes organization_logo / total_courses when present (added on the LMS
+ * side) and degrades gracefully when they are absent.
  *
  * @param array  $program     Raw program object.
  * @param string $detail_base Detail path segment forwarded to program_detail_url().
@@ -308,7 +358,7 @@ function programs_render_card( $program, $detail_base ) {
 			break;
 		}
 	}
-	$org_logo = isset( $program['org_logo'] ) ? (string) $program['org_logo'] : '';
+	$org_logo = isset( $program['organization_logo'] ) ? (string) $program['organization_logo'] : '';
 
 	// Number of courses (field may be absent until added on the LMS side).
 	$total_courses = null;
@@ -319,20 +369,19 @@ function programs_render_card( $program, $detail_base ) {
 	ob_start();
 	?>
 	<article class="rwaq-program-card">
-		<?php if ( $image ) : ?>
-			<a class="rwaq-program-card__media" href="<?php echo esc_url( $url ); ?>" tabindex="-1" aria-hidden="true">
+		<a class="rwaq-program-card__media" href="<?php echo esc_url( $url ); ?>" tabindex="-1" aria-hidden="true">
+			<?php if ( $image ) : ?>
 				<img class="rwaq-program-card__image" src="<?php echo esc_url( $image ); ?>" alt="" loading="lazy" />
-			</a>
-		<?php endif; ?>
+			<?php else : ?>
+				<span class="rwaq-program-card__placeholder"><?php echo programs_icon( 'thumb' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
+			<?php endif; ?>
+		</a>
 
 		<div class="rwaq-program-card__body">
 			<?php if ( $org_name || $org_logo ) : ?>
 				<div class="rwaq-program-card__org">
 					<?php if ( $org_logo ) : ?>
-						<img class="rwaq-program-card__org-logo" src="<?php echo esc_url( $org_logo ); ?>" alt="" loading="lazy" />
-					<?php endif; ?>
-					<?php if ( $org_name ) : ?>
-						<span class="rwaq-program-card__org-name"><?php echo esc_html( $org_name ); ?></span>
+						<span class="rwaq-program-card__logo"><img class="rwaq-program-card__org-logo" src="<?php echo esc_url( $org_logo ); ?>" alt="" loading="lazy" /></span>
 					<?php endif; ?>
 				</div>
 			<?php endif; ?>
@@ -362,11 +411,11 @@ function programs_render_card( $program, $detail_base ) {
 			</ul>
 
 			<div class="rwaq-program-card__badges">
-				<?php if ( $type ) : ?>
-					<span class="rwaq-program-card__type"><?php echo esc_html( programs_type_label( $type ) ); ?></span>
-				<?php endif; ?>
 				<?php if ( $featured ) : ?>
 					<span class="rwaq-program-card__featured"><?php echo esc_html__( 'مميز', 'tutor-sso' ); ?></span>
+				<?php endif; ?>
+				<?php if ( $type ) : ?>
+					<span class="rwaq-program-card__type"><?php echo esc_html( programs_type_label( $type ) ); ?></span>
 				<?php endif; ?>
 			</div>
 		</div>
@@ -420,16 +469,23 @@ function programs_render_sidebar( $filters, $uid ) {
 	?>
 	<aside class="rwaq-programs__sidebar">
 		<div class="rwaq-programs__sidebar-head">
-			<span class="rwaq-programs__sidebar-title"><?php echo esc_html__( 'التصفية', 'tutor-sso' ); ?></span>
+			<span class="rwaq-programs__sidebar-title">
+				<?php echo programs_icon( 'filter' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+				<?php echo esc_html__( 'التصفية', 'tutor-sso' ); ?>
+			</span>
 			<button type="button" class="rwaq-programs__clear"><?php echo esc_html__( 'مسح الكل', 'tutor-sso' ); ?></button>
 		</div>
 
 		<div class="rwaq-programs__filter-group" data-filter="program_type">
-			<h3 class="rwaq-programs__filter-title"><?php echo esc_html__( 'نوع البرنامج', 'tutor-sso' ); ?></h3>
+			<h3 class="rwaq-programs__filter-title" role="button" tabindex="0" aria-expanded="true">
+				<span><?php echo esc_html__( 'نوع البرنامج', 'tutor-sso' ); ?></span>
+				<span class="rwaq-programs__filter-chevron" aria-hidden="true"><?php echo programs_icon( 'chevron' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
+			</h3>
 			<div class="rwaq-programs__filter-options">
 				<?php foreach ( programs_type_options() as $value => $label ) : ?>
 					<label class="rwaq-programs__filter-option">
 						<input type="checkbox" class="rwaq-programs__filter-input" value="<?php echo esc_attr( $value ); ?>" />
+						<span class="rwaq-programs__filter-box" aria-hidden="true"><?php echo programs_icon( 'check' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
 						<span class="rwaq-programs__filter-label"><?php echo esc_html( $label ); ?></span>
 						<?php echo programs_count_badge( programs_lookup_count( $type_counts, 'slug', $value ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 					</label>
@@ -439,7 +495,10 @@ function programs_render_sidebar( $filters, $uid ) {
 
 		<?php if ( ! empty( $organizations ) ) : ?>
 			<div class="rwaq-programs__filter-group" data-filter="org">
-				<h3 class="rwaq-programs__filter-title"><?php echo esc_html__( 'الجهة', 'tutor-sso' ); ?></h3>
+				<h3 class="rwaq-programs__filter-title" role="button" tabindex="0" aria-expanded="true">
+					<span><?php echo esc_html__( 'الجهة', 'tutor-sso' ); ?></span>
+					<span class="rwaq-programs__filter-chevron" aria-hidden="true"><?php echo programs_icon( 'chevron' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
+				</h3>
 				<div class="rwaq-programs__filter-options">
 					<?php
 					$index = 0;
@@ -453,6 +512,7 @@ function programs_render_sidebar( $filters, $uid ) {
 						?>
 						<label class="rwaq-programs__filter-option<?php echo $overflow ? ' rwaq-programs__filter-option--overflow' : ''; ?>"<?php echo $overflow ? ' hidden' : ''; ?>>
 							<input type="checkbox" class="rwaq-programs__filter-input" value="<?php echo esc_attr( $value ); ?>" />
+							<span class="rwaq-programs__filter-box" aria-hidden="true"><?php echo programs_icon( 'check' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
 							<span class="rwaq-programs__filter-label"><?php echo esc_html( $label ); ?></span>
 							<?php echo programs_count_badge( isset( $org['total_programs'] ) ? (int) $org['total_programs'] : null ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 						</label>
@@ -475,11 +535,15 @@ function programs_render_sidebar( $filters, $uid ) {
 		<?php endif; ?>
 
 		<div class="rwaq-programs__filter-group" data-filter="featured">
-			<h3 class="rwaq-programs__filter-title"><?php echo esc_html__( 'مميز', 'tutor-sso' ); ?></h3>
+			<h3 class="rwaq-programs__filter-title" role="button" tabindex="0" aria-expanded="true">
+				<span><?php echo esc_html__( 'مميز', 'tutor-sso' ); ?></span>
+				<span class="rwaq-programs__filter-chevron" aria-hidden="true"><?php echo programs_icon( 'chevron' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
+			</h3>
 			<div class="rwaq-programs__filter-options">
 				<?php foreach ( programs_featured_options() as $value => $opt ) : ?>
 					<label class="rwaq-programs__filter-option">
 						<input type="radio" class="rwaq-programs__filter-input" name="<?php echo esc_attr( $uid ); ?>-featured" value="<?php echo esc_attr( $value ); ?>" />
+						<span class="rwaq-programs__filter-box rwaq-programs__filter-box--radio" aria-hidden="true"></span>
 						<span class="rwaq-programs__filter-label"><?php echo esc_html( $opt['label'] ); ?></span>
 						<?php echo programs_count_badge( programs_lookup_count( $feat_counts, 'label', $opt['api_label'] ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 					</label>
@@ -500,7 +564,9 @@ function programs_render_sidebar( $filters, $uid ) {
 function programs_catalog_shortcode( $atts ) {
 	$atts = shortcode_atts(
 		array(
-			'per_page'    => 6,
+			// Default to the site-wide "Programs per page" setting; an explicit
+			// per_page="…" attribute still overrides it per instance.
+			'per_page'    => programs_default_per_page(),
 			'columns'     => 3,
 			'detail_base' => 'program',
 			'title'       => __( 'البرامج', 'tutor-sso' ),
@@ -549,13 +615,15 @@ function programs_catalog_shortcode( $atts ) {
 			<div class="rwaq-programs__header">
 				<h2 class="rwaq-programs__title"><?php echo esc_html( $title ); ?></h2>
 				<span class="rwaq-programs__total-badge">
+					<?php echo programs_icon( 'bookmark' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 					<span class="rwaq-programs__total-count" data-total-count><?php echo esc_html( number_format_i18n( $total ) ); ?></span>
 					<?php echo esc_html__( 'برنامجًا', 'tutor-sso' ); ?>
 				</span>
 			</div>
 		<?php endif; ?>
 
-		<div class="rwaq-programs__searchbar">
+		<div class="rwaq-programs__searchbar" role="search">
+			<span class="rwaq-programs__search-icon" aria-hidden="true"><?php echo programs_icon( 'search' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
 			<label class="screen-reader-text" for="<?php echo esc_attr( $uid ); ?>-search"><?php echo esc_html__( 'ابحث في البرامج', 'tutor-sso' ); ?></label>
 			<input
 				type="search"
@@ -570,25 +638,36 @@ function programs_catalog_shortcode( $atts ) {
 			<?php echo programs_render_sidebar( $filters, $uid ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 
 			<div class="rwaq-programs__main">
+				<div class="rwaq-programs__chips" aria-live="polite"></div>
+
 				<div class="rwaq-programs__controls">
-					<div class="rwaq-programs__sort">
-						<label class="screen-reader-text" for="<?php echo esc_attr( $uid ); ?>-sort"><?php echo esc_html__( 'ترتيب البرامج', 'tutor-sso' ); ?></label>
-						<span class="rwaq-programs__sort-caption"><?php echo esc_html__( 'الترتيب حسب', 'tutor-sso' ); ?></span>
-						<select id="<?php echo esc_attr( $uid ); ?>-sort" class="rwaq-programs__sort-select">
-							<?php foreach ( programs_sort_options() as $value => $label ) : ?>
-								<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $value, programs_default_sort() ); ?>><?php echo esc_html( $label ); ?></option>
-							<?php endforeach; ?>
-						</select>
-					</div>
 					<div class="rwaq-programs__result-count" data-result-count>
 						<?php
 						/* translators: %s: number of programs found. */
 						echo esc_html( sprintf( __( 'تم العثور على %s برنامجًا', 'tutor-sso' ), number_format_i18n( $total ) ) );
 						?>
 					</div>
-				</div>
 
-				<div class="rwaq-programs__chips" aria-live="polite"></div>
+					<?php
+					$sort_options  = programs_sort_options();
+					$default_sort  = programs_default_sort();
+					$default_label = isset( $sort_options[ $default_sort ] ) ? $sort_options[ $default_sort ] : '';
+					?>
+					<div class="rwaq-programs__sort">
+						<label class="screen-reader-text" for="<?php echo esc_attr( $uid ); ?>-sort"><?php echo esc_html__( 'ترتيب البرامج', 'tutor-sso' ); ?></label>
+						<select id="<?php echo esc_attr( $uid ); ?>-sort" class="rwaq-programs__sort-select">
+							<?php foreach ( $sort_options as $value => $label ) : ?>
+								<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $value, $default_sort ); ?>><?php echo esc_html( $label ); ?></option>
+							<?php endforeach; ?>
+						</select>
+						<button type="button" class="rwaq-programs__sort-trigger" aria-haspopup="listbox" aria-expanded="false">
+							<span class="rwaq-programs__sort-caption"><?php echo esc_html__( 'الترتيب حسب', 'tutor-sso' ); ?></span>
+							<span class="rwaq-programs__sort-value"><?php echo esc_html( $default_label ); ?></span>
+							<span class="rwaq-programs__sort-chevron" aria-hidden="true"><?php echo programs_icon( 'caret' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
+						</button>
+						<div class="rwaq-programs__sort-menu" role="listbox"></div>
+					</div>
+				</div>
 
 				<div class="rwaq-programs__grid" style="--rwaq-programs-columns: <?php echo esc_attr( $columns ); ?>;" aria-live="polite" aria-busy="false">
 					<?php echo programs_render_cards( $programs, $detail_base ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
