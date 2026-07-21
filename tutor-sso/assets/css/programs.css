@@ -14,7 +14,18 @@
  * programs_register_assets() in programs-catalog.php), not @imported here.
  */
 
-.rwaq-programs {
+/* ==========================================================================
+   SHARED COLOR PALETTE
+   Single source of truth for every program surface. Both the catalog
+   (.rwaq-programs) and the detail page (.rwaq-pd) inherit the full set, so a
+   variable defined for one scope resolves in the other and can be used freely
+   across both. Both naming conventions (--rwaq-* and --rwaq-pd-*) are kept so
+   existing selectors in either section keep working. Variables stay scoped to
+   the program roots — nothing leaks onto :root or into the theme.
+   ========================================================================== */
+.rwaq-programs,
+.rwaq-pd {
+	/* Catalog palette */
 	--rwaq-primary: #565199;
 	--rwaq-primary-soft: #EFEEFA;
 	--rwaq-text: #242424;
@@ -27,6 +38,13 @@
 	--rwaq-divider: #EDEDED;
 	--rwaq-featured: #F2B07F;
 
+	/* Detail-page palette */
+	--rwaq-pd-gray: #424242;
+	--rwaq-pd-purple-dark: #4a3d96;
+	--rwaq-pd-orange2: #F2B07F;
+}
+
+.rwaq-programs {
 	position: relative;
 	margin: 0 0 2rem;
 	color: var(--rwaq-text);
@@ -224,7 +242,7 @@
 	justify-content: space-between;
 	margin: 0;
 	font-size: 14px;
-	font-weight:600;
+	font-weight: 600;
 	line-height: 20px;
 	color: var(--rwaq-text);
 	cursor: pointer;
@@ -298,17 +316,17 @@
 	opacity: 0;
 }
 
-.rwaq-programs__filter-input:checked + .rwaq-programs__filter-box {
+.rwaq-programs__filter-input:checked+.rwaq-programs__filter-box {
 	background: var(--rwaq-primary);
 	border-color: var(--rwaq-primary);
 }
 
-.rwaq-programs__filter-input:checked + .rwaq-programs__filter-box svg {
+.rwaq-programs__filter-input:checked+.rwaq-programs__filter-box svg {
 	opacity: 1;
 }
 
 /* Focus ring on the custom box when the hidden input is focused via keyboard. */
-.rwaq-programs__filter-input:focus-visible + .rwaq-programs__filter-box {
+.rwaq-programs__filter-input:focus-visible+.rwaq-programs__filter-box {
 	box-shadow: 0 0 0 3px rgba(108, 93, 211, 0.25);
 }
 
@@ -327,12 +345,12 @@
 	transition: opacity 0.12s;
 }
 
-.rwaq-programs__filter-input:checked + .rwaq-programs__filter-box--radio {
+.rwaq-programs__filter-input:checked+.rwaq-programs__filter-box--radio {
 	background: #fff;
 	border-color: var(--rwaq-primary);
 }
 
-.rwaq-programs__filter-input:checked + .rwaq-programs__filter-box--radio::after {
+.rwaq-programs__filter-input:checked+.rwaq-programs__filter-box--radio::after {
 	opacity: 1;
 }
 
@@ -534,10 +552,7 @@
 .rwaq-program-card {
 	/* N columns per row (from the shortcode's `columns` attribute, default 3),
 	   accounting for the gaps between them. */
-	flex: 0 0 calc(
-		(100% - (var(--rwaq-programs-columns, 3) - 1) * var(--rwaq-programs-gap, 15px))
-		/ var(--rwaq-programs-columns, 3)
-	);
+	flex: 0 0 calc((100% - (var(--rwaq-programs-columns, 3) - 1) * var(--rwaq-programs-gap, 15px)) / var(--rwaq-programs-columns, 3));
 	min-width: 0;
 	display: flex;
 	flex-direction: column;
@@ -827,3 +842,742 @@
 		font-size: 17px;
 	}
 }
+
+/* ==========================================================================
+   PROGRAM DETAIL — BEGIN
+   Styles for the single-program view ([rwaq_program_detail], see
+   includes/programs/programs-detail.php). Enqueued by the shortcode. Adapted
+   from the program-page design; every selector is prefixed .rwaq-pd* and the
+   custom properties are scoped to the program roots (see SHARED COLOR PALETTE
+   near the top), so nothing (variables, resets, generic class names) leaks into
+   the theme. Colors are shared with the catalog — this scope only adds layout
+   vars (--rwaq-pd-pad / --rwaq-pd-max). RTL layout — the shortcode sets
+   dir="rtl" on the root, so the flex rows mirror automatically.
+   ========================================================================== */
+
+.rwaq-pd {
+	/* Colors live in the shared palette above; only layout vars are scoped here. */
+	--rwaq-pd-pad: 40px;
+	--rwaq-pd-max: 1232px;
+
+	margin: 0 0 2rem;
+	color: var(--rwaq-text);
+	font-family: 'IBM Plex Sans Arabic', sans-serif;
+	-webkit-font-smoothing: antialiased;
+	line-height: 1.6;
+}
+
+.rwaq-pd *,
+.rwaq-pd *::before,
+.rwaq-pd *::after {
+	box-sizing: border-box;
+}
+
+.rwaq-pd a {
+	color: var(--rwaq-primary);
+	text-decoration: none;
+}
+
+.rwaq-pd a:hover {
+	color: var(--rwaq-pd-purple-dark);
+}
+
+.rwaq-pd img {
+	display: block;
+	max-width: 100%;
+}
+
+/* Safety net: embeds (esp. iframes) never exceed their container. Without this
+   a YouTube iframe in the WYSIWYG overview keeps its width="560" attribute and
+   forces a horizontal scrollbar on phones. */
+.rwaq-pd iframe,
+.rwaq-pd video,
+.rwaq-pd embed,
+.rwaq-pd object {
+	max-width: 100%;
+}
+
+/* Embedded videos inside the overview prose: full-width, responsive 16:9. */
+.rwaq-pd__prose iframe,
+.rwaq-pd__prose video {
+	width: 100%;
+	height: auto;
+	aspect-ratio: 16 / 9;
+	border: 0;
+	border-radius: 12px;
+}
+
+/* Breadcrumb bar — full-width white background, content in the 1232 container */
+.rwaq-pd__breadcrumb-bar {
+	background: #fff;
+	color: #616161;
+	font-size: 12px;
+	line-height: 16px;
+	padding: 12px 0;
+}
+
+.rwaq-pd__breadcrumb {
+	max-width: var(--rwaq-pd-max);
+	margin: 0 auto;
+	padding: 0 var(--rwaq-pd-pad);
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+	color: #616161;
+}
+
+.rwaq-pd__breadcrumb a {
+	color: #565199;
+}
+
+.rwaq-pd__breadcrumb a:hover {
+	color: #454084;
+}
+
+.rwaq-pd__sep {
+	color: #9a9aa0;
+	font-size: 11px;
+}
+
+.rwaq-pd__current {
+	color: #616161;
+}
+
+/* Header bar + tabs — full-width dark background + sticky, content centered */
+.rwaq-pd__header-bar {
+	background: #292929;
+	color: #fff;
+	border-top: 1px solid #292929;
+	position: sticky;
+	top: 0;
+	z-index: 6;
+}
+
+.rwaq-pd__header-inner {
+	max-width: var(--rwaq-pd-max);
+	margin: 0 auto;
+	padding: 0 var(--rwaq-pd-pad);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 24px;
+	flex-wrap: wrap;
+}
+
+.rwaq-pd__header-title {
+	margin: 0;
+	padding: 18px 0;
+	font-size: 16px;
+	font-weight: 600;
+	line-height: 22px;
+	/* Truncate the title to keep the sticky bar single-line. */
+	max-width: 280px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.rwaq-pd__tabs {
+	display: flex;
+	gap: 34px;
+}
+
+/* Scoped under .rwaq-pd__tabs so the color beats the generic `.rwaq-pd a`
+   rule (the tabs are links). */
+.rwaq-pd__tabs .rwaq-pd__tab {
+	position: relative;
+	padding: 24px 10px;
+	font-size: 14px;
+	line-height: 20px;
+	color: #fff;
+}
+
+.rwaq-pd__tabs .rwaq-pd__tab:hover {
+	color: #fff;
+}
+
+.rwaq-pd__tabs .rwaq-pd__tab--active {
+	font-weight: 600;
+}
+
+.rwaq-pd__tab--active::after {
+	content: "";
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	height: 3px;
+	background: #fff;
+	border-radius: 3px 3px 0 0;
+}
+
+/* Layout: content + sticky sidebar — centered in the 1232 container */
+.rwaq-pd__layout {
+	max-width: var(--rwaq-pd-max);
+	margin: 0 auto;
+	display: flex;
+	gap: 64px;
+	align-items: flex-start;
+	padding: 0px;
+}
+
+.rwaq-pd__content {
+	flex: 1;
+	min-width: 0;
+	margin-top: 48px;
+}
+
+.rwaq-pd__sidebar {
+	width: 372px;
+	flex-shrink: 0;
+	position: sticky;
+	/* Clear the sticky header bar (~68px) plus a small gap, so the card doesn't
+	   tuck under it when stuck. */
+	top: 88px;
+	margin-top: 48px;
+}
+
+/* Hero — inline promo video (YouTube iframe) or fallback card image */
+.rwaq-pd__hero {
+	position: relative;
+	aspect-ratio: 720 / 320;
+	border-radius: 16px;
+	overflow: hidden;
+	margin-bottom: 32px;
+	background: linear-gradient(135deg, #4a4a5c 0%, #2e2e3c 60%, #3a3648 100%);
+}
+
+.rwaq-pd__hero-img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.rwaq-pd__hero-video {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	border: 0;
+}
+
+/* Badges */
+.rwaq-pd__badges {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin-bottom: 20px;
+}
+
+.rwaq-pd__badge-featured {
+	background-color: var(--rwaq-pd-orange2);
+	color: var(--rwaq-text);
+	font-size: 12px;
+	font-weight: 600;
+	padding: 6px 14px;
+	border-radius: 8px;
+	border: 1 px solid var(--rwaq-pd-orange2);
+}
+
+.rwaq-pd__badge-level {
+	background: #F1F0F8;
+	color: var(--rwaq-primary);
+	font-size: 12px;
+	font-weight: 500;
+	padding: 6px 16px;
+	border-radius: 8px;
+	border: 1 px solid #F1F0F8;
+}
+
+.rwaq-pd__title {
+	margin: 0 0 20px;
+	font-size: 32px;
+	color: var(--rwaq-text);
+	font-weight: 600;
+	line-height: 40px;
+}
+
+.rwaq-pd__lead {
+	margin: 0 0 30px;
+	font-size: 14px;
+	font-weight: 400;
+	line-height: 28px;
+	color: var(--rwaq-pd-gray);
+	max-width: 720px;
+}
+
+/* Provider (organization) */
+.rwaq-pd__provider {
+	display: flex;
+	align-items: center;
+	gap: 22px;
+	margin-bottom: 8px;
+}
+
+.rwaq-pd__provider-logo {
+	border: 1px solid var(--rwaq-border);
+	border-radius: 10px;
+	padding: 12px 20px;
+	display: flex;
+	align-items: center;
+}
+
+.rwaq-pd__provider-logo img {
+	max-height: 34px;
+	width: auto;
+}
+
+.rwaq-pd__provider-small {
+	font-size: 10px;
+	font-weight: 400;
+	color: var(--rwaq-pd-gray);
+}
+
+.rwaq-pd__provider-name {
+	font-size: 14px;
+	color: #565199;
+	font-weight: 400;
+}
+
+/* Sections */
+.rwaq-pd__section {
+	margin-top: 48px;
+}
+
+.rwaq-pd__section-title {
+	margin: 0 0 20px;
+	font-size: 28px;
+	line-height: 36px;
+	font-weight: 600;
+	color: #000
+}
+
+.rwaq-pd__prose {
+	font-size: 14px;
+	line-height: 28px;
+	color: var(--rwaq-pd-gray);
+	max-width: 830px;
+}
+
+.rwaq-pd__prose p {
+	margin: 0 0 16px;
+}
+
+.rwaq-pd__prose p:last-child {
+	margin-bottom: 0;
+}
+
+/* Course timeline */
+.rwaq-pd__timeline {
+	display: flex;
+	flex-direction: column;
+	max-width: 1000px;
+}
+
+.rwaq-pd__tl-row {
+	display: flex;
+	align-items: stretch;
+	gap: 24px;
+}
+
+.rwaq-pd__tl-node {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	flex-shrink: 0;
+	width: 46px;
+}
+
+.rwaq-pd__tl-circle {
+	width: 46px;
+	height: 46px;
+	border-radius: 50%;
+	border: 1px solid var(--rwaq-border);
+	background: #fff;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 14px;
+	line-height: 20px;
+	font-weight: 600;
+	flex-shrink: 0;
+}
+
+.rwaq-pd__tl-line {
+	flex: 1;
+	width: 0;
+	border-right: 1px solid var(--rwaq-border);
+	margin: 4px 0;
+}
+
+/* Last course has no trailing connector. */
+.rwaq-pd__tl-row:last-child .rwaq-pd__tl-line {
+	display: none;
+}
+
+.rwaq-pd__tl-card {
+	flex: 1;
+	border: 1px solid var(--rwaq-border);
+	border-radius: 12px;
+	padding: 20px 24px;
+	margin-bottom: 18px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+}
+
+.rwaq-pd__tl-title {
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 20px;
+	color: #000;
+}
+
+.rwaq-pd__tl-sub {
+	margin-top: 4px;
+	font-size: 12px;
+	line-height: 16px;
+	font-weight: 400;
+	color: #616161;
+}
+
+.rwaq-pd__detail-btn {
+	border: 1px solid var(--rwaq-border);
+	background: #fff;
+	border-radius: 6px;
+	padding: 10px 18px;
+	font-size: 14px;
+	line-height: 20px;
+	font-weight: 600;
+	color: var(--rwaq-text) !important;
+	white-space: nowrap;
+	transition: border-color 0.15s, background 0.15s;
+}
+
+.rwaq-pd__detail-btn:hover {
+	border-color: var(--rwaq-primary);
+	background: var(--rwaq-text);
+	color: var(--rwaq-primary);
+}
+
+/* Certificate banner (timeline tail) */
+.rwaq-pd__tl-circle--cert {
+	color: var(--rwaq-pd-gray);
+}
+
+.rwaq-pd__tl-circle--cert svg {
+	width: 22px;
+	height: 22px;
+	display: block;
+}
+
+.rwaq-pd__cert-banner {
+	flex: 1;
+	margin-bottom: 18px;
+	background: #292929;
+	color: #fff;
+	border-radius: 10px;
+	padding: 26px 32px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 30px;
+	flex-wrap: wrap;
+	border: 1px solid var(--rwaq-border)
+}
+
+.rwaq-pd__cert-text {
+	flex: 1;
+	min-width: 200px;
+}
+
+.rwaq-pd__cert-title {
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 20px;
+}
+
+.rwaq-pd__cert-desc {
+	margin-top: 6px;
+	font-size: 12px;
+	line-height: 16px;
+	color: #fff;
+}
+
+.rwaq-pd__cert-logo {
+	flex-shrink: 0;
+	background: #fff;
+	border-radius: 8px;
+	border: 1px solid var(--rwaq-border);
+	padding: 14px 22px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.rwaq-pd__cert-logo img {
+	max-height: 40px;
+	width: auto;
+}
+
+.rwaq-pd__cert-logo-text {
+	color: #706D6E;
+	font-size: 18px;
+	font-weight: 700;
+}
+
+/* Sidebar card */
+.rwaq-pd__side-card {
+	border: 1px solid var(--rwaq-border);
+	border-radius: 14px;
+	overflow: hidden;
+	background: #fff;
+	box-shadow: 0 2px 10px rgba(20, 20, 40, 0.04);
+}
+
+.rwaq-pd__video-thumb {
+	position: relative;
+	aspect-ratio: 372 / 240;
+	background: linear-gradient(135deg, #4a4a5c 0%, #2e2e3c 60%, #3a3648 100%);
+}
+
+.rwaq-pd__video-thumb img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.rwaq-pd__side-body {
+	padding: 22px;
+}
+
+.rwaq-pd__enroll {
+	display: block;
+	width: 100%;
+	background: var(--rwaq-primary);
+	color: #fff;
+	border: none;
+	border-radius: 8px;
+	padding: 15px;
+	font-family: inherit;
+	font-size: 16px;
+	line-height: 22px;
+	font-weight: 600;
+	text-align: center;
+	cursor: pointer;
+	transition: background 0.15s;
+	/* Divider below the button: 24px above the border, 24px below (see
+	   .rwaq-pd__info-list padding-top). */
+	margin-bottom: 24px;
+}
+
+.rwaq-pd__enroll:hover {
+	background: var(--rwaq-pd-purple-dark);
+	color: #fff;
+}
+
+/* Enroll button also renders as an <a> (logged-out / login and go-to variants). */
+.rwaq-pd__enroll--login,
+.rwaq-pd__enroll--goto {
+	text-decoration: none;
+}
+
+.rwaq-pd__side-body a.rwaq-pd__enroll.rwaq-pd__enroll--goto {
+	color: #fff;
+}
+
+/* "Go to program" is the primary action once enrolled; it sits directly above
+   the (secondary) unenroll button, so tighten the gap between the two. */
+.rwaq-pd__enroll--goto {
+	margin-bottom: 12px;
+}
+
+/* Enrolled state: the unenroll action reads as a secondary/destructive button. */
+.rwaq-pd__enroll--unenroll {
+	background: #fff;
+	color: var(--rwaq-primary);
+	border: 1px solid var(--rwaq-primary);
+}
+
+.rwaq-pd__enroll--unenroll:hover {
+	background: #f5eff9;
+	color: var(--rwaq-pd-purple-dark);
+}
+
+.rwaq-pd__enroll:disabled {
+	opacity: 0.65;
+	cursor: default;
+}
+
+/* Feedback line under the button (success / error), announced via aria-live. */
+.rwaq-pd__enroll-message {
+	margin-top: -12px;
+	margin-bottom: 20px;
+	font-size: 13px;
+	line-height: 1.5;
+	color: #444;
+	min-height: 0;
+}
+
+.rwaq-pd__enroll-message:empty {
+	display: none;
+}
+
+.rwaq-pd__info-list {
+	list-style: none;
+	margin: 0;
+	padding: 24px 0 0;
+	border-top: 1px solid var(--rwaq-border);
+}
+
+.rwaq-pd__info-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 14px;
+	padding: 9px 0;
+	font-size: 14px;
+}
+
+.rwaq-pd_inner-info-container {
+	display: flex;
+	gap: 16px;
+}
+
+.rwaq-pd__info-ico {
+	width: 20px;
+	flex-shrink: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	color: #616161;
+}
+
+.rwaq-pd__info-ico svg {
+	width: 20px;
+	height: 20px;
+	display: block;
+}
+
+.rwaq-pd__info-label {
+	color: #616161;
+	font-size: 14px;
+	line-height: 22px;
+	font-weight: 400;
+	width: 88px;
+	flex-shrink: 0;
+}
+
+.rwaq-pd__info-value {
+	color: var(--rwaq-text);
+	font-size: 14px;
+	line-height: 22px;
+	font-weight: 400;
+}
+
+.single-program .rwaq-program-single {
+	max-width: 100%;
+}
+
+.site-main.rwaq-program-single {
+	max-width: 100% !important;
+}
+
+/* Responsive */
+@media (max-width: 1100px) {
+	.rwaq-pd {
+		--rwaq-pd-pad: 20px;
+	}
+
+	.rwaq-pd__layout {
+		flex-direction: column-reverse;
+		gap: 32px;
+		/* Stop the stacked content from touching the screen edges on tablets —
+		   the base rule zeroes this out for the desktop centered container. */
+		padding-inline: var(--rwaq-pd-pad);
+	}
+
+	.rwaq-pd__sidebar {
+		width: 100%;
+		position: static;
+	}
+
+	/* Once stacked, a full-width enroll card blows the video thumbnail up to
+	   tablet-width. Cap and center it so it reads as a card, not a banner. */
+	.rwaq-pd__side-card {
+		max-width: 460px;
+		margin-inline: auto;
+	}
+
+	.rwaq-pd__title {
+		font-size: 30px;
+	}
+
+	.rwaq-pd__tabs {
+		gap: 24px;
+	}
+}
+
+
+
+/* Phones — tighten padding, scale down the display headings and hero. */
+@media (max-width: 600px) {
+	.rwaq-pd {
+		--rwaq-pd-pad: 16px;
+	}
+
+	.rwaq-pd__title {
+		font-size: 26px;
+		line-height: 34px;
+	}
+
+	.rwaq-pd__section {
+		margin-top: 36px;
+	}
+
+	.rwaq-pd__section-title {
+		font-size: 22px;
+		line-height: 30px;
+	}
+
+	.rwaq-pd__hero {
+		border-radius: 12px;
+		margin-bottom: 24px;
+	}
+
+	/* Shrink the sticky bar so it doesn't eat vertical space on small screens. */
+	.rwaq-pd__header-title {
+		padding: 14px 0;
+		max-width: 160px;
+	}
+
+	.rwaq-pd__tabs .rwaq-pd__tab {
+		padding: 16px 8px;
+	}
+}
+
+@media (max-width: 460px) {
+	.rwaq-program-single {
+		padding: 0px !important;
+	}
+	.rwaq-pd__layout{
+		padding: 0px 15px;
+	}
+
+}
+
+/* Error state (shared by the shortcode's WP_Error fallbacks) */
+.rwaq-program-detail--error {
+	padding: 1.5rem;
+	border: 1px dashed #fca5a5;
+	border-radius: 8px;
+	text-align: center;
+	color: #b91c1c;
+}
+
+/* ==========================================================================
+   PROGRAM DETAIL — END
+   ========================================================================== */
