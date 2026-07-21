@@ -14,6 +14,11 @@
 
 	var cfg = window.tutorSsoPrograms || {};
 	var i18n = cfg.i18n || {};
+	var icons = cfg.icons || {};
+
+	// Remove ("×") icon used on active-filter chips. Sourced from programs_icon()
+	// in PHP (see programs_enqueue_assets) and localized onto tutorSsoPrograms.
+	var CHIP_X_SVG = icons.removeChip || '';
 
 	$( '.rwaq-programs' ).each( function () {
 		initCatalog( $( this ) );
@@ -27,6 +32,10 @@
 		var $sentinel = $root.find( '.rwaq-programs__sentinel' ).first();
 		var $search = $root.find( '.rwaq-programs__search-input' ).first();
 		var $sort = $root.find( '.rwaq-programs__sort-select' ).first();
+		var $sortWrap = $root.find( '.rwaq-programs__sort' ).first();
+		var $sortTrigger = $root.find( '.rwaq-programs__sort-trigger' ).first();
+		var $sortValue = $root.find( '.rwaq-programs__sort-value' ).first();
+		var $sortMenu = $root.find( '.rwaq-programs__sort-menu' ).first();
 		var $chips = $root.find( '.rwaq-programs__chips' ).first();
 		var $resultCount = $root.find( '[data-result-count]' ).first();
 
@@ -98,7 +107,7 @@
 					.attr( 'data-value', it.value )
 					.attr( 'aria-label', ( i18n.removeFilter || 'Remove' ) + ': ' + label );
 				$( '<span></span>' ).text( label ).appendTo( $chip );
-				$( '<span class="rwaq-programs__chip-x" aria-hidden="true">×</span>' ).appendTo( $chip );
+				$( '<span class="rwaq-programs__chip-x" aria-hidden="true"></span>' ).html( CHIP_X_SVG ).appendTo( $chip );
 				$chips.append( $chip );
 			} );
 		}
@@ -110,7 +119,7 @@
 				return;
 			}
 			if ( $resultCount.length && i18n.countLabel ) {
-				$resultCount.text( i18n.countLabel.replace( '%s', toArabicDigits( count ) ) );
+				$resultCount.text( i18n.countLabel.replace( '%s', count ) );
 			}
 		}
 
@@ -208,24 +217,102 @@
 			observer.observe( $sentinel.get( 0 ) );
 		}
 
-		// ── Search (debounced) ───────────────────────────────────────────────────
+		// ── Search (debounced input + explicit submit) ───────────────────────────
 		var searchTimer = null;
+
+		function runSearch( value ) {
+			value = $.trim( value );
+			if ( value === state.search ) {
+				return;
+			}
+			state.search = value;
+			load( true );
+		}
+
 		$search.on( 'input', function () {
-			var value = $.trim( $( this ).val() );
+			var value = $( this ).val();
 			window.clearTimeout( searchTimer );
 			searchTimer = window.setTimeout( function () {
-				if ( value === state.search ) {
-					return;
-				}
-				state.search = value;
-				load( true );
+				runSearch( value );
 			}, 350 );
 		} );
 
-		// ── Sort ─────────────────────────────────────────────────────────────────
+		// ── Sort (custom dropdown backed by the hidden native <select>) ───────────
+		function renderSortUI() {
+			var current = $sort.val();
+			if ( $sortValue.length ) {
+				$sortValue.text( $sort.find( 'option:selected' ).text() );
+			}
+			$sortMenu.find( '.rwaq-programs__sort-option' ).each( function () {
+				$( this ).toggleClass(
+					'is-selected',
+					String( $( this ).data( 'value' ) ) === String( current )
+				);
+			} );
+		}
+
+		function closeSort() {
+			$sortWrap.removeClass( 'is-open' );
+			$sortTrigger.attr( 'aria-expanded', 'false' );
+		}
+
+		// Build the custom menu from the native select's options.
+		if ( $sortMenu.length && $sortTrigger.length ) {
+			$sort.find( 'option' ).each( function () {
+				$( '<div class="rwaq-programs__sort-option" role="option"></div>' )
+					.attr( 'data-value', $( this ).val() )
+					.text( $( this ).text() )
+					.appendTo( $sortMenu );
+			} );
+
+			$sortTrigger.on( 'click', function ( e ) {
+				e.stopPropagation();
+				var open = $sortWrap.toggleClass( 'is-open' ).hasClass( 'is-open' );
+				$sortTrigger.attr( 'aria-expanded', open ? 'true' : 'false' );
+			} );
+
+			$sortMenu.on( 'click', '.rwaq-programs__sort-option', function () {
+				var value = String( $( this ).data( 'value' ) );
+				if ( $sort.val() !== value ) {
+					$sort.val( value ).trigger( 'change' );
+				}
+				closeSort();
+			} );
+
+			$( document ).on( 'click', function ( e ) {
+				if ( ! $( e.target ).closest( $sortWrap ).length ) {
+					closeSort();
+				}
+			} );
+		}
+
+		// The native select stays the single source of truth for the chosen sort.
 		$sort.on( 'change', function () {
 			state.ordering = $( this ).val();
+			renderSortUI();
 			load( true );
+		} );
+
+		renderSortUI();
+
+		// ── Collapsible filter groups ────────────────────────────────────────────
+		function toggleGroup( $title ) {
+			var collapsed = $title
+				.closest( '.rwaq-programs__filter-group' )
+				.toggleClass( 'is-collapsed' )
+				.hasClass( 'is-collapsed' );
+			$title.attr( 'aria-expanded', collapsed ? 'false' : 'true' );
+		}
+
+		$root.on( 'click', '.rwaq-programs__filter-title', function () {
+			toggleGroup( $( this ) );
+		} );
+
+		$root.on( 'keydown', '.rwaq-programs__filter-title', function ( e ) {
+			if ( e.key === 'Enter' || e.key === ' ' || e.which === 13 || e.which === 32 ) {
+				e.preventDefault();
+				toggleGroup( $( this ) );
+			}
 		} );
 
 		// ── Filters (checkboxes + radios) ────────────────────────────────────────
@@ -267,13 +354,6 @@
 
 	function toBool( value ) {
 		return value === true || value === 'true' || value === 1 || value === '1';
-	}
-
-	function toArabicDigits( value ) {
-		var digits = '٠١٢٣٤٥٦٧٨٩';
-		return String( value ).replace( /[0-9]/g, function ( d ) {
-			return digits.charAt( Number( d ) );
-		} );
 	}
 
 	function errorText( data ) {

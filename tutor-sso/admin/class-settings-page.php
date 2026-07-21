@@ -67,6 +67,7 @@ class Settings_Page {
 			'tutor_sso_client_secret'       => 'sanitize_text_field',
 			'tutor_sso_course_dashboard_url' => 'esc_url_raw',
 			'tutor_sso_jwt_auth_secret_key' => 'sanitize_text_field',
+			'tutor_sso_programs_per_page'   => 'absint',
 		);
 
 		foreach ( $options as $name => $cb ) {
@@ -227,6 +228,34 @@ class Settings_Page {
 					: __( 'A long random string (e.g. from the WordPress salt generator). Used to sign JWTs. Defining JWT_AUTH_SECRET_KEY in wp-config.php,  overrides this field.', 'tutor-sso' ),
 			)
 		);
+
+		// ── Section 6: Programs Catalog ──────────────────────────────────────
+		add_settings_section(
+			'tutor_sso_section_programs_catalog',
+			__( 'Programs Catalog', 'tutor-sso' ),
+			function () {
+				echo '<p>' . esc_html__(
+					'Display settings for the [rwaq_programs] catalog and the /programs/ archive page.',
+					'tutor-sso'
+				) . '</p>';
+			},
+			self::PAGE_SLUG
+		);
+
+		add_settings_field(
+			'tutor_sso_programs_per_page',
+			__( 'Programs per page', 'tutor-sso' ),
+			array( $this, 'render_number_field' ),
+			self::PAGE_SLUG,
+			'tutor_sso_section_programs_catalog',
+			array(
+				'option_name' => 'tutor_sso_programs_per_page',
+				'default'     => 6,
+				'min'         => 1,
+				'max'         => 48,
+				'description' => __( 'How many programs to load per page / infinite-scroll batch. Default: 6, maximum: 48. A per_page="…" attribute on the shortcode overrides this.', 'tutor-sso' ),
+			)
+		);
 	}
 
 	/**
@@ -289,6 +318,30 @@ class Settings_Page {
 			esc_attr( $args['option_name'] ),
 			esc_attr( $value ),
 			esc_attr( $args['placeholder'] ?? '' )
+		);
+		$this->maybe_description( $args );
+	}
+
+	/**
+	 * Render a number <input>.
+	 *
+	 * @param array $args {
+	 *     @type string $option_name  Option name.
+	 *     @type int    $default      Default value when unset.
+	 *     @type int    $min          Optional minimum.
+	 *     @type int    $max          Optional maximum.
+	 *     @type string $description  Optional help text.
+	 * }
+	 */
+	public function render_number_field( $args ) {
+		$default = isset( $args['default'] ) ? (int) $args['default'] : 0;
+		$value   = get_option( $args['option_name'], $default );
+		printf(
+			'<input type="number" id="%1$s" name="%1$s" value="%2$s" class="small-text"%3$s%4$s step="1" />',
+			esc_attr( $args['option_name'] ),
+			esc_attr( $value ),
+			isset( $args['min'] ) ? ' min="' . esc_attr( $args['min'] ) . '"' : '',
+			isset( $args['max'] ) ? ' max="' . esc_attr( $args['max'] ) . '"' : ''
 		);
 		$this->maybe_description( $args );
 	}
@@ -365,7 +418,7 @@ class Settings_Page {
 				'example'     => '[rwaq_programs per_page="6" columns="3" detail_base="program" title="البرامج"]',
 				'description' => __( 'Published-programs catalog with a filter sidebar (program type, organization, featured), search, sorting, active-filter chips, and AJAX infinite scroll.', 'tutor-sso' ),
 				'attributes'  => array(
-					'per_page'    => __( 'Programs per page. Default: 6.', 'tutor-sso' ),
+					'per_page'    => __( 'Programs per page. Defaults to the "Programs per page" setting above (6 if unset).', 'tutor-sso' ),
 					'columns'     => __( 'Grid column count. Default: 3.', 'tutor-sso' ),
 					'detail_base' => __( 'Path segment before the program slug; detail links become {site}/{detail_base}/{slug}/. Default: "program".', 'tutor-sso' ),
 					'title'       => __( 'Header title shown above the catalog. Leave blank to hide the header. Default: "البرامج".', 'tutor-sso' ),
