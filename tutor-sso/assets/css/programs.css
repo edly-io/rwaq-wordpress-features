@@ -919,7 +919,7 @@
 .rwaq-pd__breadcrumb {
 	max-width: var(--rwaq-pd-max);
 	margin: 0 auto;
-	padding: 0 var(--rwaq-pd-pad);
+	padding: 0;
 	display: flex;
 	align-items: center;
 	flex-wrap: wrap;
@@ -957,7 +957,7 @@
 .rwaq-pd__header-inner {
 	max-width: var(--rwaq-pd-max);
 	margin: 0 auto;
-	padding: 0 var(--rwaq-pd-pad);
+	padding: 0;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -1019,7 +1019,7 @@
 	display: flex;
 	gap: 64px;
 	align-items: flex-start;
-	padding: 0px;
+	padding: 0;
 }
 
 .rwaq-pd__content {
@@ -1257,10 +1257,17 @@
 	transition: border-color 0.15s, background 0.15s;
 }
 
-.rwaq-pd__detail-btn:hover {
-	border-color: var(--rwaq-primary);
-	background: var(--rwaq-text);
-	color: var(--rwaq-primary);
+/* Keep flat on hover/focus and beat WordPress theme button overrides. */
+.rwaq-pd__detail-btn:hover,
+.rwaq-pd__detail-btn:focus,
+.rwaq-pd__detail-btn:focus-visible,
+.rwaq-pd__detail-btn:active {
+	border-color: var(--rwaq-border) !important;
+	background: #fff !important;
+	color: var(--rwaq-text) !important;
+	outline: none;
+	box-shadow: none;
+	-webkit-box-shadow: none;
 }
 
 /* Certificate banner (timeline tail) */
@@ -1360,6 +1367,9 @@
 	background: var(--rwaq-primary);
 	color: #fff;
 	border: none;
+	-webkit-appearance: none;
+	appearance: none;
+	-webkit-tap-highlight-color: transparent;
 	border-radius: 8px;
 	padding: 15px;
 	font-family: inherit;
@@ -1374,18 +1384,16 @@
 	margin-bottom: 24px;
 }
 
-.rwaq-pd__enroll:hover {
-	background: var(--rwaq-pd-purple-dark);
-	color: #fff;
-}
-
 /* Enroll button also renders as an <a> (logged-out / login and go-to variants). */
 .rwaq-pd__enroll--login,
 .rwaq-pd__enroll--goto {
 	text-decoration: none;
 }
 
-.rwaq-pd__side-body a.rwaq-pd__enroll.rwaq-pd__enroll--goto {
+/* Both <a> variants sit on the purple button fill, so force white text to beat
+   the generic `.rwaq-pd a { color: var(--rwaq-primary) }` link rule. */
+.rwaq-pd__side-body a.rwaq-pd__enroll.rwaq-pd__enroll--goto,
+.rwaq-pd__side-body a.rwaq-pd__enroll.rwaq-pd__enroll--login {
 	color: #fff;
 }
 
@@ -1402,9 +1410,26 @@
 	border: 1px solid var(--rwaq-primary);
 }
 
-.rwaq-pd__enroll--unenroll:hover {
-	background: #f5eff9;
-	color: var(--rwaq-pd-purple-dark);
+/* Keep the button flat on hover/focus: match the normal-state colors and beat
+   any WordPress theme button hover overrides with !important. */
+.rwaq-pd__enroll:hover,
+.rwaq-pd__enroll:focus,
+.rwaq-pd__enroll:focus-visible,
+.rwaq-pd__enroll:active {
+	background: var(--rwaq-primary) !important;
+	color: #fff !important;
+	outline: none;
+	box-shadow: none;
+	-webkit-box-shadow: none;
+}
+
+.rwaq-pd__enroll--unenroll:hover,
+.rwaq-pd__enroll--unenroll:focus,
+.rwaq-pd__enroll--unenroll:focus-visible,
+.rwaq-pd__enroll--unenroll:active {
+	background: #fff !important;
+	color: var(--rwaq-primary) !important;
+	border-color: var(--rwaq-primary) !important;
 }
 
 .rwaq-pd__enroll:disabled {
@@ -1487,6 +1512,17 @@
 }
 
 /* Responsive */
+/* On large screens the containers run flush to the 1232px max-width (no gutter).
+   Once the viewport dips below that, add side padding so content doesn't touch
+   the screen edges. --rwaq-pd-pad shrinks further at the breakpoints below. */
+@media (max-width: 1232px) {
+	.rwaq-pd__breadcrumb,
+	.rwaq-pd__header-inner,
+	.rwaq-pd__layout {
+		padding-inline: var(--rwaq-pd-pad);
+	}
+}
+
 @media (max-width: 1100px) {
 	.rwaq-pd {
 		--rwaq-pd-pad: 20px;
