@@ -2,7 +2,7 @@
 /**
  * Single-program template loader.
  *
- * Attaches includes/programs/single-program.php as the template for single
+ * Attaches templates/single-program.php as the template for single
  * `program` posts, so the program detail view ([rwaq_program_detail]) is shown
  * by default on every program page — no page editing or theme work required.
  *
@@ -52,7 +52,7 @@ function program_single_template( $template ) {
 		return $theme_template;
 	}
 
-	$plugin_template = TUTOR_SSO_PATH . 'includes/programs/single-program.php';
+	$plugin_template = TUTOR_SSO_PATH . 'templates/single-program.php';
 
 	return file_exists( $plugin_template ) ? $plugin_template : $template;
 }
