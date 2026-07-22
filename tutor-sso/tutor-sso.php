@@ -43,6 +43,10 @@ require_once TUTOR_SSO_PATH . 'includes/courses/rest/routes.php';
 require_once TUTOR_SSO_PATH . 'includes/programs/programs-catalog.php';
 require_once TUTOR_SSO_PATH . 'includes/programs/programs-ajax.php';
 require_once TUTOR_SSO_PATH . 'includes/programs/programs-archive.php';
+require_once TUTOR_SSO_PATH . 'includes/programs/program-enrollment-api.php';
+require_once TUTOR_SSO_PATH . 'includes/programs/program-enrollment-ajax.php';
+require_once TUTOR_SSO_PATH . 'includes/programs/programs-detail.php';
+require_once TUTOR_SSO_PATH . 'includes/programs/program-single.php';
 
 // Boot the admin settings UI.
 add_action( 'plugins_loaded', function () {
@@ -147,6 +151,48 @@ function tutor_sso_enroll_enqueue_assets() {
  */
 function tutor_sso_render_enroll_button( $course_id, $args = array() ) {
 	return \TutorSSO\render_enroll_button( $course_id, $args );
+}
+
+/**
+ * Register front-end program-enrollment assets. Enqueued lazily, only when the
+ * program detail view actually renders an enroll button for a logged-in user
+ * (see \TutorSSO\program_detail_enroll_button()).
+ */
+function tutor_sso_register_program_enroll_assets() {
+	wp_register_script(
+		'tutor-sso-program-enroll',
+		TUTOR_SSO_URL . 'assets/js/program-enroll.js',
+		array( 'jquery' ),
+		TUTOR_SSO_VERSION,
+		true
+	);
+}
+add_action( 'wp_enqueue_scripts', 'tutor_sso_register_program_enroll_assets' );
+
+/**
+ * Enqueue + localize the program-enrollment script. The button reuses the
+ * catalog stylesheet (tutor-sso-programs), so only the script is enqueued here.
+ */
+function tutor_sso_program_enroll_enqueue_assets() {
+	wp_enqueue_script( 'tutor-sso-program-enroll' );
+
+	wp_localize_script(
+		'tutor-sso-program-enroll',
+		'tutorSsoProgramEnroll',
+		array(
+			'ajaxurl' => admin_url( 'admin-ajax.php' ),
+			'nonce'   => wp_create_nonce( 'tutor_sso_program_enroll' ),
+			'i18n'    => array(
+				'enroll'          => __( 'سجّل الآن', 'tutor-sso' ),
+				'enrolling'       => __( 'جارٍ التسجيل…', 'tutor-sso' ),
+				'unenroll'        => __( 'إلغاء التسجيل', 'tutor-sso' ),
+				'unenrolling'     => __( 'جارٍ إلغاء التسجيل…', 'tutor-sso' ),
+				'goToProgram'     => __( 'اذهب إلى البرنامج', 'tutor-sso' ),
+				'confirmUnenroll' => __( 'هل أنت متأكد من رغبتك في إلغاء التسجيل من هذا البرنامج؟', 'tutor-sso' ),
+				'error'           => __( 'حدث خطأ ما. يرجى المحاولة مرة أخرى.', 'tutor-sso' ),
+			),
+		)
+	);
 }
 
 /**
