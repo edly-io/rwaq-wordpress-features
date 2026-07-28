@@ -68,7 +68,7 @@ add_filter( 'template_include', __NAMESPACE__ . '\\blogs_load_page_template' );
  */
 function blogs_page_template_assets() {
 	if ( blogs_is_page_template() ) {
-		wp_enqueue_style( 'tutor-sso-blogs' );
+		wp_enqueue_style( 'tutor-sso-blog' );
 	}
 }
 add_action( 'wp_enqueue_scripts', __NAMESPACE__ . '\\blogs_page_template_assets' );

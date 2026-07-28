@@ -32,16 +32,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Register the (lazily enqueued) blogs listing assets.
  */
 function blogs_register_assets() {
-	// The IBM Plex Sans Arabic webfont ('tutor-sso-programs-font') is registered
-	// and enqueued globally in tutor-sso.php; reused here as a dependency so it
-	// loads before the listing stylesheet.
-	wp_register_style(
-		'tutor-sso-blogs',
-		TUTOR_SSO_URL . 'assets/css/blogs.css',
-		array( 'tutor-sso-programs-font' ),
-		TUTOR_SSO_VERSION
-	);
-
+	// The combined blog stylesheet (listing + detail) is registered once as
+	// 'tutor-sso-blog' in blog-detail.php; the listing reuses that same handle
+	// (see blogs_enqueue_assets()) so the file is never registered twice.
 	wp_register_script(
 		'tutor-sso-blogs',
 		TUTOR_SSO_URL . 'assets/js/blogs.js',
@@ -57,7 +50,7 @@ add_action( 'wp_enqueue_scripts', __NAMESPACE__ . '\\blogs_register_assets' );
  * load on pages that actually render the listing.
  */
 function blogs_enqueue_assets() {
-	wp_enqueue_style( 'tutor-sso-blogs' );
+	wp_enqueue_style( 'tutor-sso-blog' );
 	wp_enqueue_script( 'tutor-sso-blogs' );
 
 	wp_localize_script(
@@ -211,20 +204,51 @@ function blogs_author_avatar_fallback() {
 }
 
 /**
+ * Resolve an ACF/meta image field value to a URL, whatever return format the
+ * field uses: an image array, an attachment ID, or a plain URL string. Returns
+ * '' when the value is empty or can't be resolved.
+ *
+ * @param mixed  $value Field value (array, numeric ID, or URL string).
+ * @param string $size  Image size to request for attachment IDs.
+ * @return string
+ */
+function blogs_image_field_url( $value, $size = 'thumbnail' ) {
+	if ( empty( $value ) ) {
+		return '';
+	}
+
+	if ( is_array( $value ) ) {
+		if ( ! empty( $value['url'] ) ) {
+			return (string) $value['url'];
+		}
+		$value = isset( $value['ID'] ) ? $value['ID'] : ( isset( $value['id'] ) ? $value['id'] : 0 );
+	}
+
+	if ( is_numeric( $value ) ) {
+		$url = wp_get_attachment_image_url( (int) $value, $size );
+		return $url ? $url : '';
+	}
+
+	return (string) $value;
+}
+
+/**
  * A post author's avatar URL.
  *
- * Prefers the per-post ACF `author_image` override (return format: URL);
- * otherwise the author's Gravatar requested with d=404, so authors with no
- * Gravatar return a 404 and the card <img> swaps to the bundled SVG fallback via
- * onerror. (Gravatar can't serve an SVG as its own `default`, which renders as a
- * broken image.) get_avatar_url is false when avatars are disabled site-wide.
+ * Prefers the per-post ACF `author_image` override — resolved via
+ * blogs_image_field_url() so it works whatever return format the field uses
+ * (array / ID / URL); otherwise the author's Gravatar requested with d=404, so
+ * authors with no Gravatar return a 404 and the card <img> swaps to the bundled
+ * SVG fallback via onerror. (Gravatar can't serve an SVG as its own `default`,
+ * which renders as a broken image.) get_avatar_url is false when avatars are
+ * disabled site-wide.
  *
  * @param \WP_Post $post Post object.
  * @return string
  */
 function blogs_author_avatar( $post ) {
 	if ( function_exists( 'get_field' ) ) {
-		$custom = trim( (string) get_field( 'author_image', $post->ID ) );
+		$custom = blogs_image_field_url( get_field( 'author_image', $post->ID ) );
 		if ( '' !== $custom ) {
 			return $custom;
 		}
