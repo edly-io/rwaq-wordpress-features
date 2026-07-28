@@ -1,0 +1,782 @@
+/**
+ * Blogs listing styles.
+ *
+ * WordPress-posts counterpart of programs.css. Layout: a top toolbar (search +
+ * category dropdown + sort), a results row (count + active-filter chips + clear
+ * all), and a card grid. Also styles the "Blog Listing" page template banner
+ * (templates/page-blog-listing.php). Structural class names are the plugin's
+ * stable contract shared with blogs-catalog.php and blogs.js.
+ *
+ * The IBM Plex Sans Arabic webfont is enqueued globally (see tutor-sso.php).
+ */
+
+/* Shared palette — defined on both roots so the banner (a sibling of the
+   listing) can use the same variables. */
+.rwaq-blogs,
+.rwaq-blog-listing {
+	--rwaq-primary: #565199;
+	--rwaq-primary-soft: #EFEEFA;
+	--rwaq-text: #242424;
+	--rwaq-heading: #242424;
+	--rwaq-muted: #616161;
+	--rwaq-placeholder: #9E9E9E;
+	--rwaq-icon: #616161;
+	--rwaq-border: #D1D1D1;
+	--rwaq-divider: #EDEDED;
+	--rwaq-featured: #F2B07F;
+	--rwaq-surface-soft: #F7F7F8;
+}
+
+.rwaq-blogs {
+	position: relative;
+	margin: 0 0 2rem;
+	color: var(--rwaq-text);
+	font-family: 'IBM Plex Sans Arabic', sans-serif;
+	-webkit-font-smoothing: antialiased;
+}
+
+.rwaq-blogs *,
+.rwaq-blogs *::before,
+.rwaq-blogs *::after {
+	box-sizing: border-box;
+}
+
+/* ---- "Blog Listing" page template (templates/page-blog-listing.php) ----
+   Full-width hero banner (Featured Image as background) with right-aligned (RTL)
+   heading + subtitle, then a 1280px-wide main content area. */
+.rwaq-blog-listing {
+	font-family: 'IBM Plex Sans Arabic', sans-serif;
+	color: var(--rwaq-text);
+	-webkit-font-smoothing: antialiased;
+}
+
+.rwaq-blog-listing *,
+.rwaq-blog-listing *::before,
+.rwaq-blog-listing *::after {
+	box-sizing: border-box;
+}
+
+.rwaq-blog-listing__banner {
+	width: 100%;
+	background-color: #FBFBFB;
+	background-size: cover;
+	background-position: center;
+	background-repeat: no-repeat;
+}
+
+.rwaq-blog-listing__banner-inner {
+	max-width: 1280px;
+	margin-inline: auto;
+	padding: 72px 15px;
+	text-align: right;
+}
+
+.rwaq-blog-listing__banner-title {
+	margin: 0;
+	font-size: 32px;
+	line-height: 40px;
+	font-weight: 600;
+	color: var(--rwaq-heading);
+}
+
+.rwaq-blog-listing__banner-subtitle {
+	max-width: 595px;
+	margin: 16px 0 0 auto;
+	font-size: 16px;
+	line-height: 28px;
+	font-weight: 400;
+	color: var(--rwaq-muted);
+}
+
+.rwaq-blog-listing__main {
+	max-width: 1280px;
+	margin-inline: auto;
+	padding: 40px 15px;
+}
+
+/* Overlay shown while a search / sort / filter reloads the whole list. */
+.rwaq-blogs__overlay {
+	position: absolute;
+	inset: 0;
+	z-index: 2;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: rgba(255, 255, 255, 0.7);
+	backdrop-filter: blur(1px);
+}
+
+.rwaq-blogs__overlay[hidden] {
+	display: none;
+}
+
+.rwaq-blogs__overlay .rwaq-blogs__spinner {
+	position: sticky;
+	top: 40%;
+	width: 2rem;
+	height: 2rem;
+}
+
+/* ---- Optional header ---- */
+.rwaq-blogs__header {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	margin-bottom: 22px;
+}
+
+.rwaq-blogs__title {
+	margin: 0;
+	font-size: 32px;
+	line-height: 40px;
+	font-weight: 600;
+	color: var(--rwaq-heading);
+}
+
+.rwaq-blogs__total-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	background: var(--rwaq-primary-soft);
+	color: var(--rwaq-primary);
+	border-radius: 999px;
+	padding: 6px 14px;
+	font-size: 14px;
+	line-height: 20px;
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+/* ---- Toolbar: [ search + category filter ] on the start, sort on the end ---- */
+.rwaq-blogs__toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 20px;
+}
+
+/* Search + filter grouped together (right in RTL); sort is the other child. */
+.rwaq-blogs__toolbar-group {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	min-width: 0;
+}
+
+.rwaq-blogs__searchbar {
+	position: relative;
+	width: 300px;
+	max-width: 100%;
+}
+
+.rwaq-blogs__search-icon {
+	position: absolute;
+	inset-inline-end: 16px; /* left in RTL */
+	top: 50%;
+	transform: translateY(-50%);
+	display: inline-flex;
+	color: var(--rwaq-icon);
+	pointer-events: none;
+}
+
+.rwaq-blogs input.rwaq-blogs__search-input {
+	width: 100%;
+	height: 44px;
+	border: 1px solid var(--rwaq-border);
+	border-radius: 12px;
+	outline: none;
+	box-shadow: none;
+	background: #fff;
+	font-family: inherit;
+	font-size: 15px;
+	color: var(--rwaq-text);
+	padding-inline-start: 16px;
+	padding-inline-end: 44px; /* room for the icon on the left */
+	transition: border-color 0.15s;
+}
+
+.rwaq-blogs input.rwaq-blogs__search-input:focus {
+	border-color: var(--rwaq-primary);
+}
+
+.rwaq-blogs__search-input::placeholder {
+	color: var(--rwaq-placeholder);
+}
+
+.rwaq-blogs__search-input::-webkit-search-cancel-button,
+.rwaq-blogs__search-input::-webkit-search-decoration {
+	-webkit-appearance: none;
+	appearance: none;
+}
+
+/* ---- Shared trigger button (category filter + sort) ---- */
+.rwaq-blogs__filter,
+.rwaq-blogs__sort {
+	position: relative;
+	flex: 0 0 auto;
+}
+
+.rwaq-blogs .rwaq-blogs__filter-trigger,
+.rwaq-blogs .rwaq-blogs__sort-trigger,
+.rwaq-blogs .rwaq-blogs__filter-trigger:hover,
+.rwaq-blogs .rwaq-blogs__sort-trigger:hover,
+.rwaq-blogs .rwaq-blogs__filter-trigger:focus,
+.rwaq-blogs .rwaq-blogs__sort-trigger:focus {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	height: 44px;
+	border: 1px solid var(--rwaq-border) !important;
+	box-shadow: none !important;
+	border-radius: 12px;
+	padding: 0 16px;
+	background: #fff !important;
+	color: inherit !important;
+	font-family: inherit;
+	font-size: 14px;
+	cursor: pointer;
+}
+
+.rwaq-blogs__filter-caption,
+.rwaq-blogs__sort-caption {
+	color: var(--rwaq-muted);
+	font-weight: 400;
+}
+
+.rwaq-blogs__filter-value,
+.rwaq-blogs__sort-value {
+	font-weight: 600;
+	color: var(--rwaq-text);
+	white-space: nowrap;
+}
+
+.rwaq-blogs__sort-value {
+	min-width: 92px;
+	text-align: right;
+}
+
+.rwaq-blogs__filter-chevron,
+.rwaq-blogs__sort-chevron {
+	display: inline-flex;
+	color: var(--rwaq-text);
+	transition: transform 0.15s;
+}
+
+.rwaq-blogs__filter.is-open .rwaq-blogs__filter-chevron,
+.rwaq-blogs__sort.is-open .rwaq-blogs__sort-chevron {
+	transform: rotate(180deg);
+}
+
+/* Hidden native <select> — the source of truth behind the custom sort UI. */
+.rwaq-blogs__sort-select {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	opacity: 0;
+	pointer-events: none;
+}
+
+/* ---- Sort menu ---- */
+.rwaq-blogs__sort-menu {
+	position: absolute;
+	top: calc(100% + 8px);
+	inset-inline-start: 0;
+	width: 240px;
+	max-width: 80vw;
+	background: #fff;
+	border: 1px solid #e5e5e5;
+	border-radius: 12px;
+	box-shadow: 0 12px 28px rgba(16, 24, 40, 0.14);
+	padding: 8px;
+	z-index: 20;
+	display: none;
+}
+
+.rwaq-blogs__sort.is-open .rwaq-blogs__sort-menu {
+	display: block;
+}
+
+.rwaq-blogs__sort-option {
+	padding: 10px 14px;
+	border-radius: 8px;
+	font-size: 15px;
+	color: var(--rwaq-text);
+	text-align: right;
+	cursor: pointer;
+}
+
+.rwaq-blogs__sort-option:hover {
+	background: #f4f4f6;
+}
+
+.rwaq-blogs__sort-option.is-selected {
+	font-weight: 700;
+	background: #f4f4f6;
+}
+
+/* ---- Category filter menu ---- */
+.rwaq-blogs__filter-menu {
+	position: absolute;
+	top: calc(100% + 8px);
+	inset-inline-start: 0;
+	width: 280px;
+	max-width: 86vw;
+	background: #fff;
+	border: 1px solid #e5e5e5;
+	border-radius: 14px;
+	box-shadow: 0 12px 28px rgba(16, 24, 40, 0.14);
+	overflow: hidden;
+	z-index: 20;
+	display: none;
+}
+
+.rwaq-blogs__filter.is-open .rwaq-blogs__filter-menu {
+	display: block;
+}
+
+.rwaq-blogs__filter-list {
+	max-height: 320px;
+	overflow-y: auto;
+}
+
+/* Checkbox (start / right) → label (fills) → post count (end / left). */
+.rwaq-blogs__filter-option {
+	display: flex;
+	align-items: center;
+	gap: 11px;
+	padding: 11px 16px;
+	font-size: 14px;
+	line-height: 22px;
+	color: var(--rwaq-text);
+	cursor: pointer;
+}
+
+.rwaq-blogs__filter-option:hover {
+	background: #f4f4f6;
+}
+
+/* The "All" reset row sits in a shaded header. */
+.rwaq-blogs__filter-option--all {
+	background: var(--rwaq-surface-soft);
+	border-bottom: 1px solid var(--rwaq-divider);
+}
+
+.rwaq-blogs__filter-label {
+	flex: 1 1 auto;
+}
+
+/* Visually hide the native control while keeping it accessible / focusable. */
+.rwaq-blogs__filter-input {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	opacity: 0;
+	pointer-events: none;
+}
+
+.rwaq-blogs__filter-box {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 auto;
+	width: 20px;
+	height: 20px;
+	border: 1.5px solid var(--rwaq-border);
+	border-radius: 6px;
+	background: #fff;
+	transition: background 0.12s, border-color 0.12s;
+}
+
+.rwaq-blogs__filter-box svg {
+	opacity: 0;
+}
+
+.rwaq-blogs__filter-input:checked + .rwaq-blogs__filter-box {
+	background: var(--rwaq-primary);
+	border-color: var(--rwaq-primary);
+}
+
+.rwaq-blogs__filter-input:checked + .rwaq-blogs__filter-box svg {
+	opacity: 1;
+}
+
+.rwaq-blogs__filter-input:focus-visible + .rwaq-blogs__filter-box {
+	box-shadow: 0 0 0 3px rgba(86, 81, 153, 0.25);
+}
+
+.rwaq-blogs__filter-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 12px 16px;
+	border-top: 1px solid var(--rwaq-divider);
+}
+
+.rwaq-blogs .rwaq-blogs__filter-clear,
+.rwaq-blogs .rwaq-blogs__filter-clear:hover,
+.rwaq-blogs .rwaq-blogs__filter-clear:focus {
+	background: none !important;
+	border: none !important;
+	box-shadow: none !important;
+	color: var(--rwaq-primary) !important;
+	font-family: inherit;
+	font-size: 14px;
+	font-weight: 600;
+	cursor: pointer;
+	padding: 0;
+}
+
+.rwaq-blogs .rwaq-blogs__filter-apply,
+.rwaq-blogs .rwaq-blogs__filter-apply:hover,
+.rwaq-blogs .rwaq-blogs__filter-apply:focus {
+	background: var(--rwaq-primary) !important;
+	border: 1px solid var(--rwaq-primary) !important;
+	box-shadow: none !important;
+	color: #fff !important;
+	font-family: inherit;
+	font-size: 14px;
+	font-weight: 600;
+	border-radius: 10px;
+	padding: 8px 22px;
+	cursor: pointer;
+}
+
+/* ---- Results row: count + chips + clear all ---- */
+.rwaq-blogs__results {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin-bottom: 24px;
+	min-height: 32px;
+}
+
+.rwaq-blogs__result-count {
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 20px;
+	color: var(--rwaq-text);
+}
+
+.rwaq-blogs__chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+}
+
+.rwaq-blogs__chips:empty {
+	display: none;
+}
+
+.rwaq-blogs .rwaq-blogs__chip,
+.rwaq-blogs .rwaq-blogs__chip:hover,
+.rwaq-blogs .rwaq-blogs__chip:focus {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	height: 32px;
+	padding: 0 12px;
+	background: #fff !important;
+	border: 1px solid var(--rwaq-border) !important;
+	box-shadow: none !important;
+	border-radius: 8px;
+	font-family: inherit;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 20px;
+	color: var(--rwaq-muted) !important;
+	cursor: pointer;
+}
+
+.rwaq-blogs__chip-x {
+	display: inline-flex;
+	color: #6b7280;
+	line-height: 1;
+}
+
+.rwaq-blogs .rwaq-blogs__clear-all,
+.rwaq-blogs .rwaq-blogs__clear-all:hover,
+.rwaq-blogs .rwaq-blogs__clear-all:focus {
+	background: none !important;
+	border: none !important;
+	box-shadow: none !important;
+	color: var(--rwaq-primary) !important;
+	font-family: inherit;
+	font-size: 14px;
+	font-weight: 600;
+	cursor: pointer;
+	padding: 0;
+}
+
+.rwaq-blogs__clear-all[hidden] {
+	display: none;
+}
+
+/* ---- Cards grid (flexbox: N per row, wrapping) ---- */
+.rwaq-blogs__grid {
+	--rwaq-blogs-gap: 15px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--rwaq-blogs-gap);
+}
+
+/* ---- Card ---- */
+.rwaq-blog-card {
+	flex: 0 0 calc(
+		(100% - (var(--rwaq-blogs-columns, 4) - 1) * var(--rwaq-blogs-gap, 15px))
+		/ var(--rwaq-blogs-columns, 4)
+	);
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	border: 1px solid var(--rwaq-border);
+	border-radius: 18px;
+	padding: 16px;
+	background: #fff;
+	box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+	transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.rwaq-blog-card:hover {
+	box-shadow: 0 8px 22px rgba(16, 24, 40, 0.1);
+	transform: translateY(-2px);
+}
+
+.rwaq-blog-card__media {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 180px;
+	border-radius: 12px;
+	overflow: hidden;
+	background: linear-gradient(135deg, #eef0f5, #e2e5ee);
+	color: #b6bccb;
+}
+
+.rwaq-blog-card__image {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+
+.rwaq-blog-card__placeholder {
+	display: inline-flex;
+}
+
+.rwaq-blog-card__body {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	padding: 0;
+}
+
+/* Badges: featured first, then category pills. */
+.rwaq-blog-card__terms {
+	display: flex;
+	flex-wrap: nowrap;
+    gap: 8px;
+    margin-top: 16px;
+    overflow: scroll;
+    padding-bottom: 10px;
+}
+
+.rwaq-blog-card__term {
+	background: var(--rwaq-primary-soft);
+	color: var(--rwaq-primary);
+	border-radius: 8px;
+	padding: 7px 12px;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 20px;
+	white-space: nowrap;
+}
+
+.rwaq-blog-card__term--featured {
+	background: var(--rwaq-featured);
+	color: var(--rwaq-text);
+}
+
+.rwaq-blog-card__title {
+	margin: 12px 0 0;
+	font-size: 16px;
+    font-weight: 600;
+    line-height: 24px;
+	color: var(--rwaq-heading);
+}
+
+.rwaq-blog-card__title a {
+	color: inherit;
+	text-decoration: none;
+	/* Clamp to 2 lines with an ellipsis. */
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+
+.rwaq-blog-card__title a:hover {
+	color: var(--rwaq-primary);
+}
+
+/* Footer: date (start) + author (end), pinned to the card bottom. */
+.rwaq-blog-card__footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	margin-top: auto;
+	padding-top: 16px;
+}
+
+.rwaq-blog-card__date {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 12px;
+	font-weight: 400;
+	line-height: 16px;
+	color: var(--rwaq-muted);
+}
+
+.rwaq-blog-card__date .rwaq-icon {
+	flex: 0 0 auto;
+	color: var(--rwaq-placeholder);
+}
+
+.rwaq-blog-card__author {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	min-width: 0;
+}
+
+.rwaq-blog-card__author-name {
+	font-size: 12px;
+	font-weight: 400;
+	line-height: 16px;
+	color: var(--rwaq-muted);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.rwaq-blog-card__author-avatar {
+	width: 32px;
+	height: 32px;
+	flex: 0 0 auto;
+	border-radius: 50%;
+	object-fit: cover;
+	background: var(--rwaq-surface-soft);
+}
+
+/* ---- AJAX loader ---- */
+.rwaq-blogs__loader {
+	display: flex;
+	justify-content: center;
+	padding: 1.5rem 0;
+}
+
+.rwaq-blogs__loader[hidden] {
+	display: none;
+}
+
+.rwaq-blogs__spinner {
+	width: 2rem;
+	height: 2rem;
+	fill: var(--rwaq-primary);
+	animation: rwaq-blogs-spin 0.9s linear infinite;
+}
+
+@keyframes rwaq-blogs-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.rwaq-blogs__spinner {
+		animation-duration: 2.4s;
+	}
+}
+
+.rwaq-blogs__sentinel {
+	height: 1px;
+}
+
+.rwaq-blogs__status {
+	text-align: center;
+	color: var(--rwaq-muted);
+	font-size: 0.95rem;
+	margin-top: 1rem;
+}
+
+.rwaq-blogs__status:empty {
+	display: none;
+}
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+
+/* Small screens: one card per row (full width). */
+@media (max-width: 767px) {
+	.rwaq-blog-card {
+		flex: 0 0 100%;
+	}
+
+	/* Center the banner text on mobile. */
+	.rwaq-blog-listing__banner-inner {
+		text-align: center;
+	}
+
+	.rwaq-blog-listing__banner-subtitle {
+		margin-inline: auto;
+	}
+}
+
+/* Landscape phone / small tablet: stack the toolbar controls. */
+@media (max-width: 680px) {
+	.rwaq-blogs__header {
+		flex-wrap: wrap;
+		gap: 12px;
+	}
+
+	.rwaq-blogs__title {
+		font-size: 26px;
+	}
+
+	.rwaq-blogs__toolbar {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.rwaq-blogs__toolbar-group {
+		flex-direction: column;
+		align-items: stretch;
+		width: 100%;
+	}
+
+	.rwaq-blogs__searchbar {
+		width: 100%;
+	}
+
+	.rwaq-blogs .rwaq-blogs__filter-trigger,
+	.rwaq-blogs .rwaq-blogs__sort-trigger {
+		width: 100%;
+		justify-content: space-between;
+	}
+
+	.rwaq-blogs__filter-menu,
+	.rwaq-blogs__sort-menu {
+		width: 100%;
+		max-width: none;
+	}
+
+	.rwaq-blogs__sort-value {
+		min-width: 0;
+	}
+}
