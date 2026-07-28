@@ -1,19 +1,35 @@
 /**
- * Blogs listing styles.
+ * Blog styles — listing + detail (combined).
  *
- * WordPress-posts counterpart of programs.css. Layout: a top toolbar (search +
- * category dropdown + sort), a results row (count + active-filter chips + clear
- * all), and a card grid. Also styles the "Blog Listing" page template banner
- * (templates/page-blog-listing.php). Structural class names are the plugin's
- * stable contract shared with blogs-catalog.php and blogs.js.
+ * Two style sets live in this one file, separated by the big block banners
+ * below:
  *
- * The IBM Plex Sans Arabic webfont is enqueued globally (see tutor-sso.php).
+ *   1. BLOG LISTING — WordPress-posts counterpart of programs.css: a top toolbar
+ *      (search + category dropdown + sort), a results row (count + active-filter
+ *      chips + clear all), a card grid, and the "Blog Listing" page-template
+ *      banner. Shared with blogs-catalog.php / blogs-page-template.php / blogs.js.
+ *   2. BLOG DETAIL — the single-post view: a centered 900px article column
+ *      (title, category / featured pills, rounded hero, byline, content) and a
+ *      wider 1232px "related posts" grid below. Shared with blog-detail.php.
+ *
+ * Both target Arabic (RTL) pages but use logical/flex rules so they also render
+ * in LTR. IBM Plex Sans Arabic is enqueued globally as 'tutor-sso-programs-font'
+ * (see tutor-sso.php), not @imported here.
  */
 
-/* Shared palette — defined on both roots so the banner (a sibling of the
-   listing) can use the same variables. */
+/* ==========================================================================
+   SHARED COLOR PALETTE
+   Single source of truth for every blog surface, defined on all blog roots so a
+   variable resolves across the listing (.rwaq-blogs / .rwaq-blog-listing) and
+   the detail view (.rwaq-bd) alike. Colors shared by both sections use one
+   canonical --rwaq-* name; only values unique to the detail view keep a
+   --rwaq-bd-* name. Variables stay scoped to the blog roots and never leak onto
+   :root / the theme.
+   ========================================================================== */
 .rwaq-blogs,
-.rwaq-blog-listing {
+.rwaq-blog-listing,
+.rwaq-bd {
+	/* Shared palette — used by both the listing and the detail view */
 	--rwaq-primary: #565199;
 	--rwaq-primary-soft: #EFEEFA;
 	--rwaq-text: #242424;
@@ -25,7 +41,25 @@
 	--rwaq-divider: #EDEDED;
 	--rwaq-featured: #F2B07F;
 	--rwaq-surface-soft: #F7F7F8;
+
+	/* Detail-only values (no listing equivalent) */
+	--rwaq-bd-primary-dark: #4f3a91;
+	--rwaq-bd-primary-soft: #F1F0F8;
+	--rwaq-bd-text: #424242;
+	--rwaq-bd-name: #2b2b3a;
+	--rwaq-bd-surface: #eef0f3;
+
+	/* Detail layout tokens */
+	--rwaq-bd-article: 900px;
+	--rwaq-bd-wide: 1232px;
+	--rwaq-bd-pad: 24px;
 }
+
+/* ==========================================================================
+   ==========================================================================
+   BLOG LISTING
+   ==========================================================================
+   ========================================================================== */
 
 .rwaq-blogs {
 	position: relative;
@@ -579,7 +613,7 @@
 	flex-wrap: nowrap;
     gap: 8px;
     margin-top: 16px;
-    overflow: scroll;
+    overflow-y: auto;
     padding-bottom: 10px;
 }
 
@@ -718,10 +752,7 @@
 	display: none;
 }
 
-/* ============================================================
-   Responsive
-   ============================================================ */
-
+/* ---- Listing responsive ---- */
 /* Small screens: one card per row (full width). */
 @media (max-width: 767px) {
 	.rwaq-blog-card {
@@ -779,4 +810,370 @@
 	.rwaq-blogs__sort-value {
 		min-width: 0;
 	}
+}
+
+/* ==========================================================================
+   ==========================================================================
+   BLOG DETAIL
+   ==========================================================================
+   ========================================================================== */
+
+.rwaq-bd {
+	color: var(--rwaq-bd-name);
+	font-family: 'IBM Plex Sans Arabic', sans-serif;
+	-webkit-font-smoothing: antialiased;
+	line-height: 1.9;
+	margin: 0 0 2rem;
+	background: #FBFBFB;
+}
+.rwaq-blog-single.site-main {
+    max-width: 100% !important;
+}
+
+.rwaq-bd *,
+.rwaq-bd *::before,
+.rwaq-bd *::after {
+	box-sizing: border-box;
+}
+
+.rwaq-bd a {
+	color: var(--rwaq-primary);
+	text-decoration: none;
+}
+
+.rwaq-bd a:hover {
+	color: var(--rwaq-primary);
+}
+
+/* ---- Breadcrumb ----
+   The wrapper stays full-width and carries the white background; the nav inside
+   re-centers to the 1232px container (like the article / related blocks). */
+.rwaq-bd__breadcrumb-bar {
+	background: #fff;
+}
+
+.rwaq-bd__breadcrumb {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+	max-width: var(--rwaq-bd-wide);
+	margin: 0 auto;
+	padding: 20px 0 8px;
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--rwaq-muted);
+}
+
+.rwaq-bd__breadcrumb a {
+	color: var(--rwaq-primary);
+}
+
+.rwaq-bd__breadcrumb a:hover {
+	color: var(--rwaq-primary);
+}
+
+.rwaq-bd__sep {
+	color: #242424;
+}
+
+.rwaq-bd__current {
+	color: var(--rwaq-muted);
+}
+
+/* ---- Article column (900px) ---- */
+.rwaq-bd__article {
+	max-width: var(--rwaq-bd-article);
+	margin: 0 auto;
+	padding: 16px 0 0;
+}
+
+.rwaq-bd__title {
+	text-align: right;
+	font-weight: 600;
+	font-size: 32px;
+	line-height: 40px;
+	margin: 24px 0 22px;
+	color: var(--rwaq-heading);
+}
+
+/* Pills — featured (orange) + one per category (purple) */
+.rwaq-bd__pills {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin-bottom: 26px;
+}
+
+.rwaq-bd__pill {
+	display: inline-block;
+	font-weight: 500;
+	font-size: 13px;
+	padding: 7px 18px;
+	border-radius: 999px;
+	white-space: nowrap;
+}
+
+.rwaq-bd__pill--featured {
+	background: var(--rwaq-featured);
+	color: #fff;
+}
+
+.rwaq-bd__pill--cat,
+.rwaq-bd a.rwaq-bd__pill--cat {
+	background: var(--rwaq-bd-primary-soft);
+	color: var(--rwaq-primary);
+}
+
+.rwaq-bd a.rwaq-bd__pill--cat:hover {
+	color: var(--rwaq-primary);
+}
+
+/* Hero image */
+.rwaq-bd__hero {
+	width: 100%;
+	aspect-ratio: 16 / 8.2;
+	max-height: 420px;
+	border-radius: 10px;
+	overflow: hidden;
+	background: var(--rwaq-bd-surface);
+}
+
+.rwaq-bd__hero img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+
+/* Byline: author (name + avatar) and date */
+.rwaq-bd__byline {
+	display: flex;
+	align-items: center;
+	gap: 34px;
+	margin: 22px 0 8px;
+}
+
+.rwaq-bd__author {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.rwaq-bd__author-avatar {
+	width: 40px;
+	height: 40px;
+	border-radius: 50%;
+	overflow: hidden;
+	background: #e6e8ec;
+	flex: none;
+}
+
+.rwaq-bd__author-avatar img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+
+.rwaq-bd__author-name {
+	font-weight: 600;
+	font-size: 16px;
+	line-height: 26px;
+	color: var(--rwaq-heading);
+}
+
+.rwaq-bd__date {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	color: var(--rwaq-heading);
+	font-weight: 400;
+	font-size: 14px;
+}
+
+.rwaq-bd__date svg {
+	color: var(--rwaq-muted);
+}
+
+.rwaq-bd__rule {
+	border: none;
+	border-top: 1px solid var(--rwaq-border);
+	margin: 18px 0 28px;
+}
+
+.rwaq-bd__rule--end {
+	margin: 34px 0 26px;
+}
+
+/* ---- Prose (the_content) ---- */
+.rwaq-bd__prose {
+	font-size: 15.5px;
+	line-height: 1.9;
+	color: var(--rwaq-bd-text);
+}
+
+.rwaq-bd__prose>*:first-child {
+	margin-top: 0;
+}
+
+.rwaq-bd__prose h2,
+.rwaq-bd__prose h3,
+.rwaq-bd__prose h4 {
+	text-align: right;
+	color: var(--rwaq-heading);
+	font-weight: 800;
+	line-height: 1.4;
+	margin: 32px 0 16px;
+}
+
+.rwaq-bd__prose h2 {
+	font-size: 24px;
+}
+
+.rwaq-bd__prose h3 {
+	font-size: 20px;
+}
+
+.rwaq-bd__prose h4 {
+	font-size: 17px;
+}
+
+.rwaq-bd__prose p {
+	text-align: justify;
+	margin: 0 0 18px;
+}
+
+.rwaq-bd__prose a {
+	text-decoration: underline;
+}
+
+.rwaq-bd__prose img {
+	max-width: 100%;
+	height: auto;
+	border-radius: 14px;
+}
+
+.rwaq-bd__prose ul,
+.rwaq-bd__prose ol {
+	margin: 0 0 18px;
+	padding-inline-start: 1.5rem;
+}
+
+.rwaq-bd__prose li {
+	margin-bottom: 8px;
+}
+
+.rwaq-bd__prose blockquote {
+	margin: 0 0 24px;
+	background: #f6f4fb;
+	border-radius: 14px;
+	padding: 26px 28px;
+	color: var(--rwaq-bd-text);
+	line-height: 2;
+}
+
+.rwaq-bd__prose figure {
+	margin: 0 0 24px;
+}
+
+/* ---- Prev / next ---- */
+.rwaq-bd__adjacent {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 12px;
+	margin: 0 0 10px;
+}
+
+.rwaq-bd__nav,
+.rwaq-bd a.rwaq-bd__nav {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	border: 1px solid var(--rwaq-border);
+	border-radius: 10px;
+	padding: 11px 20px;
+	font-weight: 600;
+	font-size: 14px;
+	color: var(--rwaq-heading)
+}
+
+.rwaq-bd a.rwaq-bd__nav:hover {
+	color: var(--rwaq-heading);
+	border: 1px solid var(--rwaq-border);
+}
+
+.rwaq-bd__nav svg {
+	color: #1A1A1A;
+	flex: none;
+}
+
+/* ---- Related posts (1232px) ---- */
+.rwaq-bd__related {
+	max-width: var(--rwaq-bd-wide);
+	margin: 56px auto 0;
+	padding: 0;
+}
+
+.rwaq-bd__related-title {
+	text-align: right;
+	font-weight: 600;
+	font-size: 28px;
+	line-height: 36px;
+	margin: 0 0 26px;
+	color: var(--rwaq-heading);
+}
+
+/* The recent-posts cards reuse the catalog card (.rwaq-blog-card, in the BLOG
+   LISTING section) so they're identical to the listing page. */
+.rwaq-bd__related-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+	gap: 24px;
+}
+
+/* ---- Detail responsive ---- */
+/* On screens wider than the 1232px max-width the containers run flush (no
+   gutter). Once the viewport dips below the max, add side padding so content
+   doesn't sit edge to edge. --rwaq-bd-pad shrinks further at 600px. */
+@media (max-width: 1232px) {
+	.rwaq-bd__breadcrumb,
+	.rwaq-bd__article,
+	.rwaq-bd__related {
+		padding-inline: var(--rwaq-bd-pad);
+	}
+}
+
+@media (max-width: 600px) {
+	.rwaq-bd {
+		--rwaq-bd-pad: 16px;
+	}
+
+	.rwaq-bd__title {
+		font-size: 26px;
+	}
+
+	.rwaq-bd__byline {
+		flex-wrap: wrap;
+		gap: 14px;
+	}
+
+	.rwaq-bd__related-title {
+		font-size: 24px;
+	}
+}
+
+/* ==========================================================================
+   ERROR STATE (shared)
+   ========================================================================== */
+.rwaq-blog-detail--error {
+	max-width: var(--rwaq-bd-wide, 1232px);
+	margin: 2rem auto;
+	padding: 1.25rem;
+	border: 1px solid #d1d1d1;
+	border-radius: 12px;
+	color: #616161;
+	text-align: center;
+	font-family: 'IBM Plex Sans Arabic', sans-serif;
 }

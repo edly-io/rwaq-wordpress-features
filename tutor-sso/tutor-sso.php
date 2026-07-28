@@ -51,6 +51,8 @@ require_once TUTOR_SSO_PATH . 'includes/blogs/blogs-query.php';
 require_once TUTOR_SSO_PATH . 'includes/blogs/blogs-catalog.php';
 require_once TUTOR_SSO_PATH . 'includes/blogs/blogs-ajax.php';
 require_once TUTOR_SSO_PATH . 'includes/blogs/blogs-page-template.php';
+require_once TUTOR_SSO_PATH . 'includes/blogs/blog-detail.php';
+require_once TUTOR_SSO_PATH . 'includes/blocks/quote-block.php';
 
 // Boot the admin settings UI.
 add_action( 'plugins_loaded', function () {
