@@ -246,7 +246,7 @@ function blog_detail_render($post)
 						<span class="rwaq-bd__pill rwaq-bd__pill--featured"><?php echo esc_html__('مميز', 'tutor-sso'); ?></span>
 					<?php endif; ?>
 					<?php foreach ($categories as $category) : ?>
-						<a class="rwaq-bd__pill rwaq-bd__pill--cat" href="#"><?php echo esc_html($category->name); ?></a>
+						<span class="rwaq-bd__pill rwaq-bd__pill--cat"><?php echo esc_html($category->name); ?></span>
 					<?php endforeach; ?>
 				</div>
 			<?php endif; ?>

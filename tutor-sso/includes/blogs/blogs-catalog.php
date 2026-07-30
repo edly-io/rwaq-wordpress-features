@@ -172,9 +172,9 @@ function blogs_is_featured( $post_id ) {
 /**
  * A post author's display name.
  *
- * Prefers the per-post ACF `author_name` override; otherwise the author's
- * first + last name (whichever exist). Returns '' when nothing is set (the card
- * then shows just the avatar, no name).
+ * Prefers the per-post ACF `author_name` override; otherwise the WP author's
+ * first + last name, then their display name (usernames commonly have no first /
+ * last name set). Returns '' only when the post has no author at all.
  *
  * @param \WP_Post $post Post object.
  * @return string
@@ -190,8 +190,13 @@ function blogs_author_name( $post ) {
 	$author_id = (int) $post->post_author;
 	$first     = (string) get_the_author_meta( 'first_name', $author_id );
 	$last      = (string) get_the_author_meta( 'last_name', $author_id );
+	$name      = trim( $first . ' ' . $last );
 
-	return trim( $first . ' ' . $last );
+	if ( '' !== $name ) {
+		return $name;
+	}
+
+	return (string) get_the_author_meta( 'display_name', $author_id );
 }
 
 /**
@@ -605,6 +610,103 @@ function blogs_register_admin_shortcode( $shortcodes ) {
 		),
 	);
 
+	$shortcodes[] = array(
+		'tag'         => 'rwaq_blog_author',
+		'title'       => __( 'Blog Author Block', 'tutor-sso' ),
+		'example'     => '[rwaq_blog_author show="both" size="32"]',
+		'description' => __( 'Author avatar + name for the current post, using the ACF author_image / author_name overrides (else the WP author\'s Gravatar and name, with the bundled SVG fallback). Made for reuse inside an Elementor Loop Grid item.', 'tutor-sso' ),
+		'attributes'  => array(
+			'id'   => __( 'Post ID. Defaults to the current post (e.g. the current Loop Grid item).', 'tutor-sso' ),
+			'show' => __( 'Which parts to render: "both" (default), "image", or "name".', 'tutor-sso' ),
+			'size' => __( 'Avatar display size in pixels. Default: 32.', 'tutor-sso' ),
+		),
+	);
+
 	return $shortcodes;
 }
 add_filter( 'tutor_sso_admin_shortcodes', __NAMESPACE__ . '\\blogs_register_admin_shortcode' );
+
+/**
+ * Shortcode: [rwaq_blog_author] — the author block (avatar + name) resolved
+ * exactly like the cards: the per-post ACF `author_image` / `author_name`
+ * overrides win, otherwise the WP author's Gravatar (with the bundled SVG
+ * fallback, swapped in via onerror) and name.
+ *
+ * Made for reuse inside an Elementor Loop Grid item template — with no `id` it
+ * renders the current post in the loop — but works anywhere via an explicit id.
+ *
+ *   [rwaq_blog_author]                current post (loop context)
+ *   [rwaq_blog_author id="123"]       an explicit post
+ *   [rwaq_blog_author show="image"]   avatar only
+ *   [rwaq_blog_author show="name"]    name only
+ *   [rwaq_blog_author size="40"]      avatar display size in px (default 32)
+ *
+ * @param array $atts Shortcode attributes.
+ * @return string HTML, or '' when the post can't be resolved.
+ */
+function blogs_author_shortcode( $atts ) {
+	$atts = shortcode_atts(
+		array(
+			'id'   => '',
+			'show' => 'both',
+			'size' => 32,
+		),
+		$atts,
+		'rwaq_blog_author'
+	);
+
+	// Resolve the post: an explicit id wins; otherwise the current post in the
+	// loop. get_post() (no arg) uses the loop's global $post, which is more
+	// reliable inside Elementor Loop Grid items than get_the_ID().
+	if ( '' !== trim( (string) $atts['id'] ) ) {
+		$post = get_post( (int) $atts['id'] );
+	} else {
+		$post = get_post();
+		if ( ! $post && function_exists( 'get_queried_object' ) ) {
+			$queried = get_queried_object();
+			$post    = $queried instanceof \WP_Post ? $queried : null;
+		}
+	}
+
+	if ( ! $post instanceof \WP_Post ) {
+		return '';
+	}
+
+	$show = in_array( $atts['show'], array( 'both', 'image', 'name' ), true ) ? $atts['show'] : 'both';
+	$size = max( 1, (int) $atts['size'] );
+
+	$name     = blogs_author_name( $post );
+	$avatar   = blogs_author_avatar( $post );
+	$fallback = blogs_author_avatar_fallback();
+
+	// Reuse the blog stylesheet on normal pages…
+	wp_enqueue_style( 'tutor-sso-blog' );
+
+	ob_start();
+
+	// …but Elementor renders Loop Grid items after <head> is printed, so the
+	// enqueued stylesheet may not load. Inline the block's CSS once per request
+	// (self-contained, literal values) so it always renders. printf-safe: no
+	// user data in the style.
+	static $printed_css = false;
+	if ( ! $printed_css ) {
+		$printed_css = true;
+		echo '<style id="rwaq-author-css">'
+			. '.rwaq-author{display:inline-flex;align-items:center;gap:8px;min-width:0;font-family:"IBM Plex Sans Arabic",sans-serif;-webkit-font-smoothing:antialiased}'
+			. '.rwaq-author__avatar{flex:0 0 auto;border-radius:50%;object-fit:cover;background:#F7F7F8}'
+			. '.rwaq-author__name{font-size:12px;font-weight:400;line-height:16px;color:#616161;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'
+			. '</style>';
+	}
+	?>
+	<span class="rwaq-author">
+		<?php if ( 'name' !== $show ) : ?>
+			<img class="rwaq-author__avatar" src="<?php echo esc_url( $avatar ); ?>" alt="" loading="lazy" width="<?php echo esc_attr( $size ); ?>" height="<?php echo esc_attr( $size ); ?>" style="width:<?php echo esc_attr( $size ); ?>px;height:<?php echo esc_attr( $size ); ?>px;" onerror="this.onerror=null;this.src='<?php echo esc_url( $fallback ); ?>';" />
+		<?php endif; ?>
+		<?php if ( 'image' !== $show && '' !== $name ) : ?>
+			<span class="rwaq-author__name"><?php echo esc_html( $name ); ?></span>
+		<?php endif; ?>
+	</span>
+	<?php
+	return ob_get_clean();
+}
+add_shortcode( 'rwaq_blog_author', __NAMESPACE__ . '\\blogs_author_shortcode' );
