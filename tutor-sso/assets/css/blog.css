@@ -28,7 +28,8 @@
    ========================================================================== */
 .rwaq-blogs,
 .rwaq-blog-listing,
-.rwaq-bd {
+.rwaq-bd,
+.rwaq-author {
 	/* Shared palette — used by both the listing and the detail view */
 	--rwaq-primary: #565199;
 	--rwaq-primary-soft: #EFEEFA;
@@ -919,13 +920,8 @@
 	color: #fff;
 }
 
-.rwaq-bd__pill--cat,
-.rwaq-bd a.rwaq-bd__pill--cat {
+.rwaq-bd__pill--cat {
 	background: var(--rwaq-bd-primary-soft);
-	color: var(--rwaq-primary);
-}
-
-.rwaq-bd a.rwaq-bd__pill--cat:hover {
 	color: var(--rwaq-primary);
 }
 
@@ -1176,4 +1172,39 @@
 	color: #616161;
 	text-align: center;
 	font-family: 'IBM Plex Sans Arabic', sans-serif;
+}
+
+/* ==========================================================================
+   REUSABLE AUTHOR BLOCK
+   Standalone author avatar + name output by the [rwaq_blog_author] shortcode.
+   Mirrors the card author block (.rwaq-blog-card__author*) but self-contained,
+   so it can be dropped into an Elementor Loop Grid item outside .rwaq-blogs.
+   .rwaq-author is a palette root (see SHARED COLOR PALETTE) so its vars resolve.
+   ========================================================================== */
+.rwaq-author {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	min-width: 0;
+	font-family: 'IBM Plex Sans Arabic', sans-serif;
+	-webkit-font-smoothing: antialiased;
+}
+
+.rwaq-author__avatar {
+	width: 32px;
+	height: 32px;
+	flex: 0 0 auto;
+	border-radius: 50%;
+	object-fit: cover;
+	background: var(--rwaq-surface-soft);
+}
+
+.rwaq-author__name {
+	font-size: 12px;
+	font-weight: 400;
+	line-height: 16px;
+	color: var(--rwaq-muted);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
