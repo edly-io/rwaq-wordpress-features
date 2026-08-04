@@ -59,6 +59,13 @@ function ajax_load_courses() {
 		)
 	);
 
+	if ( ! empty( $data['error'] ) ) {
+		wp_send_json_error(
+			array( 'message' => __( 'حدث خطأ أثناء تحميل الدورات. يرجى المحاولة مرة أخرى.', 'tutor-sso' ) ),
+			502
+		);
+	}
+
 	$courses   = $data['results'];
 	$total     = $data['total'];
 	$num_pages = $data['num_pages'];

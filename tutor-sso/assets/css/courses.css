@@ -1,10 +1,11 @@
 /**
  * Courses catalog styles.
  *
- * Card / search / sort follow the programs catalog; the organization filter
- * follows the blogs category dropdown, with an added in-dropdown search box for
- * long organization lists. Structural class names are the plugin's stable
- * contract shared with courses-catalog.php and courses.js.
+ * Mirrors the programs catalog: a full-width search bar above a two-column
+ * layout — filter sidebar (organization checkboxes with counts, collapsible,
+ * with an in-group search box and a "show more" toggle) beside the results
+ * (chips, count + sort, card grid). Structural class names are the plugin's
+ * stable contract shared with courses-catalog.php and courses.js.
  *
  * Targets Arabic (RTL) pages but uses logical/flex rules. IBM Plex Sans Arabic
  * is enqueued globally as 'tutor-sso-programs-font' (see tutor-sso.php).
@@ -20,8 +21,6 @@
 	--rwaq-icon: #616161;
 	--rwaq-border: #D1D1D1;
 	--rwaq-divider: #EDEDED;
-	--rwaq-featured: #F2B07F;
-	--rwaq-surface-soft: #F7F7F8;
 
 	position: relative;
 	margin: 0 0 2rem;
@@ -34,6 +33,14 @@
 .rwaq-courses *::before,
 .rwaq-courses *::after {
 	box-sizing: border-box;
+}
+
+/* Width-constrained wrapper used by the /courses/ archive template
+   (templates/archive-course.php). Matches the site's Elementor content width. */
+.rwaq-courses-archive {
+	max-width: 1280px;
+	margin-inline: auto;
+	padding: 25px 15px;
 }
 
 /* Overlay shown while a search / sort / filter reloads the whole list. */
@@ -89,26 +96,10 @@
 	white-space: nowrap;
 }
 
-/* ---- Toolbar: [ search + org filter ] on the start, sort on the end ---- */
-.rwaq-courses__toolbar {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 12px;
-	margin-bottom: 20px;
-}
-
-.rwaq-courses__toolbar-group {
-	display: flex;
-	align-items: center;
-	gap: 12px;
-	min-width: 0;
-}
-
+/* ---- Search bar (full width, above the layout) ---- */
 .rwaq-courses__searchbar {
 	position: relative;
-	width: 300px;
-	max-width: 100%;
+	margin-bottom: 24px;
 }
 
 .rwaq-courses__search-icon {
@@ -123,7 +114,7 @@
 
 .rwaq-courses input.rwaq-courses__search-input {
 	width: 100%;
-	height: 44px;
+	height: 48px;
 	border: 1px solid var(--rwaq-border);
 	border-radius: 12px;
 	outline: none;
@@ -133,7 +124,7 @@
 	font-size: 15px;
 	color: var(--rwaq-text);
 	padding-inline-start: 16px;
-	padding-inline-end: 44px;
+	padding-inline-end: 48px;
 	transition: border-color 0.15s;
 }
 
@@ -151,18 +142,322 @@
 	appearance: none;
 }
 
-/* ---- Shared trigger button (org filter + sort) ---- */
-.rwaq-courses__filter,
+/* ---- Layout: filter sidebar + results ---- */
+.rwaq-courses__layout {
+	display: flex;
+	gap: 24px;
+	align-items: flex-start;
+}
+
+.rwaq-courses__sidebar {
+	flex: 0 0 280px;
+	width: 280px;
+	border: 1px solid var(--rwaq-border);
+	border-radius: 18px;
+	padding: 22px 22px 26px;
+}
+
+.rwaq-courses__main {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+/* Sidebar head */
+.rwaq-courses__sidebar-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 24px;
+}
+
+.rwaq-courses__sidebar-title {
+	display: flex;
+	align-items: center;
+	gap: 9px;
+	font-size: 16px;
+	line-height: 22px;
+	font-weight: 600;
+	color: var(--rwaq-text);
+}
+
+/* Stays transparent on hover / focus (override theme / Elementor button styles). */
+.rwaq-courses .rwaq-courses__clear,
+.rwaq-courses .rwaq-courses__clear:hover,
+.rwaq-courses .rwaq-courses__clear:focus {
+	background: none !important;
+	border: none !important;
+	box-shadow: none !important;
+	color: var(--rwaq-primary) !important;
+	font-family: inherit;
+	font-size: 14px;
+	line-height: 20px;
+	font-weight: 600;
+	cursor: pointer;
+	padding: 0;
+}
+
+/* ---- Filter groups ---- */
+.rwaq-courses__filter-group {
+	margin-top: 17px;
+	padding-top: 17px;
+	border-top: 1px solid var(--rwaq-divider);
+}
+
+.rwaq-courses__filter-title {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin: 0;
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 20px;
+	color: var(--rwaq-text);
+	cursor: pointer;
+	user-select: none;
+}
+
+.rwaq-courses__filter-chevron {
+	display: inline-flex;
+	color: var(--rwaq-text);
+	transition: transform 0.18s ease;
+}
+
+/* Collapsed state: hide the search box, options and "show more" toggle, and
+   flip the chevron. */
+.rwaq-courses__filter-group.is-collapsed .rwaq-courses__filter-search,
+.rwaq-courses__filter-group.is-collapsed .rwaq-courses__filter-options,
+.rwaq-courses__filter-group.is-collapsed .rwaq-courses__show-more {
+	display: none;
+}
+
+.rwaq-courses__filter-group.is-collapsed .rwaq-courses__filter-chevron {
+	transform: rotate(180deg);
+}
+
+/* In-group search for long option lists (organizations). */
+.rwaq-courses__filter-search {
+	position: relative;
+	margin-top: 14px;
+}
+
+.rwaq-courses__filter-search-icon {
+	position: absolute;
+	inset-inline-end: 12px; /* left in RTL */
+	top: 50%;
+	transform: translateY(-50%);
+	display: inline-flex;
+	color: var(--rwaq-icon);
+	pointer-events: none;
+}
+
+.rwaq-courses input.rwaq-courses__filter-search-input {
+	width: 100%;
+	height: 40px;
+	border: 1px solid var(--rwaq-border);
+	border-radius: 10px;
+	outline: none;
+	box-shadow: none;
+	background: #fff;
+	font-family: inherit;
+	font-size: 14px;
+	color: var(--rwaq-text);
+	padding-inline-start: 12px;
+	padding-inline-end: 40px;
+	transition: border-color 0.15s;
+}
+
+.rwaq-courses input.rwaq-courses__filter-search-input:focus {
+	border-color: var(--rwaq-primary);
+}
+
+.rwaq-courses__filter-search-input::placeholder {
+	color: var(--rwaq-placeholder);
+}
+
+.rwaq-courses__filter-search-input::-webkit-search-cancel-button,
+.rwaq-courses__filter-search-input::-webkit-search-decoration {
+	-webkit-appearance: none;
+	appearance: none;
+}
+
+/* "No organizations match" message (toggled by the in-group search). */
+.rwaq-courses__filter-empty {
+	padding: 4px 0;
+	font-size: 13px;
+	color: var(--rwaq-muted);
+}
+
+.rwaq-courses__filter-empty[hidden] {
+	display: none;
+}
+
+.rwaq-courses__filter-options {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	margin-top: 14px;
+}
+
+.rwaq-courses__filter-option {
+	display: flex;
+	align-items: center;
+	gap: 11px;
+	font-size: 14px;
+	font-weight: 400;
+	line-height: 22px;
+	color: var(--rwaq-text);
+	cursor: pointer;
+}
+
+/* Honor the `hidden` attribute on overflow options — the class's display:flex
+   otherwise overrides the browser's built-in [hidden] { display: none } rule.
+   `is-filtered-out` is the in-group search's own hiding mechanism, kept separate
+   so it composes with the overflow state instead of fighting it. */
+.rwaq-courses__filter-option[hidden],
+.rwaq-courses__filter-option.is-filtered-out {
+	display: none;
+}
+
+/* Visually hide the native control while keeping it accessible / focusable. */
+.rwaq-courses__filter-input {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	opacity: 0;
+	pointer-events: none;
+}
+
+/* Custom checkbox box */
+.rwaq-courses__filter-box {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 auto;
+	width: 20px;
+	height: 20px;
+	border: 1.5px solid var(--rwaq-border);
+	border-radius: 6px;
+	background: #fff;
+	transition: background 0.12s, border-color 0.12s;
+}
+
+.rwaq-courses__filter-box svg {
+	opacity: 0;
+}
+
+.rwaq-courses__filter-input:checked + .rwaq-courses__filter-box {
+	background: var(--rwaq-primary);
+	border-color: var(--rwaq-primary);
+}
+
+.rwaq-courses__filter-input:checked + .rwaq-courses__filter-box svg {
+	opacity: 1;
+}
+
+/* Focus ring on the custom box when the hidden input is focused via keyboard. */
+.rwaq-courses__filter-input:focus-visible + .rwaq-courses__filter-box {
+	box-shadow: 0 0 0 3px rgba(86, 81, 153, 0.25);
+}
+
+.rwaq-courses__filter-label {
+	flex: 1 1 auto;
+}
+
+/* Per-organization course count from the filters API. */
+.rwaq-courses__filter-count {
+	flex: 0 0 auto;
+	color: var(--rwaq-muted);
+	font-size: 12px;
+	line-height: 16px;
+	font-weight: 400;
+	font-variant-numeric: tabular-nums;
+}
+
+/* Hidden while the in-group search is active (every match is shown then). */
+.rwaq-courses__show-more[hidden] {
+	display: none;
+}
+
+.rwaq-courses .rwaq-courses__show-more,
+.rwaq-courses .rwaq-courses__show-more:hover,
+.rwaq-courses .rwaq-courses__show-more:focus {
+	margin-top: 14px;
+	background: none !important;
+	border: none !important;
+	box-shadow: none !important;
+	color: var(--rwaq-primary) !important;
+	font-family: inherit;
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 20px;
+	cursor: pointer;
+	padding: 0;
+}
+
+/* ---- Active filter chips ---- */
+.rwaq-courses__chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin-bottom: 4px;
+	min-height: 32px;
+}
+
+.rwaq-courses__chips:empty {
+	display: none;
+}
+
+.rwaq-courses .rwaq-courses__chip,
+.rwaq-courses .rwaq-courses__chip:hover,
+.rwaq-courses .rwaq-courses__chip:focus {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	height: 32px;
+	padding: 0 12px;
+	background: #fff !important;
+	border: 1px solid var(--rwaq-border) !important;
+	box-shadow: none !important;
+	border-radius: 8px;
+	font-family: inherit;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 20px;
+	color: var(--rwaq-muted) !important;
+	cursor: pointer;
+}
+
+.rwaq-courses__chip-x {
+	display: inline-flex;
+	color: #6b7280;
+	line-height: 1;
+}
+
+/* ---- Controls: result count + sort ---- */
+.rwaq-courses__controls {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	flex-wrap: wrap;
+	margin: 20px 0 24px;
+}
+
+.rwaq-courses__result-count {
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 20px;
+	color: var(--rwaq-text);
+}
+
+/* ---- Sort control (custom dropdown backed by a hidden native <select>) ---- */
 .rwaq-courses__sort {
 	position: relative;
 	flex: 0 0 auto;
 }
 
-.rwaq-courses .rwaq-courses__filter-trigger,
 .rwaq-courses .rwaq-courses__sort-trigger,
-.rwaq-courses .rwaq-courses__filter-trigger:hover,
 .rwaq-courses .rwaq-courses__sort-trigger:hover,
-.rwaq-courses .rwaq-courses__filter-trigger:focus,
 .rwaq-courses .rwaq-courses__sort-trigger:focus {
 	display: inline-flex;
 	align-items: center;
@@ -179,32 +474,25 @@
 	cursor: pointer;
 }
 
-.rwaq-courses__filter-caption,
 .rwaq-courses__sort-caption {
 	color: var(--rwaq-muted);
 	font-weight: 400;
 }
 
-.rwaq-courses__filter-value,
 .rwaq-courses__sort-value {
+	min-width: 92px;
+	text-align: right;
 	font-weight: 600;
 	color: var(--rwaq-text);
 	white-space: nowrap;
 }
 
-.rwaq-courses__sort-value {
-	min-width: 92px;
-	text-align: right;
-}
-
-.rwaq-courses__filter-chevron,
 .rwaq-courses__sort-chevron {
 	display: inline-flex;
 	color: var(--rwaq-text);
 	transition: transform 0.15s;
 }
 
-.rwaq-courses__filter.is-open .rwaq-courses__filter-chevron,
 .rwaq-courses__sort.is-open .rwaq-courses__sort-chevron {
 	transform: rotate(180deg);
 }
@@ -218,7 +506,6 @@
 	pointer-events: none;
 }
 
-/* ---- Sort menu ---- */
 .rwaq-courses__sort-menu {
 	position: absolute;
 	top: calc(100% + 8px);
@@ -254,267 +541,6 @@
 .rwaq-courses__sort-option.is-selected {
 	font-weight: 700;
 	background: #f4f4f6;
-}
-
-/* ---- Organization filter menu ---- */
-.rwaq-courses__filter-menu {
-	position: absolute;
-	top: calc(100% + 8px);
-	inset-inline-start: 0;
-	width: 300px;
-	max-width: 86vw;
-	background: #fff;
-	border: 1px solid #e5e5e5;
-	border-radius: 14px;
-	box-shadow: 0 12px 28px rgba(16, 24, 40, 0.14);
-	overflow: hidden;
-	z-index: 20;
-	display: none;
-}
-
-.rwaq-courses__filter.is-open .rwaq-courses__filter-menu {
-	display: block;
-}
-
-/* In-dropdown organization search. */
-.rwaq-courses__filter-search {
-	position: relative;
-	padding: 12px 12px 8px;
-	border-bottom: 1px solid var(--rwaq-divider);
-}
-
-.rwaq-courses__filter-search-icon {
-	position: absolute;
-	inset-inline-end: 24px; /* left in RTL */
-	top: 50%;
-	transform: translateY(-50%);
-	display: inline-flex;
-	color: var(--rwaq-icon);
-	pointer-events: none;
-}
-
-.rwaq-courses input.rwaq-courses__filter-search-input {
-	width: 100%;
-	height: 40px;
-	border: 1px solid var(--rwaq-border);
-	border-radius: 10px;
-	outline: none;
-	box-shadow: none;
-	background: #fff;
-	font-family: inherit;
-	font-size: 14px;
-	color: var(--rwaq-text);
-	padding-inline-start: 14px;
-	padding-inline-end: 40px;
-}
-
-.rwaq-courses input.rwaq-courses__filter-search-input:focus {
-	border-color: var(--rwaq-primary);
-}
-
-.rwaq-courses__filter-search-input::placeholder {
-	color: var(--rwaq-placeholder);
-}
-
-.rwaq-courses__filter-search-input::-webkit-search-cancel-button,
-.rwaq-courses__filter-search-input::-webkit-search-decoration {
-	-webkit-appearance: none;
-	appearance: none;
-}
-
-.rwaq-courses__filter-list {
-	max-height: 300px;
-	overflow-y: auto;
-}
-
-.rwaq-courses__filter-option {
-	display: flex;
-	align-items: center;
-	gap: 11px;
-	padding: 11px 16px;
-	font-size: 14px;
-	line-height: 22px;
-	color: var(--rwaq-text);
-	cursor: pointer;
-}
-
-.rwaq-courses__filter-option:hover {
-	background: #f4f4f6;
-}
-
-/* Hidden while it doesn't match the in-dropdown search. */
-.rwaq-courses__filter-option[hidden] {
-	display: none;
-}
-
-/* The "All" reset row sits in a shaded header. */
-.rwaq-courses__filter-option--all {
-	background: var(--rwaq-surface-soft);
-	border-bottom: 1px solid var(--rwaq-divider);
-}
-
-.rwaq-courses__filter-label {
-	flex: 1 1 auto;
-}
-
-/* "No organizations match" message (shown by JS when the search empties). */
-.rwaq-courses__filter-empty {
-	padding: 16px;
-	text-align: center;
-	font-size: 13px;
-	color: var(--rwaq-muted);
-}
-
-.rwaq-courses__filter-empty[hidden] {
-	display: none;
-}
-
-/* Visually hide the native control while keeping it accessible / focusable. */
-.rwaq-courses__filter-input {
-	position: absolute;
-	width: 1px;
-	height: 1px;
-	opacity: 0;
-	pointer-events: none;
-}
-
-.rwaq-courses__filter-box {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	flex: 0 0 auto;
-	width: 20px;
-	height: 20px;
-	border: 1.5px solid var(--rwaq-border);
-	border-radius: 6px;
-	background: #fff;
-	transition: background 0.12s, border-color 0.12s;
-}
-
-.rwaq-courses__filter-box svg {
-	opacity: 0;
-}
-
-.rwaq-courses__filter-input:checked + .rwaq-courses__filter-box {
-	background: var(--rwaq-primary);
-	border-color: var(--rwaq-primary);
-}
-
-.rwaq-courses__filter-input:checked + .rwaq-courses__filter-box svg {
-	opacity: 1;
-}
-
-.rwaq-courses__filter-input:focus-visible + .rwaq-courses__filter-box {
-	box-shadow: 0 0 0 3px rgba(86, 81, 153, 0.25);
-}
-
-.rwaq-courses__filter-footer {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 12px;
-	padding: 12px 16px;
-	border-top: 1px solid var(--rwaq-divider);
-}
-
-.rwaq-courses .rwaq-courses__filter-clear,
-.rwaq-courses .rwaq-courses__filter-clear:hover,
-.rwaq-courses .rwaq-courses__filter-clear:focus {
-	background: none !important;
-	border: none !important;
-	box-shadow: none !important;
-	color: var(--rwaq-primary) !important;
-	font-family: inherit;
-	font-size: 14px;
-	font-weight: 600;
-	cursor: pointer;
-	padding: 0;
-}
-
-.rwaq-courses .rwaq-courses__filter-apply,
-.rwaq-courses .rwaq-courses__filter-apply:hover,
-.rwaq-courses .rwaq-courses__filter-apply:focus {
-	background: var(--rwaq-primary) !important;
-	border: 1px solid var(--rwaq-primary) !important;
-	box-shadow: none !important;
-	color: #fff !important;
-	font-family: inherit;
-	font-size: 14px;
-	font-weight: 600;
-	border-radius: 10px;
-	padding: 8px 22px;
-	cursor: pointer;
-}
-
-/* ---- Results row: count + chips + clear all ---- */
-.rwaq-courses__results {
-	display: flex;
-	align-items: center;
-	flex-wrap: wrap;
-	gap: 12px;
-	margin-bottom: 24px;
-	min-height: 32px;
-}
-
-.rwaq-courses__result-count {
-	font-size: 14px;
-	font-weight: 600;
-	line-height: 20px;
-	color: var(--rwaq-text);
-}
-
-.rwaq-courses__chips {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 12px;
-}
-
-.rwaq-courses__chips:empty {
-	display: none;
-}
-
-.rwaq-courses .rwaq-courses__chip,
-.rwaq-courses .rwaq-courses__chip:hover,
-.rwaq-courses .rwaq-courses__chip:focus {
-	display: inline-flex;
-	align-items: center;
-	gap: 8px;
-	height: 32px;
-	padding: 0 12px;
-	background: #fff !important;
-	border: 1px solid var(--rwaq-border) !important;
-	box-shadow: none !important;
-	border-radius: 8px;
-	font-family: inherit;
-	font-size: 12px;
-	font-weight: 600;
-	line-height: 20px;
-	color: var(--rwaq-muted) !important;
-	cursor: pointer;
-}
-
-.rwaq-courses__chip-x {
-	display: inline-flex;
-	color: #6b7280;
-	line-height: 1;
-}
-
-.rwaq-courses .rwaq-courses__clear-all,
-.rwaq-courses .rwaq-courses__clear-all:hover,
-.rwaq-courses .rwaq-courses__clear-all:focus {
-	background: none !important;
-	border: none !important;
-	box-shadow: none !important;
-	color: var(--rwaq-primary) !important;
-	font-family: inherit;
-	font-size: 14px;
-	font-weight: 600;
-	cursor: pointer;
-	padding: 0;
-}
-
-.rwaq-courses__clear-all[hidden] {
-	display: none;
 }
 
 /* ---- Cards grid (flexbox: N per row, wrapping) ---- */
@@ -555,7 +581,8 @@
 	height: 180px;
 	border-radius: 12px;
 	overflow: hidden;
-	background: linear-gradient(135deg, #eef0f5, #e2e5ee);
+	/* No background fill, so the empty state renders exactly like a program
+	   card's: the 'thumb' icon (tinted by `color`) centered on the card. */
 	color: #b6bccb;
 }
 
@@ -570,20 +597,6 @@
 	display: inline-flex;
 }
 
-/* Featured pill overlaid on the media (top corner). */
-.rwaq-course-card__featured {
-	position: absolute;
-	inset-block-start: 12px;
-	inset-inline-start: 12px;
-	background: var(--rwaq-featured);
-	color: var(--rwaq-text);
-	border-radius: 8px;
-	padding: 5px 12px;
-	font-size: 12px;
-	font-weight: 600;
-	line-height: 18px;
-}
-
 .rwaq-course-card__body {
 	display: flex;
 	flex-direction: column;
@@ -591,37 +604,8 @@
 	padding: 0;
 }
 
-/* Organization row */
-.rwaq-course-card__org {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	margin-top: 16px;
-}
-
-.rwaq-course-card__logo {
-	display: inline-flex;
-	flex: 0 0 auto;
-}
-
-.rwaq-course-card__logo img {
-	height: 22px;
-	width: auto;
-	max-width: 90px;
-	object-fit: contain;
-}
-
-.rwaq-course-card__org-name {
-	font-size: 13px;
-	font-weight: 600;
-	color: var(--rwaq-muted);
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-}
-
 .rwaq-course-card__title {
-	margin: 12px 0 0;
+	margin: 16px 0 0;
 	font-size: 16px;
 	font-weight: 600;
 	line-height: 24px;
@@ -642,7 +626,7 @@
 	color: var(--rwaq-primary);
 }
 
-/* Meta list (duration, lessons) */
+/* Meta list (instructor, start date) */
 .rwaq-course-card__meta {
 	list-style: none;
 	margin: 14px 0 0;
@@ -669,7 +653,7 @@
 	color: var(--rwaq-placeholder);
 }
 
-/* Footer badge (level), pinned to the card bottom. */
+/* Footer badge (organization), pinned to the card bottom. */
 .rwaq-course-card__badges {
 	display: flex;
 	flex-wrap: wrap;
@@ -678,14 +662,19 @@
 	padding-top: 16px;
 }
 
-.rwaq-course-card__level {
-	background: var(--rwaq-primary-soft);
-	color: var(--rwaq-primary);
+.rwaq-course-card__org {
+	max-width: 100%;
+	border: 1px solid var(--rwaq-border);
 	border-radius: 8px;
-	padding: 6px 14px;
+	padding: 5px 12px;
+	background: #fff;
+	color: var(--rwaq-muted);
 	font-size: 12px;
 	font-weight: 600;
 	line-height: 18px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 /* ---- AJAX loader ---- */
@@ -740,6 +729,19 @@
 	}
 }
 
+/* Tablet: stack the filter sidebar above the results. */
+@media (max-width: 900px) {
+	.rwaq-courses__layout {
+		flex-direction: column;
+		gap: 24px;
+	}
+
+	.rwaq-courses__sidebar {
+		flex: 0 0 auto;
+		width: 100%;
+	}
+}
+
 @media (max-width: 680px) {
 	.rwaq-courses__header {
 		flex-wrap: wrap;
@@ -750,35 +752,30 @@
 		font-size: 26px;
 	}
 
-	.rwaq-courses__toolbar {
+	.rwaq-courses__controls {
 		flex-direction: column;
 		align-items: stretch;
+		gap: 14px;
 	}
 
-	.rwaq-courses__toolbar-group {
-		flex-direction: column;
-		align-items: stretch;
+	.rwaq-courses__sort {
 		width: 100%;
 	}
 
-	.rwaq-courses__searchbar {
-		width: 100%;
-	}
-
-	.rwaq-courses .rwaq-courses__filter-trigger,
 	.rwaq-courses .rwaq-courses__sort-trigger {
 		width: 100%;
-		justify-content: space-between;
-	}
-
-	.rwaq-courses__filter-menu,
-	.rwaq-courses__sort-menu {
-		width: 100%;
-		max-width: none;
+		justify-content: flex-start;
 	}
 
 	.rwaq-courses__sort-value {
 		min-width: 0;
+		flex: 1;
+		text-align: start;
+	}
+
+	.rwaq-courses__sort-menu {
+		width: 100%;
+		max-width: none;
 	}
 
 	.rwaq-course-card {

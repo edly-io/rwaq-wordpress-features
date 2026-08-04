@@ -1,16 +1,16 @@
 /* global jQuery, tutorSsoCourses */
 /**
- * Courses catalog: infinite scroll + AJAX search, sort and an organization
- * filter dropdown.
+ * Courses catalog: infinite scroll + AJAX search, sort and sidebar filters.
  *
  * Each `.rwaq-courses` block is self-contained; per-instance config lives in
  * data-* attributes, shared config (ajaxurl / nonce / i18n) in tutorSsoCourses.
  *
- * Organization filter: a top-toolbar dropdown of organization checkboxes with an
- * "All" reset row and an in-dropdown search box to filter a long org list.
- * Selections are staged and only take effect on "Apply" (تطبيق); applied
- * selections render as removable chips; "clear all" (chip row or dropdown)
- * resets everything. Search & sort apply instantly; the grid paginates on scroll.
+ * Filters: organization (multi-select checkboxes) in the sidebar, matching the
+ * programs catalog, plus an in-group search box that narrows a long
+ * organization list client-side. Any change re-queries page 1 via AJAX
+ * immediately; active selections render as removable chips and "clear all"
+ * resets them. Catalog search and sort apply instantly too; the grid paginates
+ * on scroll.
  */
 ( function ( $ ) {
 	'use strict';
@@ -19,6 +19,8 @@
 	var i18n = cfg.i18n || {};
 	var icons = cfg.icons || {};
 
+	// Remove ("×") icon used on active-filter chips. Sourced from courses_icon()
+	// in PHP (see courses_enqueue_assets) and localized onto tutorSsoCourses.
 	var CHIP_X_SVG = icons.removeChip || '';
 
 	$( '.rwaq-courses' ).each( function () {
@@ -33,6 +35,7 @@
 		var $sentinel = $root.find( '.rwaq-courses__sentinel' ).first();
 		var $search = $root.find( '.rwaq-courses__search-input' ).first();
 		var $resultCount = $root.find( '[data-result-count]' ).first();
+		var $chips = $root.find( '.rwaq-courses__chips' ).first();
 
 		// Sort (custom dropdown backed by a hidden native <select>).
 		var $sort = $root.find( '.rwaq-courses__sort-select' ).first();
@@ -41,132 +44,79 @@
 		var $sortValue = $root.find( '.rwaq-courses__sort-value' ).first();
 		var $sortMenu = $root.find( '.rwaq-courses__sort-menu' ).first();
 
-		// Organization filter dropdown.
-		var $filter = $root.find( '.rwaq-courses__filter' ).first();
-		var $filterTrigger = $filter.find( '.rwaq-courses__filter-trigger' ).first();
-		var $filterValue = $filter.find( '.rwaq-courses__filter-value' ).first();
-		var $filterMenu = $filter.find( '.rwaq-courses__filter-menu' ).first();
-		var $filterAll = $filterMenu.find( '.rwaq-courses__filter-input[data-role="all"]' ).first();
-		var $filterAllOption = $filterMenu.find( '.rwaq-courses__filter-option--all' ).first();
-		var $filterSearch = $filterMenu.find( '.rwaq-courses__filter-search-input' ).first();
-		var $filterEmpty = $filterMenu.find( '.rwaq-courses__filter-empty' ).first();
-
-		// Active-filter chips + "clear all".
-		var $chips = $root.find( '.rwaq-courses__chips' ).first();
-		var $clearAll = $root.find( '.rwaq-courses__clear-all' ).first();
-
 		var state = {
-			page: parseInt( $root.data( 'page' ), 10 ) || 1,
-			perPage: parseInt( $root.data( 'per-page' ), 10 ) || 9,
+			page: parseInt( $root.data( 'page' ), 10 ) || 1, // Last page in the grid.
+			perPage: parseInt( $root.data( 'per-page' ), 10 ) || 8,
 			search: '',
 			ordering: $sort.length ? $sort.val() : ( $root.data( 'default-sort' ) || '' ),
-			orgs: [], // applied organization slugs
+			filters: { org: [] },
 			hasMore: toBool( $root.data( 'has-more' ) ),
 			loading: false
 		};
 
 		// ── Filter helpers ───────────────────────────────────────────────────────
-		function orgInputs() {
-			return $filterMenu.find( '.rwaq-courses__filter-input[data-role="org"]' );
+		function groupInputs( group ) {
+			return $root.find(
+				'.rwaq-courses__filter-group[data-filter="' + group + '"] .rwaq-courses__filter-input'
+			);
 		}
 
-		function orgOptions() {
-			return $filterMenu.find( '.rwaq-courses__filter-option[data-label]' );
-		}
-
-		function anySpecificChecked() {
-			return orgInputs().filter( ':checked' ).length > 0;
-		}
-
-		function labelForInput( $input ) {
-			return $.trim( $input.closest( '.rwaq-courses__filter-option' ).find( '.rwaq-courses__filter-label' ).text() );
-		}
-
-		// Reflect the applied selection back onto the checkboxes (on open + after
-		// apply / clear / chip removal), discarding un-applied staged edits.
-		function syncCheckboxesToApplied() {
-			orgInputs().each( function () {
-				$( this ).prop( 'checked', state.orgs.indexOf( String( $( this ).val() ) ) !== -1 );
+		function readFilters() {
+			var f = { org: [] };
+			$root.find( '.rwaq-courses__filter-group' ).each( function () {
+				var group = $( this ).data( 'filter' );
+				$( this ).find( '.rwaq-courses__filter-input:checked' ).each( function () {
+					if ( f[ group ] ) {
+						f[ group ].push( $( this ).val() );
+					}
+				} );
 			} );
-			$filterAll.prop( 'checked', 0 === state.orgs.length );
+			return f;
 		}
 
-		// Reset the in-dropdown org search to show the full list.
-		function resetFilterSearch() {
-			if ( $filterSearch.length ) {
-				$filterSearch.val( '' );
-			}
-			orgOptions().prop( 'hidden', false );
-			$filterAllOption.prop( 'hidden', false );
-			if ( $filterEmpty.length ) {
-				$filterEmpty.prop( 'hidden', true );
-			}
-		}
-
-		function appliedLabels() {
-			var labels = [];
-			orgInputs().each( function () {
-				if ( state.orgs.indexOf( String( $( this ).val() ) ) !== -1 ) {
-					labels.push( labelForInput( $( this ) ) );
+		function labelFor( group, value ) {
+			var label = value;
+			groupInputs( group ).each( function () {
+				if ( String( $( this ).val() ) === String( value ) ) {
+					var text = $( this ).siblings( '.rwaq-courses__filter-label' ).text();
+					if ( text ) {
+						label = $.trim( text );
+					}
 				}
 			} );
-			return labels;
-		}
-
-		// Trigger value: "All" (none), the single label, or "First +N".
-		function updateTriggerLabel() {
-			var labels = appliedLabels();
-			var allLabel = $filterValue.data( 'all-label' ) || '';
-			if ( ! labels.length ) {
-				$filterValue.text( allLabel );
-			} else if ( 1 === labels.length ) {
-				$filterValue.text( labels[ 0 ] );
-			} else {
-				$filterValue.text( labels[ 0 ] + ' +' + ( labels.length - 1 ) );
-			}
+			return label;
 		}
 
 		function renderChips() {
 			$chips.empty();
 
-			state.orgs.forEach( function ( slug ) {
-				var $input = orgInputs().filter( function () {
-					return String( $( this ).val() ) === String( slug );
-				} );
-				var label = $input.length ? labelForInput( $input ) : slug;
+			state.filters.org.forEach( function ( value ) {
+				var label = labelFor( 'org', value );
 				var $chip = $( '<button type="button" class="rwaq-courses__chip"></button>' )
-					.attr( 'data-value', slug )
+					.attr( 'data-group', 'org' )
+					.attr( 'data-value', value )
 					.attr( 'aria-label', ( i18n.removeFilter || 'Remove' ) + ': ' + label );
 				$( '<span></span>' ).text( label ).appendTo( $chip );
 				$( '<span class="rwaq-courses__chip-x" aria-hidden="true"></span>' ).html( CHIP_X_SVG ).appendTo( $chip );
 				$chips.append( $chip );
 			} );
-
-			$clearAll.prop( 'hidden', 0 === state.orgs.length );
 		}
 
-		function commitPending() {
-			state.orgs = [];
-			orgInputs().filter( ':checked' ).each( function () {
-				state.orgs.push( String( $( this ).val() ) );
-			} );
+		// Update the filtered "found N" line. The header badge stays at the
+		// unfiltered catalog total (rendered server-side).
+		function updateCounts( count ) {
+			if ( typeof count === 'undefined' || count === null ) {
+				return;
+			}
+			if ( $resultCount.length && i18n.countLabel ) {
+				$resultCount.text( i18n.countLabel.replace( '%s', count ) );
+			}
 		}
 
-		function reflectApplied() {
+		function applyFilters() {
+			state.filters = readFilters();
 			renderChips();
-			updateTriggerLabel();
-		}
-
-		function clearAllFilters() {
-			state.orgs = [];
-			syncCheckboxesToApplied();
-			reflectApplied();
 			load( true );
-		}
-
-		function closeFilter() {
-			$filter.removeClass( 'is-open' );
-			$filterTrigger.attr( 'aria-expanded', 'false' );
 		}
 
 		// ── Fetch a page. reset=true → page 1 (search / sort / filter change);
@@ -201,7 +151,7 @@
 					per_page: state.perPage,
 					search: state.search,
 					ordering: state.ordering,
-					org: state.orgs
+					org: state.filters.org
 				}
 			} )
 				.done( function ( response ) {
@@ -239,15 +189,6 @@
 					$loader.prop( 'hidden', true );
 					$overlay.prop( 'hidden', true );
 				} );
-		}
-
-		function updateCounts( count ) {
-			if ( typeof count === 'undefined' || count === null ) {
-				return;
-			}
-			if ( $resultCount.length && i18n.countLabel ) {
-				$resultCount.text( i18n.countLabel.replace( '%s', count ) );
-			}
 		}
 
 		// ── Infinite scroll ─────────────────────────────────────────────────────
@@ -303,7 +244,6 @@
 
 			$sortTrigger.on( 'click', function ( e ) {
 				e.stopPropagation();
-				closeFilter();
 				var open = $sortWrap.toggleClass( 'is-open' ).hasClass( 'is-open' );
 				$sortTrigger.attr( 'aria-expanded', open ? 'true' : 'false' );
 			} );
@@ -315,8 +255,15 @@
 				}
 				closeSort();
 			} );
+
+			$( document ).on( 'click', function ( e ) {
+				if ( ! $( e.target ).closest( $sortWrap ).length ) {
+					closeSort();
+				}
+			} );
 		}
 
+		// The native select stays the single source of truth for the chosen sort.
 		$sort.on( 'change', function () {
 			state.ordering = $( this ).val();
 			renderSortUI();
@@ -325,100 +272,93 @@
 
 		renderSortUI();
 
-		// ── Organization filter dropdown ─────────────────────────────────────────
-		if ( $filterTrigger.length && $filterMenu.length ) {
-			$filterTrigger.on( 'click', function ( e ) {
-				e.stopPropagation();
-				closeSort();
-				var open = $filter.toggleClass( 'is-open' ).hasClass( 'is-open' );
-				$filterTrigger.attr( 'aria-expanded', open ? 'true' : 'false' );
-				if ( open ) {
-					syncCheckboxesToApplied();
-					resetFilterSearch();
-				}
-			} );
-
-			// Keep clicks inside the menu from bubbling to the document (close) handler.
-			$filterMenu.on( 'click', function ( e ) {
-				e.stopPropagation();
-			} );
-
-			// In-dropdown search: filter the org options by label.
-			if ( $filterSearch.length ) {
-				$filterSearch.on( 'input', function () {
-					var q = $.trim( $( this ).val() ).toLowerCase();
-					var anyVisible = false;
-
-					orgOptions().each( function () {
-						var label = String( $( this ).attr( 'data-label' ) || '' ).toLowerCase();
-						var match = '' === q || label.indexOf( q ) !== -1;
-						$( this ).prop( 'hidden', ! match );
-						if ( match ) {
-							anyVisible = true;
-						}
-					} );
-
-					// Hide the "All" reset row while actively searching.
-					$filterAllOption.prop( 'hidden', '' !== q );
-
-					if ( $filterEmpty.length ) {
-						$filterEmpty.prop( 'hidden', anyVisible );
-					}
-				} );
-			}
-
-			// "All" ⇄ specific mutual exclusivity (staged, not yet applied).
-			$filterMenu.on( 'change', '.rwaq-courses__filter-input', function () {
-				var role = $( this ).data( 'role' );
-				if ( 'all' === role ) {
-					if ( $( this ).prop( 'checked' ) ) {
-						orgInputs().prop( 'checked', false );
-					} else if ( ! anySpecificChecked() ) {
-						$( this ).prop( 'checked', true ); // Can't leave nothing selected.
-					}
-				} else {
-					$filterAll.prop( 'checked', false );
-					if ( ! anySpecificChecked() ) {
-						$filterAll.prop( 'checked', true );
-					}
-				}
-			} );
-
-			$filter.find( '.rwaq-courses__filter-apply' ).on( 'click', function () {
-				commitPending();
-				reflectApplied();
-				closeFilter();
-				load( true );
-			} );
-
-			$filter.find( '.rwaq-courses__filter-clear' ).on( 'click', function () {
-				clearAllFilters();
-				closeFilter();
-			} );
+		// ── Collapsible filter groups ────────────────────────────────────────────
+		function toggleGroup( $title ) {
+			var collapsed = $title
+				.closest( '.rwaq-courses__filter-group' )
+				.toggleClass( 'is-collapsed' )
+				.hasClass( 'is-collapsed' );
+			$title.attr( 'aria-expanded', collapsed ? 'false' : 'true' );
 		}
+
+		$root.on( 'click', '.rwaq-courses__filter-title', function () {
+			toggleGroup( $( this ) );
+		} );
+
+		$root.on( 'keydown', '.rwaq-courses__filter-title', function ( e ) {
+			if ( e.key === 'Enter' || e.key === ' ' || e.which === 13 || e.which === 32 ) {
+				e.preventDefault();
+				toggleGroup( $( this ) );
+			}
+		} );
+
+		// ── Filters (checkboxes) ─────────────────────────────────────────────────
+		$root.on( 'change', '.rwaq-courses__filter-input', function () {
+			applyFilters();
+		} );
 
 		// ── Remove a single filter via its chip ──────────────────────────────────
 		$chips.on( 'click', '.rwaq-courses__chip', function () {
+			var group = $( this ).data( 'group' );
 			var value = String( $( this ).data( 'value' ) );
-			state.orgs = state.orgs.filter( function ( slug ) {
-				return slug !== value;
+			groupInputs( group ).each( function () {
+				if ( String( $( this ).val() ) === value ) {
+					$( this ).prop( 'checked', false );
+				}
 			} );
-			syncCheckboxesToApplied();
-			reflectApplied();
-			load( true );
+			applyFilters();
 		} );
 
-		// ── Clear all (chip row) ─────────────────────────────────────────────────
-		$clearAll.on( 'click', clearAllFilters );
+		// ── Clear all filters ────────────────────────────────────────────────────
+		$root.find( '.rwaq-courses__clear' ).on( 'click', function () {
+			$root.find( '.rwaq-courses__filter-input' ).prop( 'checked', false );
+			applyFilters();
+		} );
 
-		// ── Close dropdowns on outside click ─────────────────────────────────────
-		$( document ).on( 'click', function ( e ) {
-			if ( ! $( e.target ).closest( $sortWrap ).length ) {
-				closeSort();
+		// ── "Show more / less" organizations toggle. The collapsed label
+		//    ("عرض N المزيد") is dynamic, so it is kept on the button's
+		//    data-more-text and restored when collapsing.
+		$root.on( 'click', '.rwaq-courses__show-more', function () {
+			var $btn = $( this );
+			var expanded = $btn.attr( 'aria-expanded' ) === 'true';
+			$btn.closest( '.rwaq-courses__filter-group' )
+				.find( '.rwaq-courses__filter-option--overflow' )
+				.prop( 'hidden', expanded );
+			$btn.attr( 'aria-expanded', expanded ? 'false' : 'true' )
+				.text( expanded ? ( $btn.data( 'more-text' ) || '' ) : ( i18n.showLess || '' ) );
+		} );
+
+		// ── In-group search: narrow a long option list by label. Matching uses
+		//    the `is-filtered-out` class so it composes with the `hidden`
+		//    attribute that "show more" manages. While a query is active every
+		//    match is shown (overflow included) and "show more" steps aside;
+		//    clearing the box restores whichever state that toggle was in.
+		$root.on( 'input', '.rwaq-courses__filter-search-input', function () {
+			var $group = $( this ).closest( '.rwaq-courses__filter-group' );
+			var $options = $group.find( '.rwaq-courses__filter-option' );
+			var $overflow = $group.find( '.rwaq-courses__filter-option--overflow' );
+			var $showMore = $group.find( '.rwaq-courses__show-more' );
+			var $empty = $group.find( '.rwaq-courses__filter-empty' );
+			var query = $.trim( $( this ).val() ).toLowerCase();
+			var matches = 0;
+
+			$options.each( function () {
+				var label = String( $( this ).attr( 'data-label' ) || '' ).toLowerCase();
+				var match = '' === query || label.indexOf( query ) !== -1;
+				$( this ).toggleClass( 'is-filtered-out', ! match );
+				if ( match ) {
+					matches++;
+				}
+			} );
+
+			if ( '' === query ) {
+				$overflow.prop( 'hidden', $showMore.attr( 'aria-expanded' ) !== 'true' );
+			} else {
+				$overflow.prop( 'hidden', false );
 			}
-			if ( ! $( e.target ).closest( $filter ).length ) {
-				closeFilter();
-			}
+
+			$showMore.prop( 'hidden', '' !== query );
+			$empty.prop( 'hidden', matches > 0 );
 		} );
 	}
 
