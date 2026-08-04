@@ -17,7 +17,7 @@
  * Accepted body fields (JSON or form-encoded):
  *   - title              → post title             (required on create)
  *   - content            → post content
- *   - slug               → post slug (post_name)  (required on create; ignored on update)
+ *   - slug               → post slug (post_name)  (required on create; optional on update)
  *   - status             → post status (publish|draft)
  *   - openedx_course_id  → ACF field, upsert key  (required, immutable)
  *   - short_description  → ACF field              (required on create)
@@ -155,7 +155,7 @@ class Courses_REST_Controller extends \WP_REST_Controller {
 				'sanitize_callback' => 'wp_kses_post',
 			),
 			'slug'              => array(
-				'description'       => __( 'Course slug (post_name). Required on create, ignored on update.', 'tutor-sso' ),
+				'description'       => __( 'Course slug (post_name). Required on create; on update it is only changed when supplied.', 'tutor-sso' ),
 				'type'              => 'string',
 				'required'          => false,
 				'sanitize_callback' => 'sanitize_title',
@@ -324,10 +324,20 @@ class Courses_REST_Controller extends \WP_REST_Controller {
 		}
 
 		if ( $existing_id ) {
-			// slug is set once at creation and left untouched on updates so the
-			// permalink stays stable — `slug` in the body is ignored here.
 			$postarr['ID'] = $existing_id;
-			$post_id       = wp_update_post( $postarr, true );
+
+			// The slug only moves when one is supplied; leaving it out of the body
+			// keeps the existing permalink untouched.
+			if ( ! empty( $slug ) ) {
+				$conflict = $this->slug_conflict_error( $slug, $existing_id );
+				if ( $conflict ) {
+					return $conflict;
+				}
+
+				$postarr['post_name'] = $slug;
+			}
+
+			$post_id = wp_update_post( $postarr, true );
 		} else {
 			// Enforce create-only required fields.
 			$missing = $this->missing_required_fields( $request );
@@ -341,13 +351,9 @@ class Courses_REST_Controller extends \WP_REST_Controller {
 			}
 
 			// Reject a slug already taken by another course before creating.
-			if ( $this->find_course_by_slug( $slug ) ) {
-				return new \WP_Error(
-					'tutor_sso_slug_exists',
-					/* translators: %s: slug */
-					sprintf( __( 'A course with the slug "%s" already exists.', 'tutor-sso' ), $slug ),
-					array( 'status' => 409 )
-				);
+			$conflict = $this->slug_conflict_error( $slug );
+			if ( $conflict ) {
+				return $conflict;
 			}
 
 			$postarr['post_name'] = $slug;
@@ -483,6 +489,29 @@ class Courses_REST_Controller extends \WP_REST_Controller {
 		);
 
 		return ! empty( $ids ) ? (int) $ids[0] : 0;
+	}
+
+	/**
+	 * Check whether a slug is already taken by another course.
+	 *
+	 * @param string $slug      Slug to check.
+	 * @param int    $ignore_id Course to exclude from the lookup — the one being
+	 *                          updated, so re-sending its own slug is not a clash.
+	 * @return \WP_Error|null Error when the slug belongs to a different course.
+	 */
+	protected function slug_conflict_error( $slug, $ignore_id = 0 ) {
+		$owner_id = $this->find_course_by_slug( $slug );
+
+		if ( ! $owner_id || $owner_id === (int) $ignore_id ) {
+			return null;
+		}
+
+		return new \WP_Error(
+			'tutor_sso_slug_exists',
+			/* translators: %s: slug */
+			sprintf( __( 'A course with the slug "%s" already exists.', 'tutor-sso' ), $slug ),
+			array( 'status' => 409 )
+		);
 	}
 
 	/**
