@@ -6,8 +6,8 @@
  * data-* attributes, shared config (ajaxurl / nonce / i18n) in tutorSsoCourses.
  *
  * Filters: organization (multi-select checkboxes) in the sidebar, matching the
- * programs catalog, plus an in-group search box that narrows a long
- * organization list client-side. Any change re-queries page 1 via AJAX
+ * programs catalog, plus an in-group search box that narrows the (fixed-height,
+ * scrolling) organization list client-side. Any change re-queries page 1 via AJAX
  * immediately; active selections render as removable chips and "clear all"
  * resets them. Catalog search and sort apply instantly too; the grid paginates
  * on scroll.
@@ -315,34 +315,16 @@
 			applyFilters();
 		} );
 
-		// ── "Show more / less" organizations toggle. The collapsed label
-		//    ("عرض N المزيد") is dynamic, so it is kept on the button's
-		//    data-more-text and restored when collapsing.
-		$root.on( 'click', '.rwaq-courses__show-more', function () {
-			var $btn = $( this );
-			var expanded = $btn.attr( 'aria-expanded' ) === 'true';
-			$btn.closest( '.rwaq-courses__filter-group' )
-				.find( '.rwaq-courses__filter-option--overflow' )
-				.prop( 'hidden', expanded );
-			$btn.attr( 'aria-expanded', expanded ? 'false' : 'true' )
-				.text( expanded ? ( $btn.data( 'more-text' ) || '' ) : ( i18n.showLess || '' ) );
-		} );
-
-		// ── In-group search: narrow a long option list by label. Matching uses
-		//    the `is-filtered-out` class so it composes with the `hidden`
-		//    attribute that "show more" manages. While a query is active every
-		//    match is shown (overflow included) and "show more" steps aside;
-		//    clearing the box restores whichever state that toggle was in.
+		// ── In-group search: narrow a long option list by label. The whole list is
+		//    rendered (it scrolls past a fixed height), so filtering is just a
+		//    class toggle plus the "nothing matched" message.
 		$root.on( 'input', '.rwaq-courses__filter-search-input', function () {
 			var $group = $( this ).closest( '.rwaq-courses__filter-group' );
-			var $options = $group.find( '.rwaq-courses__filter-option' );
-			var $overflow = $group.find( '.rwaq-courses__filter-option--overflow' );
-			var $showMore = $group.find( '.rwaq-courses__show-more' );
 			var $empty = $group.find( '.rwaq-courses__filter-empty' );
 			var query = $.trim( $( this ).val() ).toLowerCase();
 			var matches = 0;
 
-			$options.each( function () {
+			$group.find( '.rwaq-courses__filter-option' ).each( function () {
 				var label = String( $( this ).attr( 'data-label' ) || '' ).toLowerCase();
 				var match = '' === query || label.indexOf( query ) !== -1;
 				$( this ).toggleClass( 'is-filtered-out', ! match );
@@ -351,13 +333,6 @@
 				}
 			} );
 
-			if ( '' === query ) {
-				$overflow.prop( 'hidden', $showMore.attr( 'aria-expanded' ) !== 'true' );
-			} else {
-				$overflow.prop( 'hidden', false );
-			}
-
-			$showMore.prop( 'hidden', '' !== query );
 			$empty.prop( 'hidden', matches > 0 );
 		} );
 	}

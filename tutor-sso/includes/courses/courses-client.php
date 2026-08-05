@@ -15,7 +15,7 @@
  * List response shape (DRF PageNumberPagination):
  *   {
  *     "count": int, "next": url|null, "previous": url|null,
- *     "results": [ { course_key, title, start, end, course_image, description,
+ *     "results": [ { course_key, slug, title, start, end, course_image, description,
  *                    org, org_logo, org_arabic_name, status, pricing, language,
  *                    effort, instructor, instructor_image, overview, ... }, ... ]
  *   }
@@ -27,17 +27,22 @@
  *                              (names/short names only — ids are not matched)
  *   ordering=title|-title      alphabetical sort
  *
- * The API ignores date orderings (`start` / `-start`) today; they are still sent
- * for the "newest / oldest" sort options so those start working as soon as the
- * API supports them. Until then those two options fall back to the API's
- * default order.
+ * Ordering is title-only by design of the endpoint: its OPTIONS metadata states
+ * `?ordering=title | -title   default: title (ascending)`, and DRF's
+ * OrderingFilter drops any other field silently (verified — `start`, `created`
+ * and `id` all return the default order). The catalog therefore offers only the
+ * two title sorts; see courses_allowed_ordering() for the date mapping kept in
+ * reserve.
  *
  * courses_fetch() maps the raw API rows onto the flat card shape the catalog and
  * AJAX handler consume — only what the card actually renders:
  *   {
- *     id, key, title, image, url,
+ *     id, key, slug, title, image, url,
  *     org_slug, org_name, instructor, start_text
  *   }
+ *
+ * `url` points at the local `course` post detail page ({site}/course/{slug}/),
+ * built from the API slug — see course_detail_url().
  *
  * Organization shape (filter options, from the filters endpoint):
  *   { slug, name, logo, count }
@@ -67,16 +72,6 @@ const COURSES_CACHE_TTL = 300; // 5 minutes.
 const COURSES_FILTERS_ENDPOINT = '/api/v1/courses/filters/';
 
 /**
- * Post type the LMS courses are synced into (see rest/class-courses-rest-controller.php).
- */
-const COURSES_LOCAL_POST_TYPE = 'course';
-
-/**
- * Meta key holding the edX course id on a local `course` post.
- */
-const COURSES_LOCAL_KEY_META = 'openedx_course_id';
-
-/**
  * Resolve the configured LMS base URL (reuses the SSO setting).
  *
  * @return string Base URL without a trailing slash, or '' when unset.
@@ -97,10 +92,14 @@ function courses_lms_base_url() {
  */
 function courses_allowed_ordering() {
 	return array(
-		'newest'     => '-start', // الأحدث أولًا
-		'oldest'     => 'start',  // الأقدم أولًا
 		'title_asc'  => 'title',  // أ–ي
 		'title_desc' => '-title', // ي–أ
+		// Not offered in the sort dropdown yet: the API's OrderingFilter drops
+		// unknown fields silently, so these are no-ops until `start` is added to
+		// its ordering_fields. Kept so the wiring is ready — re-add the labels in
+		// courses_sort_options() once the endpoint supports them.
+		'newest'     => '-start', // الأحدث أولًا
+		'oldest'     => 'start',  // الأقدم أولًا
 	);
 }
 
@@ -309,19 +308,11 @@ function courses_fetch( $page = 1, $per_page = 8, $args = array() ) {
 
 	$rows = apply_filters( 'tutor_sso_courses_source', $rows, $args );
 
-	$keys = array_map(
-		function ( $row ) {
-			return is_array( $row ) && isset( $row['course_key'] ) ? (string) $row['course_key'] : '';
-		},
-		$rows
-	);
-
-	$urls    = courses_local_post_urls( $keys );
 	$results = array();
 
 	foreach ( $rows as $row ) {
 		if ( is_array( $row ) ) {
-			$results[] = courses_normalize_course( $row, $urls );
+			$results[] = courses_normalize_course( $row );
 		}
 	}
 
@@ -336,11 +327,10 @@ function courses_fetch( $page = 1, $per_page = 8, $args = array() ) {
 /**
  * Map a raw API course row onto the flat shape the card renderer consumes.
  *
- * @param array               $row  Raw course object from the API.
- * @param array<string,string> $urls course_key => local permalink map.
+ * @param array $row Raw course object from the API.
  * @return array
  */
-function courses_normalize_course( $row, $urls = array() ) {
+function courses_normalize_course( $row ) {
 	$key      = isset( $row['course_key'] ) ? trim( (string) $row['course_key'] ) : '';
 	$org_code = isset( $row['org'] ) ? trim( (string) $row['org'] ) : '';
 	$org_name = isset( $row['org_arabic_name'] ) ? trim( (string) $row['org_arabic_name'] ) : '';
@@ -348,9 +338,10 @@ function courses_normalize_course( $row, $urls = array() ) {
 	$course = array(
 		'id'         => $key,
 		'key'        => $key,
+		'slug'       => isset( $row['slug'] ) ? trim( (string) $row['slug'] ) : '',
 		'title'      => isset( $row['title'] ) ? (string) $row['title'] : '',
 		'image'      => isset( $row['course_image'] ) ? (string) $row['course_image'] : '',
-		'url'        => course_catalog_url( $key, $urls ),
+		'url'        => course_detail_url( $row ),
 		'org_slug'   => $org_code,
 		'org_name'   => '' !== $org_name ? $org_name : $org_code,
 		'instructor' => isset( $row['instructor'] ) ? trim( (string) $row['instructor'] ) : '',
@@ -361,92 +352,45 @@ function courses_normalize_course( $row, $urls = array() ) {
 }
 
 /**
- * Resolve the link for a course card.
+ * Path segment the course detail pages live under, i.e. /{base}/{slug}/.
  *
- * Prefers the local `course` post synced from the LMS (see the courses REST
- * controller) and falls back to the LMS about page.
+ * Filterable so a site using a different permalink base for the `course` post
+ * type can point the catalog at it.
  *
- * @param string              $key  edX course key.
- * @param array<string,string> $urls course_key => local permalink map.
- * @return string URL, or '' when the course has no key.
+ * @return string
  */
-function course_catalog_url( $key, $urls = array() ) {
-	$key = trim( (string) $key );
-
-	if ( '' === $key ) {
-		return '';
-	}
-
-	if ( isset( $urls[ $key ] ) && '' !== $urls[ $key ] ) {
-		$url = $urls[ $key ];
-	} else {
-		$base = courses_lms_base_url();
-		$url  = '' !== $base ? $base . '/courses/' . rawurlencode( $key ) . '/about' : '';
-	}
-
-	return (string) apply_filters( 'tutor_sso_course_url', $url, $key );
+function courses_detail_base() {
+	return (string) apply_filters( 'tutor_sso_course_detail_base', 'course' );
 }
 
 /**
- * Look up local `course` posts for a batch of edX course keys, in one query.
+ * Resolve the link for a course card: the local `course` post detail page, built
+ * from the API `slug` as {site}/course/{slug}/ (mirrors program_detail_url()).
  *
- * @param array $keys edX course keys.
- * @return array<string,string> course_key => permalink (only for keys found).
+ * Falls back to the LMS about page only when the row carries no slug, so a course
+ * that has not been synced to WordPress yet still links somewhere useful.
+ *
+ * @param array $row Raw course object from the API.
+ * @return string URL, or '' when neither a slug nor a course key is available.
  */
-function courses_local_post_urls( $keys ) {
-	$keys = array_values(
-		array_unique(
-			array_filter(
-				array_map(
-					function ( $key ) {
-						return trim( (string) $key );
-					},
-					(array) $keys
-				)
-			)
-		)
-	);
+function course_detail_url( $row ) {
+	$slug = isset( $row['slug'] ) ? trim( (string) $row['slug'] ) : '';
+	$key  = isset( $row['course_key'] ) ? trim( (string) $row['course_key'] ) : '';
 
-	if ( empty( $keys ) || ! post_type_exists( COURSES_LOCAL_POST_TYPE ) ) {
-		return array();
+	if ( '' !== $slug ) {
+		// Normalize to lowercase so detail URLs match the WordPress post_name,
+		// which WP lowercases on save (e.g. "…-TS101-2014_t1" -> "…-ts101-2014_t1").
+		$base = trim( courses_detail_base(), '/' );
+		$path = '/' . ( '' !== $base ? $base . '/' : '' ) . rawurlencode( strtolower( $slug ) ) . '/';
+		$url  = home_url( $path );
+	} elseif ( '' !== $key ) {
+		$lms = courses_lms_base_url();
+		$url = '' !== $lms ? $lms . '/courses/' . rawurlencode( $key ) . '/about' : '';
+	} else {
+		$url = '';
 	}
 
-	$ids = get_posts(
-		array(
-			'post_type'              => COURSES_LOCAL_POST_TYPE,
-			'post_status'            => 'publish',
-			'posts_per_page'         => count( $keys ),
-			'fields'                 => 'ids',
-			'no_found_rows'          => true,
-			'update_post_term_cache' => false,
-			'meta_query'             => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
-				array(
-					'key'     => COURSES_LOCAL_KEY_META,
-					'value'   => $keys,
-					'compare' => 'IN',
-				),
-			),
-		)
-	);
-
-	if ( empty( $ids ) ) {
-		return array();
-	}
-
-	// 'fields' => 'ids' skips the meta cache, so prime it in one query.
-	update_meta_cache( 'post', $ids );
-
-	$urls = array();
-
-	foreach ( $ids as $id ) {
-		$key = (string) get_post_meta( $id, COURSES_LOCAL_KEY_META, true );
-
-		if ( '' !== $key && ! isset( $urls[ $key ] ) ) {
-			$urls[ $key ] = (string) get_permalink( $id );
-		}
-	}
-
-	return $urls;
+	return (string) apply_filters( 'tutor_sso_course_url', $url, $row );
 }
 
 /**

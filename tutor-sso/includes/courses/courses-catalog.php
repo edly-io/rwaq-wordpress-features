@@ -4,8 +4,8 @@
  *
  * The whole UI follows the programs catalog: a full-width search bar above a
  * two-column layout — a filter sidebar (organization checkboxes with counts, a
- * collapsible group, an in-group search box and a "show more" toggle) beside
- * the results (active-filter chips, result count + sort, card grid). Page 1 is
+ * collapsible group, an in-group search box and a fixed-height scrolling option
+ * list) beside the results (active-filter chips, result count + sort, grid). Page 1 is
  * server-rendered; further pages + every search / sort / filter change go via
  * AJAX (see courses-ajax.php and assets/js/courses.js). Data comes from the LMS
  * public courses API via courses-client.php.
@@ -22,11 +22,6 @@ namespace TutorSSO;
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
-
-/**
- * Organization filter options shown before the "show more" toggle.
- */
-const COURSES_ORG_VISIBLE = 6;
 
 /**
  * Register the (lazily enqueued) courses catalog assets.
@@ -71,7 +66,6 @@ function courses_enqueue_assets() {
 				/* translators: %s: number of courses found. */
 				'countLabel'   => __( 'تم العثور على %s دورة', 'tutor-sso' ),
 				'removeFilter' => __( 'إزالة عامل التصفية', 'tutor-sso' ),
-				'showLess'     => __( 'عرض أقل', 'tutor-sso' ),
 			),
 		)
 	);
@@ -83,9 +77,11 @@ function courses_enqueue_assets() {
  * @return array<string,string>
  */
 function courses_sort_options() {
+	// Title only: the courses API accepts `ordering=title|-title` and silently
+	// ignores date fields, so "newest / oldest first" would be dead options here.
+	// courses_allowed_ordering() keeps the date mapping ready for when the API
+	// gains it — add the two labels back at that point.
 	return array(
-		'newest'     => __( 'الأحدث أولًا', 'tutor-sso' ),
-		'oldest'     => __( 'الأقدم أولًا', 'tutor-sso' ),
 		'title_asc'  => __( 'أ–ي', 'tutor-sso' ),
 		'title_desc' => __( 'ي–أ', 'tutor-sso' ),
 	);
@@ -97,7 +93,9 @@ function courses_sort_options() {
  * @return string
  */
 function courses_default_sort() {
-	return 'newest';
+	// Matches the API's own default ordering (title ascending), so the toolbar
+	// label always describes the order actually rendered.
+	return 'title_asc';
 }
 
 /**
@@ -129,6 +127,8 @@ function courses_icon( $name ) {
 		'thumb'    => '<svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-4.5-4.5L6 21"/></svg>',
 		'search'   => '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M9.16667 15.8333C12.8486 15.8333 15.8333 12.8486 15.8333 9.16667C15.8333 5.48477 12.8486 2.5 9.16667 2.5C5.48477 2.5 2.5 5.48477 2.5 9.16667C2.5 12.8486 5.48477 15.8333 9.16667 15.8333Z" stroke="#616161" stroke-width="1.66667" stroke-linecap="round" stroke-linejoin="round"/><path d="M17.5001 17.5L13.9167 13.9167" stroke="#616161" stroke-width="1.66667" stroke-linecap="round" stroke-linejoin="round"/></svg>',
 		'caret'    => '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>',
+		// Header count badge (shared with the programs header).
+		'bookmark' => '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2.66675 13V3C2.66675 2.55797 2.84234 2.13405 3.1549 1.82149C3.46746 1.50893 3.89139 1.33333 4.33341 1.33333H13.3334V14.6667H4.33341C3.89139 14.6667 3.46746 14.4911 3.1549 14.1785C2.84234 13.866 2.66675 13.442 2.66675 13ZM2.66675 13C2.66675 12.558 2.84234 12.134 3.1549 11.8215C3.46746 11.5089 3.89139 11.3333 4.33341 11.3333H13.3334" stroke="#565199" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/></svg>',
 		// Sidebar head + collapsible group chevron (shared with the programs sidebar).
 		'filter'   => '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M14.6666 2H1.33325L6.66659 8.30667V12.6667L9.33325 14V8.30667L14.6666 2Z" stroke="#242424" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/></svg>',
 		'chevron'  => '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M10.5 8.75L7 5.25L3.5 8.75" stroke="#242424" stroke-width="1.16667" stroke-linecap="round" stroke-linejoin="round"/></svg>',
@@ -229,10 +229,11 @@ function courses_render_cards( $courses ) {
 
 /**
  * Render the filter sidebar: the organization group (checkboxes with course
- * counts) inside a collapsible panel, with a search box for long organization
- * lists and a "show more" toggle once the list grows past COURSES_ORG_VISIBLE.
- * Mirrors the programs catalog sidebar; the behaviour (collapse, search,
- * apply-on-change, chips, show more) lives in courses.js.
+ * counts) inside a collapsible panel, plus a search box for long lists. The
+ * option list scrolls past a fixed height (see .rwaq-courses__filter-options in
+ * courses.css) so the sidebar keeps the same height however many organizations
+ * the API returns. Behaviour (collapse, search, apply-on-change, chips) lives in
+ * courses.js.
  *
  * @return string HTML, or '' when there is nothing to filter by.
  */
@@ -266,12 +267,9 @@ function courses_render_sidebar() {
 				<input type="search" class="rwaq-courses__filter-search-input" placeholder="<?php echo esc_attr__( 'ابحث عن جهة…', 'tutor-sso' ); ?>" autocomplete="off" aria-label="<?php echo esc_attr__( 'ابحث عن جهة', 'tutor-sso' ); ?>" />
 			</div>
 
-			<div class="rwaq-courses__filter-options">
-				<?php
-				$index  = 0;
-				$hidden = 0;
-
-				foreach ( $organizations as $org ) :
+			<div class="rwaq-courses__filter-options" tabindex="0">
+				<?php foreach ( $organizations as $org ) : ?>
+					<?php
 					$slug  = isset( $org['slug'] ) ? (string) $org['slug'] : '';
 					$name  = isset( $org['name'] ) ? (string) $org['name'] : '';
 					$count = isset( $org['count'] ) ? (int) $org['count'] : 0;
@@ -279,14 +277,8 @@ function courses_render_sidebar() {
 					if ( '' === $slug || '' === $name ) {
 						continue;
 					}
-
-					// Options past the visible limit start hidden behind "show more".
-					$overflow = $index >= COURSES_ORG_VISIBLE;
-					if ( $overflow ) {
-						$hidden++;
-					}
 					?>
-					<label class="rwaq-courses__filter-option<?php echo $overflow ? ' rwaq-courses__filter-option--overflow' : ''; ?>" data-label="<?php echo esc_attr( $name ); ?>"<?php echo $overflow ? ' hidden' : ''; ?>>
+					<label class="rwaq-courses__filter-option" data-label="<?php echo esc_attr( $name ); ?>">
 						<input type="checkbox" class="rwaq-courses__filter-input" value="<?php echo esc_attr( $slug ); ?>" />
 						<span class="rwaq-courses__filter-box" aria-hidden="true"><?php echo courses_icon( 'check' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
 						<span class="rwaq-courses__filter-label"><?php echo esc_html( $name ); ?></span>
@@ -294,23 +286,10 @@ function courses_render_sidebar() {
 							<span class="rwaq-courses__filter-count"><?php echo esc_html( number_format_i18n( $count ) ); ?></span>
 						<?php endif; ?>
 					</label>
-					<?php
-					$index++;
-				endforeach;
-				?>
+				<?php endforeach; ?>
 
 				<div class="rwaq-courses__filter-empty" hidden><?php echo esc_html__( 'لا توجد جهات مطابقة', 'tutor-sso' ); ?></div>
 			</div>
-
-			<?php if ( $hidden > 0 ) : ?>
-				<?php
-				/* translators: %s: number of hidden organizations. */
-				$more_label = sprintf( __( 'عرض %s المزيد', 'tutor-sso' ), number_format_i18n( $hidden ) );
-				?>
-				<button type="button" class="rwaq-courses__show-more" aria-expanded="false" data-more-text="<?php echo esc_attr( $more_label ); ?>">
-					<?php echo esc_html( $more_label ); ?>
-				</button>
-			<?php endif; ?>
 		</div>
 	</aside>
 	<?php
@@ -330,7 +309,9 @@ function courses_catalog_shortcode( $atts ) {
 			// per_page="…" attribute still overrides it per instance.
 			'per_page' => courses_default_per_page(),
 			'columns'  => 3,
-			'title'    => '',
+			// Shown by default (like the programs catalog); title="" hides the
+			// heading and its count badge.
+			'title'    => __( 'الدورات', 'tutor-sso' ),
 		),
 		$atts,
 		'rwaq_courses'
@@ -383,8 +364,9 @@ function courses_catalog_shortcode( $atts ) {
 			<div class="rwaq-courses__header">
 				<h2 class="rwaq-courses__title"><?php echo esc_html( $title ); ?></h2>
 				<span class="rwaq-courses__total-badge">
+					<?php echo courses_icon( 'bookmark' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 					<span class="rwaq-courses__total-count" data-total-count><?php echo esc_html( number_format_i18n( $total ) ); ?></span>
-					<?php echo esc_html__( 'دورة', 'tutor-sso' ); ?>
+					<?php echo esc_html__( 'دورات', 'tutor-sso' ); ?>
 				</span>
 			</div>
 		<?php endif; ?>
@@ -470,11 +452,11 @@ function courses_register_admin_shortcode( $shortcodes ) {
 		'tag'         => 'rwaq_courses',
 		'title'       => __( 'Courses Catalog', 'tutor-sso' ),
 		'example'     => '[rwaq_courses per_page="9" columns="3"]',
-		'description' => __( 'Courses catalog pulled from the LMS public courses API, with a filter sidebar (searchable organizations, with course counts), search, sorting, active-filter chips, and AJAX infinite scroll.', 'tutor-sso' ),
+		'description' => __( 'Courses catalog pulled from the LMS public courses API, with a filter sidebar (searchable, scrollable organization list with course counts), search, sorting, active-filter chips, and AJAX infinite scroll.', 'tutor-sso' ),
 		'attributes'  => array(
 			'per_page' => __( 'Courses per page / infinite-scroll batch. Defaults to the "Courses per page" setting (8 if unset).', 'tutor-sso' ),
 			'columns'  => __( 'Grid column count. Default: 3 (the filter sidebar takes the rest of the row).', 'tutor-sso' ),
-			'title'    => __( 'Optional heading shown above the catalog. Leave blank to hide it.', 'tutor-sso' ),
+			'title'    => __( 'Heading shown above the catalog, next to the total-courses badge. Defaults to "الدورات"; pass title="" to hide both.', 'tutor-sso' ),
 		),
 	);
 

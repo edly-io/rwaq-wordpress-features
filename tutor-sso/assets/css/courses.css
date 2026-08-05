@@ -3,9 +3,9 @@
  *
  * Mirrors the programs catalog: a full-width search bar above a two-column
  * layout — filter sidebar (organization checkboxes with counts, collapsible,
- * with an in-group search box and a "show more" toggle) beside the results
- * (chips, count + sort, card grid). Structural class names are the plugin's
- * stable contract shared with courses-catalog.php and courses.js.
+ * with an in-group search box and a fixed-height scrolling option list) beside
+ * the results (chips, count + sort, card grid). Structural class names are the
+ * plugin's stable contract shared with courses-catalog.php and courses.js.
  *
  * Targets Arabic (RTL) pages but uses logical/flex rules. IBM Plex Sans Arabic
  * is enqueued globally as 'tutor-sso-programs-font' (see tutor-sso.php).
@@ -121,7 +121,8 @@
 	box-shadow: none;
 	background: #fff;
 	font-family: inherit;
-	font-size: 15px;
+	font-size: 16px;
+	font-weight: 400;
 	color: var(--rwaq-text);
 	padding-inline-start: 16px;
 	padding-inline-end: 48px;
@@ -222,11 +223,9 @@
 	transition: transform 0.18s ease;
 }
 
-/* Collapsed state: hide the search box, options and "show more" toggle, and
-   flip the chevron. */
+/* Collapsed state: hide the search box and options, flip the chevron. */
 .rwaq-courses__filter-group.is-collapsed .rwaq-courses__filter-search,
-.rwaq-courses__filter-group.is-collapsed .rwaq-courses__filter-options,
-.rwaq-courses__filter-group.is-collapsed .rwaq-courses__show-more {
+.rwaq-courses__filter-group.is-collapsed .rwaq-courses__filter-options {
 	display: none;
 }
 
@@ -291,11 +290,36 @@
 	display: none;
 }
 
+/* Fixed-height scroll area: the sidebar stays the same height no matter how many
+   organizations the API returns (the search box narrows a long list). The
+   negative inline margin + matching padding keep the checkbox focus ring from
+   being clipped by `overflow`. */
 .rwaq-courses__filter-options {
 	display: flex;
 	flex-direction: column;
 	gap: 14px;
 	margin-top: 14px;
+	max-height: 280px;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	margin-inline: -4px;
+	padding-inline: 4px;
+	scrollbar-width: thin;
+}
+
+.rwaq-courses__filter-options:focus-visible {
+	outline: 2px solid var(--rwaq-primary);
+	outline-offset: 2px;
+}
+
+/* Slim scrollbar on WebKit/Blink (Firefox uses scrollbar-width above). */
+.rwaq-courses__filter-options::-webkit-scrollbar {
+	width: 6px;
+}
+
+.rwaq-courses__filter-options::-webkit-scrollbar-thumb {
+	background: var(--rwaq-border);
+	border-radius: 3px;
 }
 
 .rwaq-courses__filter-option {
@@ -371,27 +395,6 @@
 	line-height: 16px;
 	font-weight: 400;
 	font-variant-numeric: tabular-nums;
-}
-
-/* Hidden while the in-group search is active (every match is shown then). */
-.rwaq-courses__show-more[hidden] {
-	display: none;
-}
-
-.rwaq-courses .rwaq-courses__show-more,
-.rwaq-courses .rwaq-courses__show-more:hover,
-.rwaq-courses .rwaq-courses__show-more:focus {
-	margin-top: 14px;
-	background: none !important;
-	border: none !important;
-	box-shadow: none !important;
-	color: var(--rwaq-primary) !important;
-	font-family: inherit;
-	font-size: 14px;
-	font-weight: 600;
-	line-height: 20px;
-	cursor: pointer;
-	padding: 0;
 }
 
 /* ---- Active filter chips ---- */
@@ -608,7 +611,7 @@
 	margin: 16px 0 0;
 	font-size: 16px;
 	font-weight: 600;
-	line-height: 24px;
+	line-height: 22px;
 	color: var(--rwaq-heading);
 }
 
@@ -640,11 +643,14 @@
 	display: none;
 }
 
+/* Typography matches .rwaq-program-card__meta-item exactly. */
 .rwaq-course-card__meta-item {
 	display: flex;
 	align-items: center;
-	gap: 8px;
-	font-size: 13px;
+	gap: 9px;
+	font-size: 12px;
+	font-weight: 400;
+	line-height: 16px;
 	color: var(--rwaq-muted);
 }
 
@@ -668,7 +674,7 @@
 	border-radius: 8px;
 	padding: 5px 12px;
 	background: #fff;
-	color: var(--rwaq-muted);
+	color: #424242;
 	font-size: 12px;
 	font-weight: 600;
 	line-height: 18px;
@@ -713,7 +719,7 @@
 
 .rwaq-courses__status {
 	text-align: center;
-	color: var(--rwaq-muted);
+	color: #52525b; /* same status grey as the programs catalog */
 	font-size: 0.95rem;
 	margin-top: 1rem;
 }
