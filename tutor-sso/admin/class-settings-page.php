@@ -69,6 +69,7 @@ class Settings_Page {
 			'tutor_sso_jwt_auth_secret_key' => 'sanitize_text_field',
 			'tutor_sso_programs_per_page'   => 'absint',
 			'tutor_sso_blogs_per_page'      => 'absint',
+			'tutor_sso_courses_per_page'    => 'absint',
 		);
 
 		foreach ( $options as $name => $cb ) {
@@ -283,6 +284,34 @@ class Settings_Page {
 				'min'         => 1,
 				'max'         => 48,
 				'description' => __( 'How many posts to load per page / infinite-scroll batch. Default: 8, maximum: 48. A per_page="…" attribute on the shortcode overrides this.', 'tutor-sso' ),
+			)
+		);
+
+		// ── Section 8: Courses Catalog ───────────────────────────────────────
+		add_settings_section(
+			'tutor_sso_section_courses_catalog',
+			__( 'Courses Catalog', 'tutor-sso' ),
+			function () {
+				echo '<p>' . esc_html__(
+					'Display settings for the [rwaq_courses] catalog.',
+					'tutor-sso'
+				) . '</p>';
+			},
+			self::PAGE_SLUG
+		);
+
+		add_settings_field(
+			'tutor_sso_courses_per_page',
+			__( 'Courses per page', 'tutor-sso' ),
+			array( $this, 'render_number_field' ),
+			self::PAGE_SLUG,
+			'tutor_sso_section_courses_catalog',
+			array(
+				'option_name' => 'tutor_sso_courses_per_page',
+				'default'     => 8,
+				'min'         => 1,
+				'max'         => 48,
+				'description' => __( 'How many courses to load per page / infinite-scroll batch. Default: 8, maximum: 48. A per_page="…" attribute on the shortcode overrides this.', 'tutor-sso' ),
 			)
 		);
 	}
