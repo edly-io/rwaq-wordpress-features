@@ -291,9 +291,13 @@
 }
 
 /* Fixed-height scroll area: the sidebar stays the same height no matter how many
-   organizations the API returns (the search box narrows a long list). The
-   negative inline margin + matching padding keep the checkbox focus ring from
-   being clipped by `overflow`. */
+   organizations the API returns (the search box narrows a long list).
+
+   Inline spacing does two jobs: the negative margin with matching start padding
+   keeps the checkbox focus ring from being clipped by `overflow`, and the larger
+   end padding keeps the course-count numbers clear of the scrollbar (which sits
+   on the inline-end edge — the left in RTL). `scrollbar-gutter` reserves that
+   space up front so the rows don't shift when the scrollbar appears. */
 .rwaq-courses__filter-options {
 	display: flex;
 	flex-direction: column;
@@ -303,8 +307,10 @@
 	overflow-y: auto;
 	overscroll-behavior: contain;
 	margin-inline: -4px;
-	padding-inline: 4px;
+	padding-inline-start: 4px;
+	padding-inline-end: 14px;
 	scrollbar-width: thin;
+	scrollbar-gutter: stable;
 }
 
 .rwaq-courses__filter-options:focus-visible {

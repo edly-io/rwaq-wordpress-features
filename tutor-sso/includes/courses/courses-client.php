@@ -47,6 +47,12 @@
  * Organization shape (filter options, from the filters endpoint):
  *   { slug, name, logo, count }
  *
+ * Internal organizations (name/short name starting with "test" — see
+ * sso_hidden_org_prefixes()) are hidden from both the filter list and the
+ * results. The API has no "exclude" filter, so the `org` param is sent as an
+ * allowlist of the visible organizations, which keeps `count` and pagination
+ * consistent with what is rendered.
+ *
  * @package tutor-sso
  */
 
@@ -70,6 +76,18 @@ const COURSES_CACHE_TTL = 300; // 5 minutes.
  * Catalog filters endpoint path (appended to the LMS base URL).
  */
 const COURSES_FILTERS_ENDPOINT = '/api/v1/courses/filters/';
+
+/**
+ * Transient key for a courses API response, aligned to a shared TTL boundary so
+ * the list and filters caches always expire together (see sso_cache_key()).
+ *
+ * @param string $prefix Key prefix identifying the resource.
+ * @param string $url    Request URL.
+ * @return string
+ */
+function courses_cache_key( $prefix, $url ) {
+	return sso_cache_key( $prefix, $url, (int) apply_filters( 'tutor_sso_courses_cache_ttl', COURSES_CACHE_TTL ) );
+}
 
 /**
  * Resolve the configured LMS base URL (reuses the SSO setting).
@@ -264,7 +282,7 @@ function courses_fetch_public( $page = 1, $per_page = 8, $args = array() ) {
 
 	$url = $base . COURSES_PUBLIC_ENDPOINT . '?' . courses_build_query( $query );
 
-	return courses_request( $url, 'tutor_sso_courses_' . md5( $url ) );
+	return courses_request( $url, courses_cache_key( 'tutor_sso_courses_', $url ) );
 }
 
 /**
@@ -294,6 +312,14 @@ function courses_fetch( $page = 1, $per_page = 8, $args = array() ) {
 	$external = apply_filters( 'tutor_sso_courses_results', null, $page, $per_page, $args );
 	if ( is_array( $external ) ) {
 		return wp_parse_args( $external, $empty );
+	}
+
+	// Hidden organizations (see sso_hidden_org_prefixes()) are excluded by
+	// turning the `org` filter into an allowlist of visible ones. null means
+	// nothing is visible at all, so there is no request worth making.
+	$args = courses_restrict_org_args( $args );
+	if ( null === $args ) {
+		return $empty;
 	}
 
 	$response = courses_fetch_public( $page, $per_page, $args );
@@ -433,7 +459,7 @@ function courses_fetch_filters() {
 	}
 
 	$url  = $base . COURSES_FILTERS_ENDPOINT;
-	$body = courses_request( $url, 'tutor_sso_course_filters_' . md5( $url ) );
+	$body = courses_request( $url, courses_cache_key( 'tutor_sso_course_filters_', $url ) );
 
 	if ( is_wp_error( $body ) ) {
 		return $body;
@@ -445,9 +471,116 @@ function courses_fetch_filters() {
 }
 
 /**
+ * Raw filters-API organizations, minus the internal ones (see sso_is_hidden_org()
+ * in sso-functions.php — the same rule the programs catalog applies).
+ *
+ * @return array[]|\WP_Error Visible organization objects, or the fetch error.
+ */
+function courses_visible_orgs() {
+	$filters = courses_fetch_filters();
+
+	if ( is_wp_error( $filters ) ) {
+		return $filters;
+	}
+
+	$visible = array();
+
+	foreach ( $filters['organizations'] as $org ) {
+		if ( is_array( $org ) && ! sso_is_hidden_org( $org ) ) {
+			$visible[] = $org;
+		}
+	}
+
+	return $visible;
+}
+
+/**
+ * The value the list endpoint's `org` filter matches for an organization (short
+ * name, falling back to name — ids are not accepted).
+ *
+ * @param array $org Organization object from the filters API.
+ * @return string
+ */
+function courses_org_filter_value( $org ) {
+	$short = isset( $org['short_name'] ) ? trim( (string) $org['short_name'] ) : '';
+	$name  = isset( $org['name'] ) ? trim( (string) $org['name'] ) : '';
+
+	return '' !== $short ? $short : $name;
+}
+
+/**
+ * Turn the requested `org` filter into an allowlist of visible organizations, so
+ * hidden ones are excluded from the results (the API has no "exclude" filter).
+ *
+ * Passing the allowlist rather than dropping rows afterwards keeps `count` and
+ * pagination honest.
+ *
+ * When the organization list cannot be determined at all — the endpoint errored,
+ * or answered without a usable `organizations` array — the args are returned
+ * untouched: a catalog that briefly shows an internal organization beats one that
+ * renders empty because of an unrelated API change. Returning null (nothing to
+ * show) is reserved for a list that was read successfully and left nothing.
+ *
+ * @param array $args Fetch args { search, ordering, org }.
+ * @return array|null Args to query with, or null when nothing is visible.
+ */
+function courses_restrict_org_args( $args ) {
+	$filters = courses_fetch_filters();
+	$known   = ( ! is_wp_error( $filters ) && ! empty( $filters['organizations'] ) );
+
+	if ( ! $known ) {
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				'[tutor-sso] course organizations unavailable; internal organizations are not being excluded'
+			);
+		}
+
+		return $args;
+	}
+
+	$allowed = array_values( array_filter( array_map( __NAMESPACE__ . '\\courses_org_filter_value', courses_visible_orgs() ) ) );
+
+	if ( empty( $allowed ) ) {
+		return null; // The list was readable and every organization is hidden.
+	}
+
+	$requested = isset( $args['org'] ) ? array_filter( array_map( 'trim', array_map( 'strval', (array) $args['org'] ) ) ) : array();
+
+	if ( empty( $requested ) ) {
+		$args['org'] = $allowed;
+
+		return $args;
+	}
+
+	// Keep only requested organizations that are visible (case-insensitive, since
+	// the value may arrive from a hand-built request).
+	$lookup = array();
+	foreach ( $allowed as $value ) {
+		$lookup[ strtolower( $value ) ] = $value;
+	}
+
+	$keep = array();
+	foreach ( $requested as $value ) {
+		$key = strtolower( $value );
+		if ( isset( $lookup[ $key ] ) ) {
+			$keep[] = $lookup[ $key ];
+		}
+	}
+
+	if ( empty( $keep ) ) {
+		return null; // Only hidden organizations were asked for.
+	}
+
+	$args['org'] = $keep;
+
+	return $args;
+}
+
+/**
  * Organizations for the filter dropdown, from the catalog filters API.
  *
- * The dropdown value is the organization's short name — the string the list
+ * Hidden organizations are omitted (see sso_hidden_org_prefixes()). The
+ * dropdown value is the organization's short name — the string the list
  * endpoint's `org` filter matches (it does not accept ids). Labels prefer the
  * Arabic name. API order is preserved (alphabetical by name).
  *
@@ -456,23 +589,18 @@ function courses_fetch_filters() {
  * @return array<int,array{slug:string,name:string,logo:string,count:int}>
  */
 function courses_organizations() {
-	$filters = courses_fetch_filters();
+	$visible = courses_visible_orgs();
 	$orgs    = array();
 
-	if ( ! is_wp_error( $filters ) ) {
-		foreach ( $filters['organizations'] as $org ) {
-			if ( ! is_array( $org ) ) {
-				continue;
-			}
-
-			$name  = isset( $org['name'] ) ? trim( (string) $org['name'] ) : '';
-			$short = isset( $org['short_name'] ) ? trim( (string) $org['short_name'] ) : '';
-			$slug  = '' !== $short ? $short : $name;
+	if ( ! is_wp_error( $visible ) ) {
+		foreach ( $visible as $org ) {
+			$slug = courses_org_filter_value( $org );
 
 			if ( '' === $slug ) {
 				continue;
 			}
 
+			$name   = isset( $org['name'] ) ? trim( (string) $org['name'] ) : '';
 			$arabic = isset( $org['organization_arabic_name'] ) ? trim( (string) $org['organization_arabic_name'] ) : '';
 
 			$orgs[] = array(

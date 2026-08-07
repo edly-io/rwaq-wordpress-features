@@ -25,6 +25,94 @@ function sso_option( $key, $default = '' ) {
 	return get_option( 'tutor_sso_' . $key, $default );
 }
 
+// ── Catalog cache helpers ─────────────────────────────────────────────────────
+
+/**
+ * Build a transient key that expires on a shared TTL boundary.
+ *
+ * A catalog page renders from two separately cached responses: the filters
+ * response (organization counts) and the list response. On independent rolling
+ * windows the two can be up to a full TTL apart in freshness, which surfaces as
+ * "a new course is in the sidebar count but not in the grid". Folding a bucket
+ * number — `floor( time() / ttl )`, identical for every caller inside the same
+ * window — into both keys makes them refresh together, so the counts and the
+ * listing always come from the same snapshot.
+ *
+ * @param string $prefix Key prefix identifying the resource.
+ * @param string $url    Request URL the response belongs to.
+ * @param int    $ttl    Cache lifetime in seconds.
+ * @return string Transient key.
+ */
+function sso_cache_key( $prefix, $url, $ttl ) {
+	$ttl = max( 1, (int) $ttl );
+
+	return $prefix . md5( (string) $url ) . '_' . (int) floor( time() / $ttl );
+}
+
+// ── Internal (hidden) organizations ───────────────────────────────────────────
+
+/**
+ * Name prefixes marking an LMS organization as internal. Its content is kept out
+ * of the public catalogs (courses + programs) and it never appears in a filter
+ * list.
+ *
+ * Matched case-insensitively against the organization's short name and name, so
+ * "test", "Test", "Testing Org" and "test-2" are all hidden, while "Contest Ltd"
+ * is not. Filterable — return an empty array to show every organization.
+ *
+ * @return string[]
+ */
+function sso_hidden_org_prefixes() {
+	return (array) apply_filters( 'tutor_sso_hidden_org_prefixes', array( 'test' ) );
+}
+
+/**
+ * Whether an organization object from a catalog filters endpoint is internal.
+ *
+ * Both the courses and programs filters endpoints expose `short_name` / `name`,
+ * so one check serves both.
+ *
+ * @param array $org Organization object from a filters endpoint.
+ * @return bool
+ */
+function sso_is_hidden_org( $org ) {
+	if ( ! is_array( $org ) ) {
+		return false;
+	}
+
+	$prefixes = array_filter( array_map( 'strtolower', array_map( 'trim', array_map( 'strval', sso_hidden_org_prefixes() ) ) ) );
+
+	if ( empty( $prefixes ) ) {
+		return false;
+	}
+
+	foreach ( array( 'short_name', 'name' ) as $field ) {
+		$value = isset( $org[ $field ] ) ? strtolower( trim( (string) $org[ $field ] ) ) : '';
+
+		if ( '' === $value ) {
+			continue;
+		}
+
+		foreach ( $prefixes as $prefix ) {
+			if ( 0 === strpos( $value, $prefix ) ) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+/**
+ * Inverse of sso_is_hidden_org(), for use as an array_filter() callback.
+ *
+ * @param array $org Organization object from a filters endpoint.
+ * @return bool
+ */
+function sso_is_not_hidden_org( $org ) {
+	return ! sso_is_hidden_org( $org );
+}
+
 // ── 1. OAuth 2.0 callback handler ────────────────────────────────────────────
 
 /**
