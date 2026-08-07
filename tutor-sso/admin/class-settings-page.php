@@ -27,6 +27,16 @@ class Settings_Page {
 	const PAGE_SLUG = 'tutor-sso-settings';
 
 	/**
+	 * Google Tag Manager container ID format.
+	 *
+	 * Shared with the front-end printer, which re-validates before output.
+	 */
+	const GTM_ID_PATTERN = '/^GTM-[A-Z0-9]{4,15}$/';
+
+	/** GA4 measurement ID format. */
+	const GA_ID_PATTERN = '/^G-[A-Z0-9]{4,15}$/';
+
+	/**
 	 * Wire up all hooks.
 	 */
 	public function __construct() {
@@ -70,6 +80,8 @@ class Settings_Page {
 			'tutor_sso_programs_per_page'   => 'absint',
 			'tutor_sso_blogs_per_page'      => 'absint',
 			'tutor_sso_courses_per_page'    => 'absint',
+			'tutor_sso_gtm_id'              => array( $this, 'sanitize_gtm_id' ),
+			'tutor_sso_ga_id'               => array( $this, 'sanitize_ga_id' ),
 		);
 
 		foreach ( $options as $name => $cb ) {
@@ -314,6 +326,124 @@ class Settings_Page {
 				'description' => __( 'How many courses to load per page / infinite-scroll batch. Default: 8, maximum: 48. A per_page="…" attribute on the shortcode overrides this.', 'tutor-sso' ),
 			)
 		);
+
+		// ── Section 9: Analytics ─────────────────────────────────────────────
+		add_settings_section(
+			'tutor_sso_section_analytics',
+			__( 'Analytics', 'tutor-sso' ),
+			function () {
+				echo '<p>' . esc_html__(
+					'Tracking code printed on every front-end page. Enter just the IDs below — the plugin builds the official Google snippets for you. Leave a field empty to disable that tag.',
+					'tutor-sso'
+				) . '</p>';
+				echo '<p>' . esc_html__(
+					'If you already deploy Google Analytics through Tag Manager, fill in the GTM ID only — filling both loads GA4 twice and double-counts every pageview.',
+					'tutor-sso'
+				) . '</p>';
+			},
+			self::PAGE_SLUG
+		);
+
+		add_settings_field(
+			'tutor_sso_gtm_id',
+			__( 'Add GTM ID', 'tutor-sso' ),
+			array( $this, 'render_text_field' ),
+			self::PAGE_SLUG,
+			'tutor_sso_section_analytics',
+			array(
+				'option_name' => 'tutor_sso_gtm_id',
+				'placeholder' => 'GTM-XXXXXXX',
+				'description' => __( 'The Google Tag Manager container used to track website analytics. Example value "GTM-M69F9BL".', 'tutor-sso' ),
+			)
+		);
+
+		add_settings_field(
+			'tutor_sso_ga_id',
+			__( 'Add Google Analytics ID', 'tutor-sso' ),
+			array( $this, 'render_text_field' ),
+			self::PAGE_SLUG,
+			'tutor_sso_section_analytics',
+			array(
+				'option_name' => 'tutor_sso_ga_id',
+				'placeholder' => 'G-XXXXXXXXXX',
+				'description' => __( 'The Google Analytics 4 measurement ID used to track user activity. Example value "G-7LZG2QW3X9".', 'tutor-sso' ),
+			)
+		);
+
+	}
+
+	/**
+	 * Sanitize a Google Tag Manager container ID.
+	 *
+	 * @param string $value Submitted value.
+	 * @return string
+	 */
+	public function sanitize_gtm_id( $value ) {
+		return $this->sanitize_tracking_id(
+			$value,
+			'tutor_sso_gtm_id',
+			self::GTM_ID_PATTERN,
+			'GTM-M69F9BL'
+		);
+	}
+
+	/**
+	 * Sanitize a GA4 measurement ID.
+	 *
+	 * @param string $value Submitted value.
+	 * @return string
+	 */
+	public function sanitize_ga_id( $value ) {
+		return $this->sanitize_tracking_id(
+			$value,
+			'tutor_sso_ga_id',
+			self::GA_ID_PATTERN,
+			'G-7LZG2QW3X9'
+		);
+	}
+
+	/**
+	 * Validate a tracking ID against a strict pattern.
+	 *
+	 * This is what makes the ID fields safe for any administrator to edit while
+	 * the raw snippet field is not: the stored value can only ever be uppercase
+	 * letters, digits and a hyphen, so it cannot close the surrounding attribute
+	 * or <script> tag when interpolated into the snippet template.
+	 *
+	 * An invalid ID keeps the previously stored value rather than clearing it —
+	 * a typo should not silently switch tracking off — and reports the problem
+	 * through the Settings API notice that options-general.php renders.
+	 *
+	 * @param string $value   Submitted value.
+	 * @param string $option  Option name, used to recover the stored value.
+	 * @param string $pattern Anchored regex the ID must match.
+	 * @param string $example Example ID shown in the error notice.
+	 * @return string
+	 */
+	private function sanitize_tracking_id( $value, $option, $pattern, $example ) {
+		// Uppercase so a pasted lowercase ID is corrected rather than rejected.
+		$value = strtoupper( trim( (string) $value ) );
+
+		if ( '' === $value ) {
+			return '';
+		}
+
+		if ( ! preg_match( $pattern, $value ) ) {
+			add_settings_error(
+				$option,
+				$option . '_invalid',
+				sprintf(
+					/* translators: 1: submitted value, 2: example ID such as G-7LZG2QW3X9 */
+					__( '"%1$s" is not a valid tracking ID, so the previous value was kept. Expected something like "%2$s".', 'tutor-sso' ),
+					esc_html( $value ),
+					$example
+				),
+				'error'
+			);
+			return (string) get_option( $option, '' );
+		}
+
+		return $value;
 	}
 
 	/**
@@ -347,15 +477,17 @@ class Settings_Page {
 	 *
 	 * @param array $args {
 	 *     @type string $option_name  Option name.
+	 *     @type string $placeholder  Optional placeholder text.
 	 *     @type string $description  Optional help text.
 	 * }
 	 */
 	public function render_text_field( $args ) {
 		$value = get_option( $args['option_name'], '' );
 		printf(
-			'<input type="text" id="%1$s" name="%1$s" value="%2$s" class="regular-text" />',
+			'<input type="text" id="%1$s" name="%1$s" value="%2$s" class="regular-text" placeholder="%3$s" />',
 			esc_attr( $args['option_name'] ),
-			esc_attr( $value )
+			esc_attr( $value ),
+			esc_attr( $args['placeholder'] ?? '' )
 		);
 		$this->maybe_description( $args );
 	}
