@@ -9,8 +9,10 @@
  *
  * The endpoints are public (no authentication / cookies required), so unlike the
  * enrollment client (see includes/enrollment-api.php) we do not forward any edX
- * session cookies here. Responses are short-lived-cached in a transient to keep
- * catalog pages fast and avoid hammering the LMS.
+ * session cookies here. Both calls go through programs_request(), which caches
+ * the decoded body in a transient keyed to a shared TTL boundary (see
+ * sso_cache_key()) so the filter counts and the listing always come from the
+ * same snapshot — the same arrangement the courses client uses.
  *
  * List response shape (DRF PageNumberPagination):
  *   {
@@ -26,9 +28,15 @@
  *   search=<term>
  *   ordering=name|-name|created|-created
  *
- * We already send org / program_type as repeated params (org=A&org=B) so the UI
- * can offer multi-select; the API currently honors only the last value per key,
- * and will "just work" once it adds `__in`-style filtering.
+ * org / program_type are sent comma-joined (org=A,B), which the API treats as OR
+ * (verified: org=Rwaq,Arbisoft returns 4+3 programs); repeated params would honor
+ * only the last value.
+ *
+ * Internal organizations (name/short name starting with "test" — see
+ * sso_hidden_org_prefixes()) are hidden from both the filter sidebar and the
+ * results. The API has no "exclude" filter, so `org` is sent as an allowlist of
+ * the visible organizations, which keeps `count` and pagination consistent with
+ * what is rendered.
  *
  * @package tutor-sso
  */
@@ -53,6 +61,18 @@ const PROGRAMS_FILTERS_ENDPOINT = '/rwaq/api/programs/public/filters/';
  * Default cache lifetime, in seconds, for a fetched catalog page / filter set.
  */
 const PROGRAMS_CACHE_TTL = 300; // 5 minutes.
+
+/**
+ * Transient key for a programs API response, aligned to a shared TTL boundary so
+ * the list and filters caches always expire together (see sso_cache_key()).
+ *
+ * @param string $prefix Key prefix identifying the resource.
+ * @param string $url    Request URL.
+ * @return string
+ */
+function programs_cache_key( $prefix, $url ) {
+	return sso_cache_key( $prefix, $url, (int) apply_filters( 'tutor_sso_programs_cache_ttl', PROGRAMS_CACHE_TTL ) );
+}
 
 /**
  * Resolve the configured LMS base URL (reuses the SSO setting).
@@ -139,6 +159,184 @@ function programs_build_query( $args ) {
 }
 
 /**
+ * The empty (but well-formed) list response: a page past the end, or a catalog
+ * with nothing visible.
+ *
+ * @return array{results:array[],pagination:array}
+ */
+function programs_empty_response() {
+	return array(
+		'results'    => array(),
+		'pagination' => array(
+			'next'      => null,
+			'previous'  => null,
+			'count'     => 0,
+			'num_pages' => 0,
+		),
+	);
+}
+
+/**
+ * Filters-API organizations minus the internal ones (see sso_is_hidden_org() in
+ * sso-functions.php — the same rule the courses catalog applies).
+ *
+ * @return array[]|\WP_Error Visible organization objects, or the fetch error.
+ */
+function programs_visible_orgs() {
+	$filters = programs_fetch_filters();
+
+	if ( is_wp_error( $filters ) ) {
+		return $filters;
+	}
+
+	$visible = array();
+
+	foreach ( $filters['organizations'] as $org ) {
+		if ( is_array( $org ) && ! sso_is_hidden_org( $org ) ) {
+			$visible[] = $org;
+		}
+	}
+
+	return $visible;
+}
+
+/**
+ * Turn the requested `org` filter into an allowlist of visible organizations, so
+ * internal ones are excluded from the results (the API has no "exclude" filter).
+ *
+ * Passing an allowlist rather than dropping rows afterwards keeps `count` and
+ * pagination honest. When the organization list cannot be determined — the
+ * endpoint errored, or answered without a usable `organizations` array — the args
+ * are returned untouched, since a catalog that briefly shows an internal
+ * organization beats one that renders empty because of an unrelated API change.
+ *
+ * @param array $args Fetch args (see programs_fetch_public()).
+ * @return array|null Args to query with, or null when nothing is visible.
+ */
+function programs_restrict_org_args( $args ) {
+	$filters = programs_fetch_filters();
+	$known   = ( ! is_wp_error( $filters ) && ! empty( $filters['organizations'] ) );
+
+	if ( ! $known ) {
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				'[tutor-sso] program organizations unavailable; internal organizations are not being excluded'
+			);
+		}
+
+		return $args;
+	}
+
+	$allowed = array();
+	foreach ( programs_visible_orgs() as $org ) {
+		$value = programs_org_value( $org );
+		if ( '' !== $value ) {
+			$allowed[] = $value;
+		}
+	}
+
+	if ( empty( $allowed ) ) {
+		return null; // The list was readable and every organization is hidden.
+	}
+
+	$requested = isset( $args['org'] ) ? array_filter( array_map( 'trim', array_map( 'strval', (array) $args['org'] ) ) ) : array();
+
+	if ( empty( $requested ) ) {
+		$args['org'] = $allowed;
+
+		return $args;
+	}
+
+	// Keep only requested organizations that are visible (case-insensitive, since
+	// the value may arrive from a hand-built request).
+	$lookup = array();
+	foreach ( $allowed as $value ) {
+		$lookup[ strtolower( $value ) ] = $value;
+	}
+
+	$keep = array();
+	foreach ( $requested as $value ) {
+		$key = strtolower( $value );
+		if ( isset( $lookup[ $key ] ) ) {
+			$keep[] = $lookup[ $key ];
+		}
+	}
+
+	if ( empty( $keep ) ) {
+		return null; // Only hidden organizations were asked for.
+	}
+
+	$args['org'] = $keep;
+
+	return $args;
+}
+
+/**
+ * GET a URL on the LMS public API and decode the JSON body, caching the decoded
+ * response under $cache_key (mirrors courses_request()).
+ *
+ * A 404 comes back as a WP_Error with the code `tutor_sso_not_found` so callers
+ * can decide what it means: for the list endpoint DRF uses it for "page past the
+ * last one" (degrade to an empty page), while on the filters endpoint it signals
+ * a misconfigured URL and should surface as an error.
+ *
+ * Failures are never cached, so a broken API is retried on the next page load
+ * instead of being pinned for the whole TTL.
+ *
+ * @param string $url       Absolute request URL.
+ * @param string $cache_key Transient key for the decoded body.
+ * @param string $label     Short label used in the debug log line.
+ * @return array|\WP_Error Decoded body, or WP_Error on failure.
+ */
+function programs_request( $url, $cache_key, $label = 'request' ) {
+	$cached = get_transient( $cache_key );
+
+	if ( false !== $cached ) {
+		return $cached;
+	}
+
+	$response = wp_remote_get(
+		$url,
+		array(
+			'timeout'   => 20,
+			'sslverify' => apply_filters( 'tutor_sso_ssl_verify', true ),
+			'headers'   => array(
+				'Accept' => 'application/json',
+			),
+		)
+	);
+
+	if ( is_wp_error( $response ) ) {
+		return $response;
+	}
+
+	$status = (int) wp_remote_retrieve_response_code( $response );
+
+	if ( 404 === $status ) {
+		return new \WP_Error( 'tutor_sso_not_found', __( 'Not found.', 'tutor-sso' ) );
+	}
+
+	$body = json_decode( wp_remote_retrieve_body( $response ), true );
+
+	if ( $status < 200 || $status >= 300 || ! is_array( $body ) ) {
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				sprintf( '[tutor-sso] programs %s %s -> HTTP %d', $label, $url, $status )
+			);
+		}
+
+		return new \WP_Error(
+			'tutor_sso_programs_failed',
+			__( 'Could not load programs from the LMS.', 'tutor-sso' )
+		);
+	}
+
+	set_transient( $cache_key, $body, (int) apply_filters( 'tutor_sso_programs_cache_ttl', PROGRAMS_CACHE_TTL ) );
+
+	return $body;
+}
+
+/**
  * Fetch one page of published programs from the LMS public catalog API.
  *
  * @param int   $page     1-based page number.
@@ -160,6 +358,13 @@ function programs_fetch_public( $page = 1, $per_page = 6, $args = array() ) {
 
 	if ( empty( $base ) ) {
 		return new \WP_Error( 'tutor_sso_no_base', __( 'LMS Base URL is not configured.', 'tutor-sso' ) );
+	}
+
+	// Internal organizations are excluded by turning `org` into an allowlist of
+	// visible ones; null means nothing is visible, so skip the request.
+	$args = programs_restrict_org_args( $args );
+	if ( null === $args ) {
+		return programs_empty_response();
 	}
 
 	$page     = max( 1, (int) $page );
@@ -194,68 +399,18 @@ function programs_fetch_public( $page = 1, $per_page = 6, $args = array() ) {
 
 	$url = $base . PROGRAMS_PUBLIC_ENDPOINT . '?' . programs_build_query( $query );
 
-	$cache_key = 'tutor_sso_programs_' . md5( $url );
-	$cached    = get_transient( $cache_key );
+	$body = programs_request( $url, programs_cache_key( 'tutor_sso_programs_', $url ), 'list' );
 
-	if ( false !== $cached ) {
-		return $cached;
+	if ( is_wp_error( $body ) ) {
+		// DRF answers 404 ("Invalid page.") for a page past the last one; degrade
+		// to an empty page so a stale ?program_page=99 does not error out.
+		return 'tutor_sso_not_found' === $body->get_error_code() ? programs_empty_response() : $body;
 	}
 
-	$response = wp_remote_get(
-		$url,
-		array(
-			'timeout'   => 20,
-			'sslverify' => apply_filters( 'tutor_sso_ssl_verify', true ),
-			'headers'   => array(
-				'Accept' => 'application/json',
-			),
-		)
-	);
-
-	if ( is_wp_error( $response ) ) {
-		return $response;
-	}
-
-	$status = (int) wp_remote_retrieve_response_code( $response );
-
-	// DRF returns 404 ("Invalid page.") for a page past the last one. Treat that
-	// as an empty result set rather than a hard error so the UI can degrade
-	// gracefully (e.g. a stale ?program_page=99 left in the URL).
-	if ( 404 === $status ) {
-		return array(
-			'results'    => array(),
-			'pagination' => array(
-				'next'      => null,
-				'previous'  => null,
-				'count'     => 0,
-				'num_pages' => 0,
-			),
-		);
-	}
-
-	$body = json_decode( wp_remote_retrieve_body( $response ), true );
-
-	if ( $status < 200 || $status >= 300 || ! is_array( $body ) ) {
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-				sprintf( '[tutor-sso] programs list %s -> HTTP %d', $url, $status )
-			);
-		}
-
-		return new \WP_Error(
-			'tutor_sso_programs_failed',
-			__( 'Could not load programs from the LMS.', 'tutor-sso' )
-		);
-	}
-
-	$data = array(
+	return array(
 		'results'    => ( isset( $body['results'] ) && is_array( $body['results'] ) ) ? $body['results'] : array(),
 		'pagination' => ( isset( $body['pagination'] ) && is_array( $body['pagination'] ) ) ? $body['pagination'] : array(),
 	);
-
-	set_transient( $cache_key, $data, apply_filters( 'tutor_sso_programs_cache_ttl', PROGRAMS_CACHE_TTL ) );
-
-	return $data;
 }
 
 /**
@@ -274,46 +429,19 @@ function programs_fetch_filters() {
 		return new \WP_Error( 'tutor_sso_no_base', __( 'LMS Base URL is not configured.', 'tutor-sso' ) );
 	}
 
-	$url       = $base . PROGRAMS_FILTERS_ENDPOINT;
-	$cache_key = 'tutor_sso_program_filters_' . md5( $url );
-	$cached    = get_transient( $cache_key );
+	$url  = $base . PROGRAMS_FILTERS_ENDPOINT;
+	$body = programs_request( $url, programs_cache_key( 'tutor_sso_program_filters_', $url ), 'filters' );
 
-	if ( false !== $cached ) {
-		return $cached;
-	}
-
-	$response = wp_remote_get(
-		$url,
-		array(
-			'timeout'   => 20,
-			'sslverify' => apply_filters( 'tutor_sso_ssl_verify', true ),
-			'headers'   => array(
-				'Accept' => 'application/json',
-			),
-		)
-	);
-
-	if ( is_wp_error( $response ) ) {
-		return $response;
-	}
-
-	$status = (int) wp_remote_retrieve_response_code( $response );
-	$body   = json_decode( wp_remote_retrieve_body( $response ), true );
-
-	if ( $status < 200 || $status >= 300 || ! is_array( $body ) ) {
+	if ( is_wp_error( $body ) ) {
 		return new \WP_Error(
 			'tutor_sso_filters_failed',
 			__( 'Could not load catalog filters from the LMS.', 'tutor-sso' )
 		);
 	}
 
-	$data = array(
+	return array(
 		'organizations' => ( isset( $body['organizations'] ) && is_array( $body['organizations'] ) ) ? $body['organizations'] : array(),
 		'program_types' => ( isset( $body['program_types'] ) && is_array( $body['program_types'] ) ) ? $body['program_types'] : array(),
 		'featured'      => ( isset( $body['featured'] ) && is_array( $body['featured'] ) ) ? $body['featured'] : array(),
 	);
-
-	set_transient( $cache_key, $data, apply_filters( 'tutor_sso_programs_cache_ttl', PROGRAMS_CACHE_TTL ) );
-
-	return $data;
 }

@@ -461,6 +461,9 @@ function programs_loader_svg() {
  */
 function programs_render_sidebar( $filters, $uid ) {
 	$organizations = ( is_array( $filters ) && ! empty( $filters['organizations'] ) ) ? $filters['organizations'] : array();
+	// Internal organizations never appear as a filter option (see
+	// sso_is_hidden_org()); their programs are excluded from the results too.
+	$organizations = array_values( array_filter( $organizations, __NAMESPACE__ . '\\sso_is_not_hidden_org' ) );
 	$type_counts   = ( is_array( $filters ) && ! empty( $filters['program_types'] ) ) ? $filters['program_types'] : array();
 	$feat_counts   = ( is_array( $filters ) && ! empty( $filters['featured'] ) ) ? $filters['featured'] : array();
 	$org_limit     = 4; // Show this many orgs before the "show more" toggle.
