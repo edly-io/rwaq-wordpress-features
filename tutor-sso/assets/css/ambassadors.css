@@ -1,0 +1,1104 @@
+/**
+ * "Rwaq Ambassadors" page-template styles.
+ *
+ * Shared with templates/page-rwaq-ambassadors.php and
+ * includes/ambassadors/ambassadors-page-template.php. The page is a static
+ * Arabic (RTL) landing page — hero, the three working groups, the 5-step
+ * timeline, the requirements grid, a photo gallery and an application form.
+ *
+ * The application form is a Contact Form 7 form (its ID lives in the page's
+ * `cf7_form_id` custom field), so the FORM section below re-skins CF7's own
+ * markup (.wpcf7-form, .wpcf7-form-control-wrap, .wpcf7-list-item, …) to match
+ * the rest of the page instead of styling hand-written inputs.
+ *
+ * Layout: every band is full-bleed, its content centered in a 1232px container
+ * (--rwaq-amb-max) that picks up a 15px side padding below that width. The page
+ * is RTL by design (the template sets dir="rtl"), and rules use logical
+ * properties (inline-start/end) so a translated LTR copy would still hold up.
+ *
+ * IBM Plex Sans Arabic is enqueued globally as 'tutor-sso-programs-font'
+ * (see tutor-sso.php), not @imported here.
+ */
+
+/* ==========================================================================
+   TOKENS + SHELL
+   ========================================================================== */
+
+.rwaq-amb {
+	--rwaq-amb-primary: #565199;
+	--rwaq-amb-primary-dark: #474283;
+	--rwaq-amb-deep: #3A356E;
+	--rwaq-amb-accent: #D33B89;
+	--rwaq-amb-gold: #F3B44F;
+	--rwaq-amb-soft: #F1F0F8;
+	--rwaq-amb-surface: #FBFBFB;
+	--rwaq-amb-text: #242424;
+	--rwaq-amb-muted: #616161;
+	--rwaq-amb-placeholder: #707070; /* NeutralForeground4.Rest */
+	--rwaq-amb-border: #D1D1D1;
+	--rwaq-amb-border-soft: #C9C7D6;
+
+	/* Layout */
+	--rwaq-amb-max: 1232px;
+	--rwaq-amb-pad: 15px;
+	--rwaq-amb-radius: 10px;
+
+	position: relative;
+	/* The markup already carries dir="rtl"; these back it up against themes
+	   that force a direction or text-align on body/containers. */
+	direction: rtl;
+	text-align: start;
+	color: var(--rwaq-amb-text);
+	font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	line-height: 1.6;
+}
+
+.rwaq-amb *,
+.rwaq-amb *::before,
+.rwaq-amb *::after {
+	box-sizing: border-box;
+}
+
+/* The 1232px content container shared by every band. Above 1232px it runs
+   flush (centered); at or below it gains the 15px side padding. */
+.rwaq-amb__inner {
+	max-width: var(--rwaq-amb-max);
+	margin-inline: auto;
+}
+
+@media (max-width: 1232px) {
+	.rwaq-amb__inner {
+		padding-inline: var(--rwaq-amb-pad);
+	}
+}
+
+.rwaq-amb__section {
+	position: relative;
+	padding-block: 64px;
+}
+
+.rwaq-amb__section--surface {
+	background: var(--rwaq-amb-surface);
+}
+
+/* Section headings */
+.rwaq-amb__title {
+	margin: 0;
+	font-size: 32px;
+	line-height: 40px;
+	font-weight: 600;
+	color: var(--rwaq-amb-text);
+}
+
+.rwaq-amb__subtitle {
+	margin: 12px 0 0;
+	font-size: 14px;
+	line-height: 22px;
+	font-weight: 400;
+	color: var(--rwaq-amb-muted);
+}
+
+.rwaq-amb__center {
+	text-align: center;
+}
+
+/* ==========================================================================
+   HERO
+   ========================================================================== */
+
+.rwaq-amb__hero {
+	position: relative;
+	overflow: hidden;
+	background: var(--rwaq-amb-surface);
+	padding-block: 56px 60px;
+}
+
+/* Decorative blurred circles (purple top-right, gold mid-left).
+   Purely ornamental — hidden from assistive tech in the markup. */
+.rwaq-amb__blob {
+	position: absolute;
+	width: 297px;
+	height: 297px;
+	border-radius: 50%;
+	opacity: 0.1;
+	pointer-events: none;
+}
+
+/* Positioned with PHYSICAL right/left, not inset-inline-*: these are fixed
+   brand ornaments, so they must stay put (purple top-right, gold lower-left)
+   rather than mirror with the page direction the way the content does. */
+.rwaq-amb__blob--primary {
+	top: -66px;
+	right: -40px;
+	background: var(--rwaq-amb-primary);
+}
+
+.rwaq-amb__blob--gold {
+	top: 343px;
+	left: -76px;
+	background: var(--rwaq-amb-gold);
+}
+
+.rwaq-amb__hero-inner {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 20px;
+	text-align: center;
+}
+
+.rwaq-amb__hero-title {
+	margin: 0;
+	font-size: 40px;
+	line-height: 56px;
+	font-weight: 600;
+	letter-spacing: -0.5px;
+}
+
+.rwaq-amb__hero-text {
+	margin: 0;
+	max-width: 560px;
+	font-size: 16px;
+	line-height: 28px;
+	color: var(--rwaq-amb-muted);
+	text-wrap: pretty;
+}
+
+/* Primary call-to-action, reused by the hero. */
+.rwaq-amb__cta {
+	margin-top: 8px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 44px;
+	padding: 0 24px;
+	border: 0;
+	border-radius: 8px;
+	background: var(--rwaq-amb-primary);
+	color: #fff;
+	font-family: inherit;
+	font-size: 16px;
+	font-weight: 600;
+	text-decoration: none;
+	cursor: pointer;
+	transition: background-color 0.18s ease;
+}
+
+.rwaq-amb__cta:hover,
+.rwaq-amb__cta:focus {
+	background: var(--rwaq-amb-primary-dark);
+	color: #fff;
+	text-decoration: none;
+}
+
+/* Hero highlights: three centered items split by 1px dividers. */
+.rwaq-amb__highlights {
+	position: relative;
+	margin: 44px auto 0;
+	max-width: 690px;
+	padding-top: 32px;
+	border-top: 1px solid var(--rwaq-amb-border);
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	align-items: start;
+}
+
+.rwaq-amb__highlight {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 14px;
+	padding-inline: 8px;
+	text-align: center;
+}
+
+.rwaq-amb__highlight + .rwaq-amb__highlight {
+	border-inline-start: 1px solid var(--rwaq-amb-border);
+}
+
+.rwaq-amb__highlight-label {
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.rwaq-amb__highlight svg,
+.rwaq-amb__icon svg {
+	display: block;
+}
+
+/* Unlike the group/requirement icons, the hero highlights sit on the bare
+   surface with no tile to carry the colour, so the accent is set on the glyph
+   itself (every icon is drawn with stroke="currentColor"). */
+.rwaq-amb__highlight svg {
+	flex: none;
+	color: var(--rwaq-amb-accent);
+}
+
+/* ==========================================================================
+   WORKING GROUPS (3 cards)
+   ========================================================================== */
+
+.rwaq-amb__groups {
+	margin-top: 40px;
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 18px;
+}
+
+.rwaq-amb__group {
+	border: 1px solid var(--rwaq-amb-border);
+	border-radius: var(--rwaq-amb-radius);
+	background: #fff;
+	padding: 32px;
+	transition: border-color 0.18s ease;
+}
+
+.rwaq-amb__group:hover {
+	border-color: var(--rwaq-amb-primary);
+}
+
+/* Rounded icon tile shared by the group cards and the requirement rows. */
+.rwaq-amb__icon {
+	flex: none;
+	width: 48px;
+	height: 48px;
+	border-radius: var(--rwaq-amb-radius);
+	background: var(--rwaq-amb-soft);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--rwaq-amb-accent);
+}
+
+.rwaq-amb__icon--sm {
+	width: 44px;
+	height: 44px;
+}
+
+/* Glyph size comes from the tile, not the SVG's own width/height, because
+   'graduation' is reused across both tile sizes and must scale with each. */
+.rwaq-amb__icon svg {
+	width: 24px;
+	height: 24px;
+}
+
+.rwaq-amb__icon--sm svg {
+	width: 20px;
+	height: 20px;
+}
+
+.rwaq-amb__group-title {
+	margin: 26px 0 0;
+	font-size: 24px;
+	line-height: 32px;
+	font-weight: 600;
+}
+
+.rwaq-amb__group-text {
+	margin: 16px 0 0;
+	font-size: 14px;
+	line-height: 22px;
+	font-weight: 400;
+	color: var(--rwaq-amb-muted);
+	text-wrap: pretty;
+}
+
+/* ==========================================================================
+   STEPS (dark card)
+   ========================================================================== */
+
+.rwaq-amb__steps-band {
+	padding-block: 16px 56px;
+}
+
+.rwaq-amb__steps-card {
+	background: var(--rwaq-amb-deep);
+	border-radius: var(--rwaq-amb-radius);
+	padding: 52px 40px 56px;
+}
+
+.rwaq-amb__steps-title {
+	margin: 0;
+	text-align: center;
+	font-size: 32px;
+	line-height: 40px;
+	font-weight: 600;
+	color: #fff;
+}
+
+.rwaq-amb__steps {
+	margin: 44px 0 0;
+	padding: 0;
+	list-style: none;
+	display: grid;
+	grid-template-columns: repeat(5, 1fr);
+	align-items: center;
+}
+
+.rwaq-amb__step {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 14px;
+	padding-inline: 10px;
+}
+
+.rwaq-amb__step + .rwaq-amb__step {
+	border-inline-start: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.rwaq-amb__step-copy {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	text-align: start;
+}
+
+.rwaq-amb__step-name {
+	font-size: 16px;
+	line-height: 26px;
+	font-weight: 600;
+	color: #fff;
+}
+
+.rwaq-amb__step-text {
+	font-size: 14px;
+	line-height: 22px;
+	color: #fff;
+	font-weight: 400;
+}
+
+.rwaq-amb__step-num {
+	flex: none;
+	width: 35px;
+	height: 35px;
+	border-radius: 50%;
+	background: var(--rwaq-amb-primary);
+	color: #fff;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 14px;
+	font-weight: 600;
+}
+
+/* ==========================================================================
+   REQUIREMENTS (2x2)
+   ========================================================================== */
+
+.rwaq-amb__reqs {
+	margin-top: 32px;
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 20px;
+}
+
+.rwaq-amb__req {
+	border: 1px solid var(--rwaq-amb-border);
+	border-radius: var(--rwaq-amb-radius);
+	background: #fff;
+	display: flex;
+	align-items: center;
+	gap: 20px;
+	padding: 20px 24px;
+}
+
+.rwaq-amb__req-copy {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.rwaq-amb__req-title {
+	margin: 0;
+	font-size: 16px;
+	line-height: 26px;
+	font-weight: 600;
+}
+
+.rwaq-amb__req-text {
+	margin: 0;
+	font-size: 14px;
+	line-height: 22px;
+	color: var(--rwaq-amb-muted);
+}
+
+/* ==========================================================================
+   GALLERY
+   ========================================================================== */
+
+.rwaq-amb__gallery {
+	margin-top: 40px;
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	grid-template-rows: 230px 170px;
+	grid-template-areas:
+		'tall wide'
+		'tall split';
+	gap: 24px;
+}
+
+.rwaq-amb__shot {
+	position: relative;
+	overflow: hidden;
+	border-radius: var(--rwaq-amb-radius);
+	background: var(--rwaq-amb-soft);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 0;
+}
+
+.rwaq-amb__shot--1 { grid-area: tall; }
+.rwaq-amb__shot--2 { grid-area: wide; }
+
+/* Slots 3 + 4 share the bottom-end cell. */
+.rwaq-amb__gallery-split {
+	grid-area: split;
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 24px;
+	min-height: 0;
+}
+
+.rwaq-amb__shot img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+
+/* Empty-slot placeholder (no image set for that gallery field). */
+.rwaq-amb__shot--empty {
+	border: 1px dashed var(--rwaq-amb-border-soft);
+}
+
+.rwaq-amb__shot-placeholder {
+	padding: 12px;
+	font-size: 13px;
+	color: var(--rwaq-amb-placeholder);
+	text-align: center;
+}
+
+.rwaq-amb__hashtag {
+	margin-top: 24px;
+	min-height: 45px;
+	padding: 12px 16px;
+	border-radius: 8px;
+	background: var(--rwaq-amb-soft);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 12px;
+	font-size: 14px;
+	text-align: center;
+	font-weight: 600;
+}
+
+.rwaq-amb__hashtag svg {
+	flex: none;
+	color: var(--rwaq-amb-primary);
+}
+
+.rwaq-amb__hashtag b {
+	color: var(--rwaq-amb-primary);
+	font-weight: 600;
+}
+
+/* ==========================================================================
+   FORM — Contact Form 7 re-skin
+   The card below wraps whatever CF7 outputs, so the rules target CF7's own
+   classes. Optional helper classes (.rwaq-amb-row / .rwaq-amb-col / …) can be
+   used inside the CF7 form template to get the two-column layout.
+   ========================================================================== */
+
+.rwaq-amb__form-band {
+	padding-block: 64px 80px;
+}
+
+.rwaq-amb__form-card {
+	margin: 40px auto 0;
+	max-width: 750px;
+	border: 1px solid var(--rwaq-amb-border);
+	border-radius: var(--rwaq-amb-radius);
+	background: #fff;
+	padding: 36px;
+}
+
+@media (max-width: 600px) {
+	.rwaq-amb__form-card {
+		padding: 24px 18px;
+	}
+}
+
+/* --- CF7 wrappers ------------------------------------------------------- */
+
+/* Contact Form 7 stamps dir="ltr" on its own wrapper whenever the FORM's
+   locale is not an RTL one — independent of the page's direction. On an Arabic
+   page created from an English-locale form that flips the whole form back to
+   LTR, so the direction is re-asserted here on the CF7 subtree. */
+.rwaq-amb__form-card .wpcf7,
+.rwaq-amb__form-card .wpcf7[dir='ltr'],
+.rwaq-amb__form-card .wpcf7-form {
+	margin: 0;
+	direction: rtl;
+	text-align: start;
+}
+
+/* CF7 wraps each field in a <span>; make it a block so labels stack. */
+.rwaq-amb__form-card .wpcf7-form-control-wrap {
+	display: block;
+	width: 100%;
+}
+
+/* CF7's default auto-<p> formatting: turn those paragraphs into the page's own
+   field rhythm instead of inheriting theme paragraph spacing. */
+.rwaq-amb__form-card .wpcf7-form > p,
+.rwaq-amb__form-card .rwaq-amb-field > p {
+	margin: 0 0 24px;
+}
+
+.rwaq-amb__form-card .wpcf7-form > p:last-of-type,
+.rwaq-amb__form-card .rwaq-amb-field > p:last-child {
+	margin-bottom: 0;
+}
+
+/* Inside a two-column row the grid gap provides the spacing. */
+.rwaq-amb__form-card .rwaq-amb-row > p {
+	margin: 0;
+}
+
+.rwaq-amb__form-card .wpcf7-form label {
+	display: block;
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--rwaq-amb-text);
+}
+
+/* Space between a label's text and the control it wraps. */
+.rwaq-amb__form-card .wpcf7-form label > .wpcf7-form-control-wrap,
+.rwaq-amb__form-card .wpcf7-form label > br + .wpcf7-form-control-wrap {
+	margin-top: 10px;
+}
+
+/* Caption for controls that cannot be wrapped in a <label> — the CV drop zone is
+   itself a <label> (no nesting allowed) and CF7 generates its own labels for
+   each checkbox. */
+.rwaq-amb__form-card .rwaq-amb-caption {
+	display: block;
+	margin-bottom: 10px;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--rwaq-amb-text);
+}
+
+/* Layout helpers for the CF7 form template. */
+.rwaq-amb__form-card .rwaq-amb-row {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 24px;
+	margin-bottom: 24px;
+}
+
+.rwaq-amb__form-card .rwaq-amb-field {
+	margin-bottom: 24px;
+}
+
+.rwaq-amb__form-card p.rwaq-amb-hint,
+.rwaq-amb__form-card .rwaq-amb-hint {
+	margin: 6px 0 0;
+	font-size: 12px;
+	line-height: 1.6;
+	color: var(--rwaq-amb-placeholder);
+}
+
+/* --- Controls ----------------------------------------------------------- */
+
+.rwaq-amb__form-card .wpcf7-form input[type='text'],
+.rwaq-amb__form-card .wpcf7-form input[type='email'],
+.rwaq-amb__form-card .wpcf7-form input[type='tel'],
+.rwaq-amb__form-card .wpcf7-form input[type='url'],
+.rwaq-amb__form-card .wpcf7-form input[type='number'],
+.rwaq-amb__form-card .wpcf7-form input[type='date'],
+.rwaq-amb__form-card .wpcf7-form input[type='search'],
+.rwaq-amb__form-card .wpcf7-form select,
+.rwaq-amb__form-card .wpcf7-form textarea {
+	width: 100%;
+	box-sizing: border-box;
+	height: 40px;
+	border: 1px solid var(--rwaq-amb-border);
+	border-radius: 8px;
+	padding: 0 14px;
+	background: #fff;
+	color: var(--rwaq-amb-text);
+	font-family: inherit;
+	font-size: 14px;
+	line-height: 1.6;
+	outline: none;
+	transition: border-color 0.18s ease;
+}
+
+.rwaq-amb__form-card .wpcf7-form textarea {
+	height: auto;
+	min-height: 120px;
+	padding: 14px;
+	line-height: 1.7;
+	resize: vertical;
+}
+
+.rwaq-amb__form-card .wpcf7-form select {
+	appearance: none;
+	-webkit-appearance: none;
+	padding-left: 38px; /* pairs with the physical background-position below */
+	background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23616161' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: left 14px center;
+	background-size: 16px 16px;
+}
+
+.rwaq-amb__form-card .wpcf7-form input:focus,
+.rwaq-amb__form-card .wpcf7-form select:focus,
+.rwaq-amb__form-card .wpcf7-form textarea:focus {
+	border-color: var(--rwaq-amb-primary);
+}
+
+.rwaq-amb__form-card .wpcf7-form input::placeholder,
+.rwaq-amb__form-card .wpcf7-form textarea::placeholder {
+	color: #A3A3A3;
+	opacity: 1;
+}
+
+/* Browsers force direction:ltr on email/url/number inputs, which makes the
+   inherited `text-align: start` resolve to LEFT and knocks these fields out of
+   alignment with their RTL siblings. Re-assert the direction; a typed address is
+   a single LTR run, so bidi still renders it correctly inside an RTL field. */
+.rwaq-amb__form-card .wpcf7-form input[type='email'],
+.rwaq-amb__form-card .wpcf7-form input[type='url'],
+.rwaq-amb__form-card .wpcf7-form input[type='number'] {
+	direction: rtl;
+	text-align: right;
+}
+
+/* The phone number keeps LTR digit order but sits at the inline-start edge,
+   next to the country badge. */
+.rwaq-amb__form-card .wpcf7-form input[type='tel'] {
+	direction: ltr;
+	text-align: right;
+}
+
+/* --- Checkboxes / radios ------------------------------------------------ */
+
+.rwaq-amb__form-card .wpcf7-checkbox,
+.rwaq-amb__form-card .wpcf7-radio,
+.rwaq-amb__form-card .wpcf7-acceptance {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px 32px;
+	margin-top: 14px;
+}
+
+.rwaq-amb__form-card .wpcf7-list-item {
+	margin: 0;
+}
+
+.rwaq-amb__form-card .wpcf7-list-item label {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	font-size: 14px;
+	font-weight: 400;
+	cursor: pointer;
+}
+
+.rwaq-amb__form-card .wpcf7-list-item input[type='checkbox'],
+.rwaq-amb__form-card .wpcf7-list-item input[type='radio'] {
+	flex: none;
+	width: 17px;
+	height: 17px;
+	margin: 0;
+	accent-color: var(--rwaq-amb-primary);
+}
+
+.rwaq-amb__form-card .wpcf7-list-item-label {
+	line-height: 1.5;
+}
+
+/* Selected option is highlighted, as in the design. */
+.rwaq-amb__form-card .wpcf7-list-item input:checked + .wpcf7-list-item-label {
+	color: #4C478C;
+}
+.rwaq-amb__form-card .wpcf7,
+.rwaq-amb__form-card .wpcf7[dir='ltr'],
+.rwaq-amb__form-card .wpcf7-form {
+	margin: 0;
+	direction: rtl;
+	text-align: start;
+}
+
+/* --- File upload -------------------------------------------------------- */
+
+/* Bare CF7 [file] tag (no .rwaq-amb-upload wrapper) — keeps a usable look. */
+.rwaq-amb__form-card .wpcf7-form input[type='file'] {
+	width: 100%;
+	border: 1px dashed var(--rwaq-amb-border-soft);
+	border-radius: 8px;
+	background: var(--rwaq-amb-surface);
+	padding: 18px 22px;
+	font-family: inherit;
+	font-size: 13px;
+	color: var(--rwaq-amb-muted);
+	cursor: pointer;
+	transition: border-color 0.18s ease;
+}
+
+.rwaq-amb__form-card .wpcf7-form input[type='file']:hover,
+.rwaq-amb__form-card .wpcf7-form input[type='file']:focus {
+	border-color: var(--rwaq-amb-primary);
+}
+
+.rwaq-amb__form-card .wpcf7-form input[type='file']::file-selector-button {
+	margin-inline-end: 14px;
+	border: 1px solid var(--rwaq-amb-border);
+	border-radius: 6px;
+	padding: 8px 14px;
+	background: #fff;
+	color: var(--rwaq-amb-text);
+	font-family: inherit;
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+/* Designed drop zone: the CF7 [file] tag is wrapped in a <label
+   class="rwaq-amb-upload"> alongside the copy and icon markup. The native
+   control is stretched invisibly over the whole box so it stays the real click
+   and drag-drop target — no JS needed to open the picker, and the box remains
+   keyboard reachable because it is still a focusable input.
+
+   `.wpcf7-form` is in the selector on purpose: the box IS a <label>, and the
+   generic `.rwaq-amb__form-card .wpcf7-form label` rule (0,2,1) would otherwise
+   out-specify a plain `.rwaq-amb__form-card .rwaq-amb-upload` (0,2,0) and force
+   `display: block`, stacking the icon underneath the copy instead of beside it.
+
+   The dashes come from an inline SVG rather than `border-style: dashed` so the
+   design's 7-on/7-off pattern is reproduced exactly; the browser's own dashed
+   border renders a much tighter ~3px pattern. stroke-width is 2 because the
+   outer half is clipped by the element edge, leaving a 1px line. */
+.rwaq-amb__form-card .wpcf7-form .rwaq-amb-upload {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 20px;
+	box-sizing: border-box;
+	min-height: 100px;
+	border: 0;
+	border-radius: 8px;
+	padding: 0 13px;
+	background-color: var(--rwaq-amb-surface);
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='100%25' height='100%25' fill='none' rx='8' stroke='%23D1D1D1' stroke-width='2' stroke-dasharray='7 7'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	font-weight: 400;
+	cursor: pointer;
+}
+
+.rwaq-amb__form-card .wpcf7-form .rwaq-amb-upload:hover,
+.rwaq-amb__form-card .wpcf7-form .rwaq-amb-upload:focus-within {
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='100%25' height='100%25' fill='none' rx='8' stroke='%23565199' stroke-width='2' stroke-dasharray='7 7'/%3E%3C/svg%3E");
+}
+
+/* CF7 wraps every field in its own <span class="wpcf7-form-control-wrap">, so the
+   label has THREE flex children: copy, icon, wrap. Left in flow that makes
+   space-between hand the edge slot to the empty wrap and strand the icon in the
+   middle. Taking the wrap out of flow with position:absolute drops it out of the
+   flex layout entirely, leaving copy and icon as the only two items, and it
+   doubles as the full-box hit area for the input inside it. */
+.rwaq-amb__form-card .rwaq-amb-upload .wpcf7-form-control-wrap {
+	position: absolute;
+	inset: 0;
+	width: auto;
+}
+
+.rwaq-amb__form-card .rwaq-amb-upload input[type='file'] {
+	display: block;
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	opacity: 0;
+	cursor: pointer;
+}
+
+/* The tip renders inside that now-absolute wrap, which would print it on top of
+   the copy; drop it just below the box instead. */
+.rwaq-amb__form-card .rwaq-amb-upload .wpcf7-not-valid-tip {
+	position: absolute;
+	top: 100%;
+	inset-inline-start: 0;
+	margin-top: 6px;
+}
+
+.rwaq-amb__form-card .rwaq-amb-upload__copy {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	min-width: 0;
+}
+
+.rwaq-amb__form-card .rwaq-amb-upload__title {
+	font-size: 14px;
+	font-weight: 500;
+	line-height: 1.5;
+	color: var(--rwaq-amb-text);
+	overflow-wrap: anywhere;
+}
+
+.rwaq-amb__form-card .rwaq-amb-upload__hint {
+	font-size: 12px;
+	line-height: 1.5;
+	color: var(--rwaq-amb-muted);
+	letter-spacing: 0.3px;
+}
+
+/* Chosen-file state is applied by assets/js/ambassadors.js. */
+.rwaq-amb__form-card .wpcf7-form .rwaq-amb-upload.is-filled {
+	background-image: none;
+	border: 1px solid var(--rwaq-amb-primary);
+	padding: 0 12px;
+}
+
+.rwaq-amb__form-card .rwaq-amb-upload.is-filled .rwaq-amb-upload__title {
+	color: var(--rwaq-amb-primary);
+}
+
+.rwaq-amb__form-card .rwaq-amb-upload__icon {
+	flex: none;
+	width: 48px;
+	height: 48px;
+	border-radius: var(--rwaq-amb-radius);
+	background: var(--rwaq-amb-soft);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--rwaq-amb-primary);
+}
+
+.rwaq-amb__form-card .rwaq-amb-upload__icon svg {
+	display: block;
+}
+
+
+/* --- Submit ------------------------------------------------------------- */
+
+.rwaq-amb__form-card .wpcf7-form .wpcf7-submit {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 44px;
+	width: auto;
+	padding: 0 22px;
+	border: 0;
+	border-radius: 8px;
+	background: var(--rwaq-amb-primary);
+	color: #fff;
+	font-family: inherit;
+	font-size: 15px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background-color 0.18s ease;
+}
+
+.rwaq-amb__form-card .wpcf7-form .wpcf7-submit:hover,
+.rwaq-amb__form-card .wpcf7-form .wpcf7-submit:focus {
+	background: var(--rwaq-amb-primary-dark);
+}
+
+.rwaq-amb__form-card .wpcf7-form .wpcf7-submit:disabled {
+	opacity: 0.6;
+	cursor: default;
+}
+
+/* Centered submit row — wrap the submit tag in <div class="rwaq-amb-submit">. */
+.rwaq-amb__form-card .rwaq-amb-submit > p {
+	margin: 0;
+}
+
+.rwaq-amb__form-card .rwaq-amb-submit {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 14px;
+	margin-top: 4px;
+	text-align: center;
+}
+
+.rwaq-amb__form-card .wpcf7-spinner {
+	margin-inline-start: 10px;
+}
+
+/* --- Validation + response messages ------------------------------------ */
+
+.rwaq-amb__form-card .wpcf7-not-valid-tip {
+	margin-top: 8px;
+	font-size: 12px;
+	font-weight: 500;
+	color: #C0392B;
+}
+
+.rwaq-amb__form-card .wpcf7-form input.wpcf7-not-valid,
+.rwaq-amb__form-card .wpcf7-form select.wpcf7-not-valid,
+.rwaq-amb__form-card .wpcf7-form textarea.wpcf7-not-valid {
+	border-color: #C0392B;
+}
+
+.rwaq-amb__form-card .wpcf7-response-output {
+	margin: 24px 0 0;
+	border: 0;
+	border-radius: 8px;
+	padding: 14px;
+	background: var(--rwaq-amb-soft);
+	color: var(--rwaq-amb-deep);
+	font-size: 14px;
+	font-weight: 500;
+	text-align: center;
+}
+
+.rwaq-amb__form-card .wpcf7-form.invalid .wpcf7-response-output,
+.rwaq-amb__form-card .wpcf7-form.unaccepted .wpcf7-response-output,
+.rwaq-amb__form-card .wpcf7-form.payment-required .wpcf7-response-output {
+	background: #FCEDEC;
+	color: #A93226;
+}
+
+.rwaq-amb__form-card .wpcf7-form.sent .wpcf7-response-output {
+	background: #ECF7F1;
+	color: #1E7A4F;
+}
+
+/* Editor-only notice shown when `cf7_form_id` is empty. */
+.rwaq-amb__form-missing {
+	margin: 0;
+	border: 1px dashed var(--rwaq-amb-border-soft);
+	border-radius: 8px;
+	padding: 20px;
+	background: var(--rwaq-amb-surface);
+	color: var(--rwaq-amb-muted);
+	font-size: 14px;
+	text-align: center;
+}
+
+/* ==========================================================================
+   RESPONSIVE
+   ========================================================================== */
+
+@media (max-width: 1024px) {
+	.rwaq-amb__hero-title {
+		font-size: 36px;
+	}
+
+	.rwaq-amb__title {
+		font-size: 28px;
+	}
+
+	.rwaq-amb__steps-title {
+		font-size: 26px;
+	}
+
+	.rwaq-amb__groups {
+		grid-template-columns: 1fr;
+	}
+
+	/* The 5 steps stack into a 2-column grid with row/column rules. */
+	.rwaq-amb__steps {
+		grid-template-columns: repeat(2, 1fr);
+		gap: 24px 0;
+	}
+
+	.rwaq-amb__step {
+		justify-content: flex-start;
+	}
+
+	.rwaq-amb__step + .rwaq-amb__step {
+		border-inline-start: 0;
+	}
+
+	.rwaq-amb__steps-card {
+		padding: 40px 28px 44px;
+	}
+}
+
+@media (max-width: 767px) {
+	.rwaq-amb__section,
+	.rwaq-amb__hero {
+		padding-block: 44px;
+	}
+
+	.rwaq-amb__form-band {
+		padding-block: 44px 60px;
+	}
+
+	.rwaq-amb__hero-title {
+		font-size: 30px;
+		letter-spacing: 0;
+	}
+
+	.rwaq-amb__hero-text {
+		font-size: 15px;
+	}
+
+	.rwaq-amb__title {
+		font-size: 24px;
+	}
+
+	.rwaq-amb__highlights {
+		grid-template-columns: 1fr;
+		gap: 24px;
+		max-width: 360px;
+	}
+
+	.rwaq-amb__highlight + .rwaq-amb__highlight {
+		border-inline-start: 0;
+		border-top: 1px solid var(--rwaq-amb-border);
+		padding-top: 24px;
+	}
+
+	.rwaq-amb__steps {
+		grid-template-columns: 1fr;
+	}
+
+	.rwaq-amb__reqs {
+		grid-template-columns: 1fr;
+	}
+
+	.rwaq-amb__group {
+		padding: 24px;
+	}
+
+	/* Gallery flattens to a single column of fixed-height tiles. */
+	.rwaq-amb__gallery {
+		grid-template-columns: 1fr;
+		grid-template-rows: none;
+		grid-template-areas: none;
+		gap: 16px;
+	}
+
+	.rwaq-amb__shot--1,
+	.rwaq-amb__shot--2 {
+		grid-area: auto;
+		height: 220px;
+	}
+
+	.rwaq-amb__gallery-split {
+		grid-area: auto;
+		gap: 16px;
+		height: 150px;
+	}
+
+	.rwaq-amb__form-card .rwaq-amb-row {
+		grid-template-columns: 1fr;
+	}
+}
