@@ -58,6 +58,8 @@ require_once TUTOR_SSO_PATH . 'includes/blogs/blogs-ajax.php';
 require_once TUTOR_SSO_PATH . 'includes/blogs/blogs-page-template.php';
 require_once TUTOR_SSO_PATH . 'includes/blogs/blog-detail.php';
 require_once TUTOR_SSO_PATH . 'includes/ambassadors/ambassadors-page-template.php';
+require_once TUTOR_SSO_PATH . 'includes/instructors/instructors-client.php';
+require_once TUTOR_SSO_PATH . 'includes/instructors/instructor-detail.php';
 require_once TUTOR_SSO_PATH . 'includes/blocks/quote-block.php';
 
 // Boot the admin settings UI.

@@ -1,0 +1,777 @@
+/**
+ * Instructor detail styles.
+ *
+ * Structural class names are the plugin's stable contract shared with
+ * includes/instructors/instructor-detail.php and assets/js/instructor.js.
+ *
+ * IBM Plex Sans Arabic is enqueued globally as 'tutor-sso-programs-font'
+ */
+
+.rwaq-ins {
+	/* Design tokens from the Figma library, mapped onto the plugin's --rwaq-*
+	   convention (see courses.css / programs.css). */
+	--rwaq-primary: #565199;          /* Brand-80 */
+	--rwaq-primary-soft: #F1F0F8;     /* Brand-10 */
+	--rwaq-text: #242424;             /* NeutralForeground1.Rest */
+	--rwaq-text-2: #424242;           /* NeutralForeground2.Rest */
+	--rwaq-muted: #616161;            /* NeutralForeground3.Rest */
+	--rwaq-border: #D1D1D1;           /* NeutralStroke1.Rest */
+	--rwaq-surface: #FFFFFF;          /* NeutralBackground1.Rest */
+	--rwaq-surface-2: #FBFBFB;        /* NeutralBackground2.Rest */
+	--rwaq-surface-4: #F0F0F0;        /* NeutralBackground4.Rest */
+	--rwaq-inverted: #292929;         /* NeutralBackgroundInverted.Rest */
+
+	/* Shadow 04 */
+	--rwaq-shadow: 0 0 2px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.10);
+
+	/* The design's 1232px content column inside a 1440px frame. The gutter is
+	   added on top of it, so the columns stay 296px wide at full width. */
+	--rwaq-ins-wide: 1232px;
+	--rwaq-ins-gutter: 16px;
+
+	position: relative;
+	color: var(--rwaq-text);
+	font-family: 'IBM Plex Sans Arabic', sans-serif;
+	-webkit-font-smoothing: antialiased;
+}
+
+.rwaq-ins *,
+.rwaq-ins *::before,
+.rwaq-ins *::after {
+	box-sizing: border-box;
+}
+
+.rwaq-ins img {
+	max-width: 100%;
+}
+
+/* Shared container: centres content in the 1232px column with a small gutter so
+   narrow viewports never touch the edge. */
+.rwaq-ins__breadcrumb-bar > *,
+.rwaq-ins__hero-inner,
+.rwaq-ins__content-inner {
+	max-width: calc(var(--rwaq-ins-wide) + var(--rwaq-ins-gutter) * 2);
+	margin-inline: auto;
+	padding-inline: var(--rwaq-ins-gutter);
+}
+
+/* ---- Breadcrumb ---- */
+.rwaq-ins__breadcrumb {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 16px;
+	padding-block: 16px;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 16px;
+}
+
+.rwaq-ins__crumb {
+	color: var(--rwaq-primary);
+	text-decoration: none;
+}
+
+a.rwaq-ins__crumb:hover,
+a.rwaq-ins__crumb:focus-visible {
+	text-decoration: underline;
+}
+
+.rwaq-ins__crumb--current {
+	color: var(--rwaq-muted);
+}
+
+.rwaq-ins__crumb-sep {
+	display: inline-flex;
+	/* The exported chevron points toward the start of the line; mirror it back
+	   when the page is rendered LTR. */
+	transform: scaleX(1);
+}
+
+[dir='ltr'] .rwaq-ins__crumb-sep {
+	transform: scaleX(-1);
+}
+
+/* ---- Hero band ----
+   The band's tint is full-bleed while its content stays in the 1232px column,
+   as designed. The plugin's markup renders inside whatever content container the
+   theme provides, so the tint has to escape that container on its own.
+
+   It does so with a spread box-shadow rather than the usual `width: 100vw;
+   margin-inline: calc(50% - 50vw)`: box-shadow paints outside the border box
+   without taking part in layout, so it cannot push the page into a horizontal
+   scrollbar — which 100vw does on platforms with classic (space-taking)
+   scrollbars, where 100vw is wider than the viewport's client width.
+
+   clip-path then trims the shadow vertically (0 inset top/bottom) while leaving
+   it free horizontally (-100vmax), so the tint reads as a clean edge-to-edge
+   band and does not bleed into the breadcrumb above or the tabs below. */
+.rwaq-ins__hero {
+	position: relative;
+	overflow: hidden;
+	background: var(--rwaq-surface-2);
+	box-shadow: 0 0 0 100vmax var(--rwaq-surface-2);
+	clip-path: inset(0 -100vmax);
+	min-height: 440px;
+	display: flex;
+	align-items: center;
+}
+
+/* Decorative radial blobs. Physical offsets on purpose: these are visual
+   composition, not content, and must not mirror with the text direction. */
+.rwaq-ins__blobs {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+}
+
+.rwaq-ins__blob {
+	position: absolute;
+	width: 297px;
+	height: 297px;
+}
+
+.rwaq-ins__blob--1 {
+	left: 0;
+	top: -34px;
+}
+
+.rwaq-ins__blob--2 {
+	left: 34%;
+	top: 253px;
+}
+
+.rwaq-ins__blob--3 {
+	right: 90px;
+	top: -107px;
+}
+
+.rwaq-ins__blob--4 {
+	right: 0;
+	bottom: -54px;
+}
+
+.rwaq-ins__hero-inner {
+	position: relative;
+	z-index: 1;
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: 28px;
+	padding-block: 32px;
+}
+
+/* ---- Profile row: avatar first in source order, so it sits at the start edge
+   (right, in RTL) exactly as designed. ---- */
+.rwaq-ins__profile {
+	display: flex;
+	align-items: center;
+	gap: 40px;
+}
+
+.rwaq-ins__summary {
+	flex: 1 1 auto;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 24px;
+	text-align: start;
+}
+
+.rwaq-ins__name {
+	margin: 0;
+	font-size: 28px;
+	font-weight: 600;
+	line-height: 36px;
+	color: var(--rwaq-text);
+}
+
+/* Affiliated organizations. */
+.rwaq-ins__partners {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 24px;
+	min-height: 28px;
+}
+
+.rwaq-ins__partners-label {
+	font-size: 16px;
+	font-weight: 600;
+	line-height: 26px;
+	color: var(--rwaq-text);
+	white-space: nowrap;
+}
+
+/* Organization logos arrive from the API as arbitrary uploads of unknown aspect
+   ratio, so they are bound by height only — each keeps its own width, and
+   `contain` stops any of them being distorted into a shared box. The 28px cap is
+   the height of the design's logo row. */
+.rwaq-ins__partner-logo {
+	flex: 0 0 auto;
+	display: block;
+	width: auto;
+	height: auto;
+	max-width: 120px;
+	max-height: 28px;
+	object-fit: contain;
+}
+
+.rwaq-ins__partners-dot {
+	flex: 0 0 auto;
+	width: 6px;
+	height: 6px;
+}
+
+/* Biography. Clamped to two lines; past that the "read more" button opens the
+   full text in a modal rather than expanding in place. */
+.rwaq-ins__bio {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 16px;
+	max-width: 658px;
+}
+
+.rwaq-ins__bio-text {
+	margin: 0;
+	font-size: 14px;
+	font-weight: 400;
+	line-height: 28px;
+	color: var(--rwaq-muted);
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+
+.rwaq-ins__bio-toggle {
+	appearance: none;
+	border: 0;
+	padding: 0;
+	background: none;
+	cursor: pointer;
+	font-family: inherit;
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 22px;
+}
+
+/* No hover treatment. Restated across every interaction state and pinned for
+   the same reason as the tabs: this is a bare <button>, so the theme's own
+   button styling reaches it and tints the label pink on hover. `cursor:
+   pointer` above and `outline` (untouched) are what still mark it actionable. */
+.rwaq-ins__bio-toggle,
+.rwaq-ins__bio-toggle:hover,
+.rwaq-ins__bio-toggle:focus,
+.rwaq-ins__bio-toggle:active {
+	color: var(--rwaq-primary) !important;
+	background: none !important;
+	box-shadow: none !important;
+	text-decoration: none !important;
+	opacity: 1 !important;
+}
+
+/* Hidden until instructor.js confirms the clamp is actually hiding text, so a
+   short biography never shows a button that opens nothing new. */
+.rwaq-ins__bio-toggle[hidden] {
+	display: none;
+}
+
+/* ---- Biography modal ----
+   700px panel from the design (node 9664:99416): a brand-purple header carrying
+   the title and the close button, over a 40px-padded body that scrolls when the
+   biography is long. The close button sits at the header's end edge — the left,
+   in RTL — which is where the design places it. */
+.rwaq-ins__modal {
+	position: fixed;
+	inset: 0;
+	z-index: 99999;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
+}
+
+.rwaq-ins__modal[hidden] {
+	display: none;
+}
+
+.rwaq-ins__modal-overlay {
+	position: absolute;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.55);
+}
+
+.rwaq-ins__modal-panel {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	width: 700px;
+	max-width: 100%;
+	max-height: min(90vh, 640px);
+	overflow: hidden;
+	border-radius: 10px;
+	background: var(--rwaq-surface);
+	/* The design's own drop shadow. */
+	box-shadow: 0 2px 37px rgba(0, 0, 0, 0.07);
+}
+
+.rwaq-ins__modal-head {
+	flex: 0 0 auto;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	/* 20px block padding on a 32px title line is the design's 72px header. */
+	padding: 20px 30px;
+	background: var(--rwaq-primary);
+}
+
+.rwaq-ins__modal-title {
+	margin: 0;
+	font-size: 24px;
+	font-weight: 600;
+	line-height: 32px;
+	color: var(--rwaq-surface);
+}
+
+.rwaq-ins__modal-close {
+	flex: 0 0 auto;
+	appearance: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	padding: 0;
+	border: 0;
+	background: none;
+	cursor: pointer;
+}
+
+/* No hover treatment, pinned as above.
+   Every descendant is covered, not just the <svg>: the icon's paths stroke with
+   currentColor, and a theme rule like `button:hover *` sets `color` on the
+   <path> itself — which beats inheriting white from the svg, so the × would go
+   pink while both the button and the svg still measured white. */
+.rwaq-ins__modal-close,
+.rwaq-ins__modal-close:hover,
+.rwaq-ins__modal-close:focus,
+.rwaq-ins__modal-close:active,
+.rwaq-ins__modal-close *,
+.rwaq-ins__modal-close:hover *,
+.rwaq-ins__modal-close:focus * {
+	color: var(--rwaq-surface) !important;
+	background: none !important;
+	box-shadow: none !important;
+	text-decoration: none !important;
+	opacity: 1 !important;
+}
+
+.rwaq-ins__modal-close svg {
+	display: block;
+	width: 24px;
+	height: 24px;
+}
+
+.rwaq-ins__modal-body {
+	flex: 1 1 auto;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	padding: 40px;
+	font-size: 14px;
+	font-weight: 400;
+	line-height: 28px;
+	color: var(--rwaq-muted);
+	text-align: start;
+}
+
+/* The API's own paragraphs, spaced as the design spaces them. */
+.rwaq-ins__modal-body > * {
+	margin: 0 0 10px;
+}
+
+.rwaq-ins__modal-body > *:last-child {
+	margin-bottom: 0;
+}
+
+/* While a modal is open the page behind it must not scroll. */
+.rwaq-ins-modal-open {
+	overflow: hidden;
+}
+
+/* ---- Avatar: the photo offset over a slightly larger tilted white card.
+   Physical offsets on purpose — the tilt reads the same in both directions. ---- */
+.rwaq-ins__avatar {
+	position: relative;
+	flex: 0 0 auto;
+	width: 252px;
+	height: 256px;
+}
+
+.rwaq-ins__avatar-card {
+	position: absolute;
+	left: 6px;
+	top: 6px;
+	width: 240px;
+	height: 244px;
+	border-radius: 8px;
+	background: var(--rwaq-surface);
+	box-shadow: var(--rwaq-shadow);
+	transform: rotate(-2.88deg);
+}
+
+.rwaq-ins__avatar-image {
+	position: absolute;
+	left: 13px;
+	top: 11px;
+	width: 238px;
+	height: 238px;
+	border-radius: 8px;
+	object-fit: cover;
+	display: block;
+}
+
+/* ---- Stats bar ---- */
+.rwaq-ins__stats {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 20px 60px;
+	border-radius: 10px;
+	background: var(--rwaq-surface);
+	box-shadow: var(--rwaq-shadow);
+}
+
+.rwaq-ins__stat {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+}
+
+.rwaq-ins__stat-icon {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 48px;
+	height: 48px;
+	border-radius: 10px;
+	background: var(--rwaq-primary-soft);
+}
+
+.rwaq-ins__stat-icon img {
+	width: 24px;
+	height: 24px;
+	display: block;
+}
+
+.rwaq-ins__stat-label {
+	font-size: 14px;
+	font-weight: 700;
+	line-height: 20px;
+	color: var(--rwaq-text);
+	white-space: nowrap;
+}
+
+.rwaq-ins__stats-divider {
+	flex: 0 0 auto;
+	width: 1px;
+	height: 22px;
+	background: var(--rwaq-border);
+}
+
+/* ---- Tabbed content ---- */
+.rwaq-ins__content-inner {
+	padding-block: 24px 48px;
+}
+
+.rwaq-ins__tabs {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding-bottom: 1px;
+	border-bottom: 1px solid var(--rwaq-border);
+	/* The strip is right-aligned in the design; in RTL that is the start edge,
+	   so the tabs sit at the container's start and the rule runs full width. */
+	justify-content: flex-start;
+}
+
+.rwaq-ins__tab {
+	appearance: none;
+	background: none;
+	border: 0;
+	/* The active tab's 2px rule sits on top of the strip's 1px one. */
+	border-bottom: 2px solid transparent;
+	margin-bottom: -1px;
+	padding: 6px 16px;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	cursor: pointer;
+	font-family: inherit;
+	font-size: 16px;
+	font-weight: 400;
+	line-height: 28px;
+	color: var(--rwaq-muted);
+}
+
+.rwaq-ins__tab.is-active {
+	font-weight: 600;
+	line-height: 26px;
+}
+
+/* No hover treatment: a tab's appearance is driven by selection alone, so the
+   resting look is restated for every interaction state.
+
+   These declarations are not redundant, and the !important is not cargo cult.
+   The tabs are bare <button> elements, so the active theme's own button styling
+   applies to them, and it tints the label pink on hover. A theme rule carrying
+   !important (or one qualified by an ancestor id) outranks anything this
+   stylesheet can express by specificity alone, so the intended resting values
+   are pinned instead. Only colour and decoration are locked — never layout —
+   and `outline` is deliberately untouched, so keyboard focus stays visible.
+
+   The label span is pinned alongside the button: themes commonly style the
+   button's descendants too (`button:hover *`), which recolours the text even
+   when the button element itself holds. */
+.rwaq-ins__tab,
+.rwaq-ins__tab:hover,
+.rwaq-ins__tab:focus,
+.rwaq-ins__tab:active,
+.rwaq-ins__tab .rwaq-ins__tab-label,
+.rwaq-ins__tab:hover .rwaq-ins__tab-label,
+.rwaq-ins__tab:focus .rwaq-ins__tab-label {
+	color: var(--rwaq-muted) !important;
+	background: none !important;
+	box-shadow: none !important;
+	text-decoration: none !important;
+	border-bottom-color: transparent !important;
+}
+
+.rwaq-ins__tab.is-active,
+.rwaq-ins__tab.is-active:hover,
+.rwaq-ins__tab.is-active:focus,
+.rwaq-ins__tab.is-active:active,
+.rwaq-ins__tab.is-active .rwaq-ins__tab-label,
+.rwaq-ins__tab.is-active:hover .rwaq-ins__tab-label,
+.rwaq-ins__tab.is-active:focus .rwaq-ins__tab-label {
+	color: var(--rwaq-text) !important;
+	background: none !important;
+	border-bottom-color: var(--rwaq-text) !important;
+}
+
+/* Count badge. Source order puts the label first, so the badge lands on the far
+   side of it — left of the label in RTL, as designed. */
+.rwaq-ins__tab-count {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	height: 20px;
+	border-radius: 999px;
+	background: var(--rwaq-surface-4);
+	color: var(--rwaq-text);
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 12px;
+}
+
+/* The badge is a child of the button, so a theme rule targeting the button's
+   descendants on hover reaches it too — pinned for the same reason. */
+.rwaq-ins__tab .rwaq-ins__tab-count,
+.rwaq-ins__tab:hover .rwaq-ins__tab-count,
+.rwaq-ins__tab:focus .rwaq-ins__tab-count {
+	background: var(--rwaq-surface-4) !important;
+	color: var(--rwaq-text) !important;
+}
+
+.rwaq-ins__tab.is-active .rwaq-ins__tab-count,
+.rwaq-ins__tab.is-active:hover .rwaq-ins__tab-count,
+.rwaq-ins__tab.is-active:focus .rwaq-ins__tab-count {
+	background: var(--rwaq-inverted) !important;
+	color: var(--rwaq-surface) !important;
+}
+
+.rwaq-ins__panel {
+	padding-top: 24px;
+}
+
+.rwaq-ins__panel[hidden] {
+	display: none;
+}
+
+.rwaq-ins__empty {
+	margin: 0;
+	padding: 32px 0;
+	font-size: 14px;
+	line-height: 22px;
+	color: var(--rwaq-muted);
+	text-align: center;
+}
+
+/* A failed fetch, as opposed to an instructor with nothing to show. */
+.rwaq-ins__empty--error {
+	color: var(--rwaq-text-2);
+}
+
+/* ---- Card grids ----
+   The panels render the courses / programs catalog card components, so their own
+   stylesheets own the grid and the cards. Only the seam is set here: the catalog
+   roots ship a bottom margin for standalone use, which this view does not want,
+   and the programs grid is nudged to the courses grid's 24px gutter so the two
+   tabs line up with each other. */
+.rwaq-ins__cards {
+	margin: 0;
+}
+
+.rwaq-ins .rwaq-programs__grid {
+	--rwaq-programs-gap: 24px;
+}
+
+/* A single very long name can still fill the meta row, so it is ellipsised
+   rather than wrapped — the card's height has to match its neighbours'. Scoped
+   to this page, so the courses listing keeps its wrapping behaviour.
+   min-width: 0 is what lets the text actually shrink inside the flex row. */
+.rwaq-ins .rwaq-course-card__meta-item {
+	min-width: 0;
+}
+
+.rwaq-ins .rwaq-course-card__meta-item > span {
+	min-width: 0;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* ---- Responsive ----
+   The design is a single 1440px frame; these steps keep it intact down to
+   phones without changing any of its proportions above 1280px. */
+@media (max-width: 1279px) {
+	.rwaq-ins__stats {
+		padding-inline: 32px;
+	}
+
+}
+
+@media (max-width: 1023px) {
+	.rwaq-ins__profile {
+		gap: 32px;
+	}
+
+	.rwaq-ins__stats {
+		flex-wrap: wrap;
+		justify-content: flex-start;
+		gap: 20px 32px;
+		padding-inline: 24px;
+	}
+
+	/* Wrapped rows make the vertical rules meaningless. */
+	.rwaq-ins__stats-divider {
+		display: none;
+	}
+
+}
+
+@media (max-width: 767px) {
+	.rwaq-ins__hero {
+		min-height: 0;
+	}
+
+	.rwaq-ins__hero-inner {
+		padding-block: 28px;
+	}
+
+	/* Photo above the summary, both centred. */
+	.rwaq-ins__profile {
+		flex-direction: column;
+		align-items: center;
+		gap: 24px;
+	}
+
+	/* `align-items: center` sizes the column's children to their content, so the
+	   summary has to be pinned to the container — otherwise the bio's 658px
+	   max-width becomes its width and the page overflows sideways. */
+	.rwaq-ins__summary {
+		width: 100%;
+		align-items: center;
+		text-align: center;
+	}
+
+	.rwaq-ins__bio {
+		width: 100%;
+		align-items: center;
+	}
+
+	.rwaq-ins__bio-text {
+		text-align: start;
+	}
+
+	.rwaq-ins__partners {
+		justify-content: center;
+		gap: 16px;
+	}
+
+	.rwaq-ins__name {
+		font-size: 24px;
+		line-height: 32px;
+	}
+
+	.rwaq-ins__blob--2,
+	.rwaq-ins__blob--3 {
+		display: none;
+	}
+
+	.rwaq-ins__stat {
+		gap: 12px;
+	}
+
+	.rwaq-ins__tabs {
+		gap: 0;
+	}
+
+	.rwaq-ins__tab {
+		padding-inline: 12px;
+	}
+}
+
+@media (max-width: 599px) {
+	.rwaq-ins__modal-head {
+		padding: 16px 20px;
+	}
+
+	.rwaq-ins__modal-title {
+		font-size: 19px;
+		line-height: 26px;
+	}
+
+	.rwaq-ins__modal-body {
+		padding: 24px 20px;
+	}
+
+	.rwaq-ins__avatar {
+		width: 216px;
+		height: 220px;
+	}
+
+	.rwaq-ins__avatar-card {
+		width: 206px;
+		height: 210px;
+	}
+
+	.rwaq-ins__avatar-image {
+		width: 204px;
+		height: 204px;
+	}
+
+	.rwaq-ins__stats {
+		gap: 16px 24px;
+		padding: 16px 20px;
+	}
+
+}
