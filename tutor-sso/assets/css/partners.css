@@ -1,0 +1,672 @@
+/**
+ * Partners catalog styles.
+ *
+ * Implements the Figma "Landing page → Partners catalogue" body (node
+ * 9656-89828): a 204px hero band carrying the heading and a live count, a
+ * toolbar (sort pill + search box) and a six-per-row grid of
+ * partner logo cards.
+ *
+ * Structural class names are the plugin's stable contract shared with
+ * includes/partners/partners-catalog.php and assets/js/partners.js.
+ *
+ * Targets Arabic (RTL) pages — the wrapper carries dir="rtl" — but uses logical
+ * properties and source order rather than physical offsets, so the layout also
+ * reads correctly LTR. The one exception is the decorative blobs, whose
+ * positions are visual composition and stay physical.
+ *
+ * IBM Plex Sans Arabic is enqueued globally as 'tutor-sso-programs-font'
+ * (see tutor-sso.php).
+ */
+
+.rwaq-partners {
+	/* Design tokens from the Figma library, mapped onto the plugin's --rwaq-*
+	   convention (see courses.css / programs.css). */
+	--rwaq-primary: #565199;          /* Brand-80 */
+	--rwaq-text: #242424;             /* NeutralForeground1.Rest */
+	--rwaq-text-2: #424242;           /* NeutralForeground2.Rest */
+	--rwaq-muted: #616161;            /* NeutralForeground3.Rest */
+	--rwaq-placeholder: #707070;      /* NeutralForeground4.Rest */
+	--rwaq-border: #D1D1D1;           /* NeutralStroke1.Rest */
+	--rwaq-surface: #FFFFFF;          /* NeutralBackground1.Rest */
+	--rwaq-surface-2: #FBFBFB;        /* NeutralBackground2.Rest */
+
+	/* The design's 1232px content column inside a 1440px frame; the gutter is
+	   added on top of it, so the columns keep their designed width at full
+	   width. */
+	--rwaq-partners-wide: 1232px;
+	--rwaq-partners-gutter: 16px;
+
+	position: relative;
+	color: var(--rwaq-text);
+	font-family: 'IBM Plex Sans Arabic', sans-serif;
+	-webkit-font-smoothing: antialiased;
+}
+
+.rwaq-partners *,
+.rwaq-partners *::before,
+.rwaq-partners *::after {
+	box-sizing: border-box;
+}
+
+.rwaq-partners img {
+	max-width: 100%;
+}
+
+/* Screen-reader-only labels, in case the theme does not define the class. */
+.rwaq-partners .screen-reader-text {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* ---- Template wrapper ----
+   The plugin's own templates render <main class="site-main rwaq-partners-archive">
+   (or …-page). Themes routinely cap `.site-main` at their own content width,
+   which would squeeze the 1232px column and every card with it — a 1000px cap
+   renders 148px cards instead of 192px.
+
+   Because these templates own that element, the cap is lifted on it directly
+   rather than breaking out with `width: 100vw`, which would overflow by the
+   scrollbar width on platforms where scrollbars take up space. `main` is included
+   in the selector so this outranks a bare `.site-main`, and !important covers the
+   case where the theme's rule is more specific still.
+
+   This only reaches a constraint on `.site-main` itself. If a theme constrains an
+   ancestor instead, the column will still be narrow — see the note in
+   templates/archive-partner.php. */
+main.rwaq-partners-archive,
+main.rwaq-partners-page,
+.rwaq-partners-archive,
+.rwaq-partners-page {
+	max-width: none !important;
+	width: auto !important;
+	margin-inline: 0 !important;
+	padding-inline: 0 !important;
+}
+
+/* Shared container. */
+.rwaq-partners__hero-inner,
+.rwaq-partners__content-inner {
+	max-width: calc(var(--rwaq-partners-wide) + var(--rwaq-partners-gutter) * 2);
+	margin-inline: auto;
+	padding-inline: var(--rwaq-partners-gutter);
+}
+
+/* ---- Hero band ----
+   The tint is full-bleed while the content stays in the 1232px column. It uses a
+   spread box-shadow rather than `width: 100vw`, because box-shadow paints
+   outside the border box without taking part in layout — so it cannot push the
+   page into a horizontal scrollbar the way 100vw does where scrollbars take up
+   space. clip-path then trims the shadow vertically while leaving it free
+   horizontally. Same approach as the instructor hero. */
+.rwaq-partners__hero {
+	position: relative;
+	overflow: hidden;
+	background: var(--rwaq-surface-2);
+	box-shadow: 0 0 0 100vmax var(--rwaq-surface-2);
+	clip-path: inset(0 -100vmax);
+	min-height: 204px;
+	display: flex;
+	align-items: center;
+}
+
+/* Decorative radial blobs, reusing the instructor page's exported ellipses.
+   Physical offsets on purpose: this is visual composition, not content, and must
+   not mirror with the text direction. The band clips them. */
+.rwaq-partners__blobs {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+}
+
+.rwaq-partners__blob {
+	position: absolute;
+	width: 297px;
+	height: 297px;
+}
+
+/* Positions derived from the design's Group 5, flattened onto the 204px band. */
+.rwaq-partners__blob--1 {
+	left: 0;
+	top: -224px;
+}
+
+.rwaq-partners__blob--2 {
+	left: 484px;
+	top: 62px;
+}
+
+.rwaq-partners__blob--3 {
+	left: 1053px;
+	top: -297px;
+}
+
+.rwaq-partners__blob--4 {
+	right: 0;
+	top: -62px;
+}
+
+.rwaq-partners__hero-inner {
+	position: relative;
+	z-index: 1;
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 24px;
+	padding-block: 40px;
+	text-align: center;
+}
+
+.rwaq-partners__title {
+	margin: 0;
+	font-size: 32px;
+	font-weight: 600;
+	line-height: 40px;
+	color: var(--rwaq-text);
+}
+
+.rwaq-partners__count {
+	margin: 0;
+	max-width: 592px;
+	font-size: 16px;
+	font-weight: 400;
+	line-height: 28px;
+	color: var(--rwaq-muted);
+}
+
+/* ---- Content ---- */
+.rwaq-partners__content-inner {
+	position: relative;
+	padding-block: 36px 64px;
+}
+
+/* Overlay shown while a search or sort reloads the whole grid. */
+.rwaq-partners__overlay {
+	position: absolute;
+	inset: 0;
+	z-index: 2;
+	display: flex;
+	align-items: flex-start;
+	justify-content: center;
+	padding-top: 120px;
+	background: rgba(255, 255, 255, 0.7);
+	backdrop-filter: blur(1px);
+}
+
+.rwaq-partners__overlay[hidden] {
+	display: none;
+}
+
+/* ---- Toolbar ----
+   Source order puts the search group first so that, under RTL, it lands at the
+   right edge and the sort pill at the left — as designed. */
+.rwaq-partners__toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	flex-wrap: wrap;
+	margin-bottom: 20px;
+}
+
+.rwaq-partners__toolbar-end {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	flex-wrap: wrap;
+}
+
+/* Sort pill. */
+.rwaq-partners__sort {
+	position: relative;
+}
+
+.rwaq-partners__sort-select {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	border: 0;
+}
+
+.rwaq-partners__pill {
+	appearance: none;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 14px;
+	border: 1px solid var(--rwaq-border);
+	border-radius: 8px;
+	background: var(--rwaq-surface);
+	cursor: pointer;
+	font-family: inherit;
+	font-size: 14px;
+	line-height: 22px;
+	white-space: nowrap;
+}
+
+.rwaq-partners__pill-caption {
+	font-weight: 400;
+	color: var(--rwaq-muted);
+}
+
+.rwaq-partners__pill-value {
+	font-weight: 600;
+	color: var(--rwaq-text);
+}
+
+.rwaq-partners__pill-value[hidden] {
+	display: none;
+}
+
+.rwaq-partners__pill-chevron {
+	display: inline-flex;
+	transition: transform 0.15s ease;
+}
+
+.rwaq-partners__sort.is-open .rwaq-partners__pill-chevron {
+	transform: rotate(180deg);
+}
+
+/* Dropdown menu, shared shape with the courses catalog's sort menu. */
+.rwaq-partners__menu {
+	position: absolute;
+	top: calc(100% + 8px);
+	inset-inline-start: 0;
+	z-index: 20;
+	width: 240px;
+	max-width: 80vw;
+	max-height: 320px;
+	overflow-y: auto;
+	padding: 8px;
+	border: 1px solid #e5e5e5;
+	border-radius: 12px;
+	background: var(--rwaq-surface);
+	box-shadow: 0 12px 28px rgba(16, 24, 40, 0.14);
+	display: none;
+}
+
+.rwaq-partners__sort.is-open .rwaq-partners__menu {
+	display: block;
+}
+
+.rwaq-partners__option {
+	padding: 10px 14px;
+	border-radius: 8px;
+	font-size: 14px;
+	line-height: 22px;
+	color: var(--rwaq-text);
+	text-align: start;
+	cursor: pointer;
+}
+
+/* No hover treatment on the options — selection is the only thing that changes
+   their appearance. Restated across the interaction states and pinned, for the
+   same reason as the search input: these sit inside theme-styled containers. */
+.rwaq-partners .rwaq-partners__option,
+.rwaq-partners .rwaq-partners__option:hover,
+.rwaq-partners .rwaq-partners__option:focus,
+.rwaq-partners .rwaq-partners__option:active {
+	background: none !important;
+	color: var(--rwaq-text) !important;
+}
+
+.rwaq-partners .rwaq-partners__option.is-selected,
+.rwaq-partners .rwaq-partners__option.is-selected:hover,
+.rwaq-partners .rwaq-partners__option.is-selected:focus {
+	background: #f4f4f6 !important;
+	font-weight: 600;
+}
+
+/* The pill is a bare <button>, so the theme's button styling reaches it too. */
+.rwaq-partners .rwaq-partners__pill,
+.rwaq-partners .rwaq-partners__pill:hover,
+.rwaq-partners .rwaq-partners__pill:focus,
+.rwaq-partners .rwaq-partners__pill:active {
+	background: var(--rwaq-surface) !important;
+	border-color: var(--rwaq-border) !important;
+	box-shadow: none !important;
+	text-decoration: none !important;
+	opacity: 1 !important;
+}
+
+.rwaq-partners .rwaq-partners__pill .rwaq-partners__pill-caption,
+.rwaq-partners .rwaq-partners__pill:hover .rwaq-partners__pill-caption,
+.rwaq-partners .rwaq-partners__pill:focus .rwaq-partners__pill-caption {
+	color: var(--rwaq-muted) !important;
+}
+
+.rwaq-partners .rwaq-partners__pill .rwaq-partners__pill-chevron svg,
+.rwaq-partners .rwaq-partners__pill:hover .rwaq-partners__pill-chevron svg,
+.rwaq-partners .rwaq-partners__pill:focus .rwaq-partners__pill-chevron svg {
+	stroke: var(--rwaq-text) !important;
+	color: var(--rwaq-text) !important;
+}
+
+.rwaq-partners .rwaq-partners__pill .rwaq-partners__pill-value,
+.rwaq-partners .rwaq-partners__pill:hover .rwaq-partners__pill-value,
+.rwaq-partners .rwaq-partners__pill:focus .rwaq-partners__pill-value {
+	color: var(--rwaq-text) !important;
+}
+
+/* ---- Search box ---- */
+.rwaq-partners__searchbar {
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	width: 304px;
+	max-width: 100%;
+	height: 40px;
+	padding-inline: 10px;
+	border: 1px solid var(--rwaq-border);
+	border-radius: 8px;
+	background: var(--rwaq-surface);
+}
+
+/* Source order puts the input first, so the icon sits at the inline end — the
+   left, in RTL — as the design shows.
+
+   The box's single 1px border comes from .rwaq-partners__searchbar above; the
+   input itself must contribute nothing. Themes routinely style
+   `input[type="search"]` with their own border, background, inset shadow and
+   radius, which then draws a second frame *inside* this one. Every one of those
+   is pinned off across all states.
+
+   Note the `.rwaq-partners` prefix: it is load-bearing, not decorative. A theme
+   rule for `input[type="search"]` scores (0,1,1), which outranks a bare
+   `.rwaq-partners__search-input` at (0,1,0) — and !important on both sides is a
+   tie that specificity then decides. The prefix takes it to (0,2,0) and wins. */
+.rwaq-partners .rwaq-partners__search-input,
+.rwaq-partners .rwaq-partners__search-input:hover,
+.rwaq-partners .rwaq-partners__search-input:focus,
+.rwaq-partners .rwaq-partners__search-input:focus-visible,
+.rwaq-partners .rwaq-partners__search-input:active {
+	appearance: none !important;
+	-webkit-appearance: none !important;
+	border: 0 !important;
+	border-radius: 0 !important;
+	background: none !important;
+	box-shadow: none !important;
+	outline: none !important;
+	min-height: 0 !important;
+	max-width: none !important;
+}
+
+.rwaq-partners__search-input {
+	flex: 1 1 auto;
+	min-width: 0;
+	width: auto;
+	height: 100%;
+	margin: 0;
+	padding: 0 2px;
+	font-family: inherit;
+	font-size: 16px;
+	line-height: 28px;
+	color: var(--rwaq-text);
+}
+
+.rwaq-partners__search-input::placeholder {
+	color: var(--rwaq-placeholder);
+	opacity: 1;
+}
+
+.rwaq-partners__search-icon {
+	flex: 0 0 auto;
+	display: inline-flex;
+	width: 24px;
+	height: 24px;
+}
+
+/* Chrome shows its own clear button on type=search; the design has none. */
+.rwaq-partners__search-input::-webkit-search-cancel-button {
+	appearance: none;
+}
+
+/* ---- Grid ----
+   Six 192px columns with a 16px gutter in the 1232px container, 20px between
+   rows. Flexbox with a computed basis rather than grid, matching the other
+   catalogs, so the column count can come from the shortcode. */
+.rwaq-partners__grid {
+	--rwaq-partners-gap: 16px;
+	--rwaq-partners-row-gap: 20px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--rwaq-partners-row-gap) var(--rwaq-partners-gap);
+}
+
+/* ---- Card ---- */
+.rwaq-partner-card {
+	flex: 0 0 calc(
+		(100% - (var(--rwaq-partners-columns, 6) - 1) * var(--rwaq-partners-gap, 16px))
+		/ var(--rwaq-partners-columns, 6)
+	);
+	min-width: 0;
+	min-height: 202px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 16px;
+	padding: 16px;
+	border: 1px solid var(--rwaq-border);
+	border-radius: 10px;
+	background: var(--rwaq-surface);
+	color: inherit;
+	text-decoration: none;
+	transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+/* The lift the courses / programs / blog cards use, so every card in the plugin
+   behaves the same on hover. Only applied to cards that actually link. */
+a.rwaq-partner-card:hover {
+	box-shadow: 0 8px 22px rgba(16, 24, 40, 0.1);
+	transform: translateY(-2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.rwaq-partner-card {
+		transition: none;
+	}
+
+	a.rwaq-partner-card:hover {
+		transform: none;
+	}
+}
+
+/* Logo well. The logos are arbitrary uploads of unknown aspect ratio, so they
+   are bound by height and `contain` keeps every one undistorted — the 60px cap
+   is the height of the design's own logo leaf inside its 102px well. */
+.rwaq-partners .rwaq-partner-card__logo {
+	flex: 0 0 auto;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	height: 102px;
+	border-start-start-radius: 6px;
+	border-start-end-radius: 6px;
+	background: var(--rwaq-surface);
+	color: #b6bccb;
+}
+
+.rwaq-partner-card__image {
+	max-width: 100%;
+	max-height: 60px;
+	width: auto;
+	height: auto;
+	object-fit: contain;
+}
+
+.rwaq-partner-card__placeholder {
+	display: inline-flex;
+}
+
+.rwaq-partner-card__text {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 4px;
+	width: 100%;
+	text-align: center;
+}
+
+.rwaq-partner-card__name {
+	font-size: 16px;
+	font-weight: 600;
+	line-height: 26px;
+	color: var(--rwaq-text);
+	/* Two lines at most, so one long name cannot outgrow its row. */
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+
+.rwaq-partner-card__subtitle {
+	font-size: 14px;
+	font-weight: 400;
+	line-height: 22px;
+	color: var(--rwaq-muted);
+	max-width: 100%;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* ---- Status + loader ---- */
+.rwaq-partners__status {
+	padding: 32px 0;
+	font-size: 14px;
+	line-height: 22px;
+	color: var(--rwaq-muted);
+	text-align: center;
+}
+
+.rwaq-partners__status:empty {
+	display: none;
+}
+
+.rwaq-partners__loader {
+	display: flex;
+	justify-content: center;
+	padding: 1.5rem 0;
+}
+
+.rwaq-partners__loader[hidden] {
+	display: none;
+}
+
+/* Infinite-scroll tripwire: occupies a sliver of layout so the observer can see
+   it enter and leave the viewport. Never display:none — a zero-box element never
+   intersects anything. */
+.rwaq-partners__sentinel {
+	width: 100%;
+	height: 1px;
+}
+
+.rwaq-partners__spinner {
+	width: 2rem;
+	height: 2rem;
+	fill: var(--rwaq-primary);
+	animation: rwaq-partners-spin 0.9s linear infinite;
+}
+
+@keyframes rwaq-partners-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.rwaq-partners__spinner {
+		animation-duration: 2.4s;
+	}
+}
+
+/* ---- Responsive ----
+   The design is a single 1440px frame; these steps keep its proportions intact
+   above 1280px and step the column count down from there. */
+@media (max-width: 1279px) {
+	.rwaq-partner-card {
+		flex-basis: calc((100% - 4 * var(--rwaq-partners-gap)) / 5);
+	}
+
+	.rwaq-partners__blob--2 {
+		left: 34%;
+	}
+}
+
+@media (max-width: 1023px) {
+	.rwaq-partner-card {
+		flex-basis: calc((100% - 3 * var(--rwaq-partners-gap)) / 4);
+	}
+
+	.rwaq-partners__title {
+		font-size: 28px;
+		line-height: 36px;
+	}
+}
+
+@media (max-width: 767px) {
+	.rwaq-partners__hero {
+		min-height: 0;
+	}
+
+	.rwaq-partners__hero-inner {
+		padding-block: 32px;
+	}
+
+	.rwaq-partners__title {
+		font-size: 24px;
+		line-height: 32px;
+	}
+
+	.rwaq-partners__content-inner {
+		padding-block: 24px 40px;
+	}
+
+	/* The toolbar's two groups stack, each filling the row. */
+	.rwaq-partners__toolbar,
+	.rwaq-partners__toolbar-end {
+		gap: 12px;
+	}
+
+	.rwaq-partners__toolbar-end {
+		width: 100%;
+	}
+
+	.rwaq-partners__searchbar {
+		width: 100%;
+	}
+
+	.rwaq-partner-card {
+		flex-basis: calc((100% - 2 * var(--rwaq-partners-gap)) / 3);
+	}
+
+	.rwaq-partners__blob--2,
+	.rwaq-partners__blob--3 {
+		display: none;
+	}
+}
+
+@media (max-width: 519px) {
+	.rwaq-partner-card {
+		flex-basis: calc((100% - var(--rwaq-partners-gap)) / 2);
+		min-height: 0;
+	}
+
+	.rwaq-partners .rwaq-partner-card__logo {
+		height: 80px;
+	}
+}
