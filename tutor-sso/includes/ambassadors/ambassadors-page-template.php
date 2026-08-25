@@ -317,3 +317,145 @@ function ambassadors_icon( $name ) {
 
 	return isset( $icons[ $name ] ) ? $icons[ $name ] : '';
 }
+
+/**
+ * CF7 form IDs used by pages running the Ambassadors template.
+ *
+ * The `cf7_form_id` field accepts a numeric ID, a hash id, or a full shortcode,
+ * so every page's value is normalised to the bare id here. Used to scope the
+ * Arabic message overrides below to this page's form only — other CF7 forms on
+ * the site keep whatever their own Messages tab says.
+ *
+ * @return string[] Normalised ids (numeric IDs and/or hash ids).
+ */
+function ambassadors_cf7_form_ids() {
+	static $ids = null;
+
+	if ( null !== $ids ) {
+		return $ids;
+	}
+
+	$ids       = array();
+	$page_ids  = get_posts(
+		array(
+			'post_type'        => 'page',
+			'post_status'      => 'any',
+			'numberposts'      => 100,
+			'fields'           => 'ids',
+			'meta_key'         => '_wp_page_template', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+			'meta_value'       => AMBASSADORS_TEMPLATE, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+			'suppress_filters' => false,
+		)
+	);
+
+	foreach ( $page_ids as $page_id ) {
+		$value = trim( (string) ambassadors_field( $page_id, 'cf7_form_id' ) );
+
+		if ( '' === $value ) {
+			continue;
+		}
+
+		// Pull the id out of a pasted [contact-form-7 id="…"] shortcode.
+		if ( false !== strpos( $value, '[' ) && preg_match( '/id=["\']?([A-Za-z0-9_-]+)/', $value, $m ) ) {
+			$value = $m[1];
+		}
+
+		$ids[] = $value;
+	}
+
+	return $ids;
+}
+
+/**
+ * Whether the CF7 form currently being rendered or validated is the
+ * Ambassadors application form.
+ *
+ * @return bool
+ */
+function ambassadors_is_cf7_form() {
+	if ( ! class_exists( '\WPCF7_ContactForm' ) ) {
+		return false;
+	}
+
+	$form = \WPCF7_ContactForm::get_current();
+
+	if ( ! $form ) {
+		return false;
+	}
+
+	$ids = ambassadors_cf7_form_ids();
+
+	if ( in_array( (string) $form->id(), $ids, true ) ) {
+		return true;
+	}
+
+	// Hash ids are stored/pasted truncated (7 chars), so match on the prefix.
+	$hash = method_exists( $form, 'hash' ) ? (string) $form->hash() : '';
+
+	foreach ( $ids as $id ) {
+		if ( '' !== $hash && ! is_numeric( $id ) && 0 === strpos( $hash, $id ) ) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/**
+ * Arabic copy for every CF7 message status.
+ *
+ * The page is hardcoded Arabic (RTL) regardless of the site locale, so the
+ * form's validation tips and response messages are forced to Arabic too rather
+ * than relying on the form's Messages tab or the CF7 locale.
+ *
+ * @return array<string,string> status => message.
+ */
+function ambassadors_cf7_messages_ar() {
+	return array(
+		'mail_sent_ok'             => __( 'تم إرسال طلبك بنجاح. شكراً لك.', 'tutor-sso' ),
+		'mail_sent_ng'             => __( 'حدث خطأ أثناء إرسال طلبك. يرجى المحاولة مرة أخرى لاحقاً.', 'tutor-sso' ),
+		'validation_error'         => __( 'حدث خطأ في واحد أو أكثر من الحقول. يرجى التحقق منها والمحاولة مرة أخرى.', 'tutor-sso' ),
+		'accept_terms'             => __( 'يجب الموافقة على الشروط قبل إرسال الطلب.', 'tutor-sso' ),
+		'invalid_required'         => __( 'هذا الحقل مطلوب.', 'tutor-sso' ),
+		'invalid_too_long'         => __( 'المدخل طويل جداً.', 'tutor-sso' ),
+		'invalid_too_short'        => __( 'المدخل قصير جداً.', 'tutor-sso' ),
+		'invalid_email'            => __( 'يرجى إدخال بريد إلكتروني صحيح.', 'tutor-sso' ),
+		'invalid_url'              => __( 'يرجى إدخال رابط صحيح.', 'tutor-sso' ),
+		'invalid_tel'              => __( 'يرجى إدخال رقم هاتف صحيح.', 'tutor-sso' ),
+		'invalid_number'           => __( 'يرجى إدخال رقم صحيح.', 'tutor-sso' ),
+		'number_too_small'         => __( 'الرقم أصغر من الحد الأدنى المسموح به.', 'tutor-sso' ),
+		'number_too_large'         => __( 'الرقم أكبر من الحد الأقصى المسموح به.', 'tutor-sso' ),
+		'invalid_date'             => __( 'يرجى إدخال تاريخ صحيح.', 'tutor-sso' ),
+		'date_too_early'           => __( 'التاريخ أبكر من الحد المسموح به.', 'tutor-sso' ),
+		'date_too_late'            => __( 'التاريخ متأخر عن الحد المسموح به.', 'tutor-sso' ),
+		'upload_failed'            => __( 'تعذّر رفع الملف. يرجى المحاولة مرة أخرى.', 'tutor-sso' ),
+		'upload_file_type_invalid' => __( 'نوع الملف غير مسموح به.', 'tutor-sso' ),
+		'upload_file_too_large'    => __( 'حجم الملف كبير جداً.', 'tutor-sso' ),
+		'upload_failed_php_error'  => __( 'حدث خطأ أثناء رفع الملف.', 'tutor-sso' ),
+		'quiz_answer_not_correct'  => __( 'الإجابة غير صحيحة.', 'tutor-sso' ),
+		'captcha_not_match'        => __( 'رمز التحقق غير مطابق.', 'tutor-sso' ),
+		'spam'                     => __( 'حدث خطأ أثناء إرسال طلبك. يرجى المحاولة مرة أخرى لاحقاً.', 'tutor-sso' ),
+	);
+}
+
+/**
+ * Force the Ambassadors form's messages to Arabic.
+ *
+ * `wpcf7_display_message` is the single point every message passes through —
+ * per-field validation tips (.wpcf7-not-valid-tip) as well as the form-level
+ * response output — so one filter covers all of them.
+ *
+ * @param string $message Message text configured on the form.
+ * @param string $status  Message status key (e.g. 'invalid_required').
+ * @return string
+ */
+function ambassadors_cf7_arabic_message( $message, $status ) {
+	if ( ! ambassadors_is_cf7_form() ) {
+		return $message;
+	}
+
+	$messages = ambassadors_cf7_messages_ar();
+
+	return isset( $messages[ $status ] ) ? $messages[ $status ] : $message;
+}
+add_filter( 'wpcf7_display_message', __NAMESPACE__ . '\\ambassadors_cf7_arabic_message', 10, 2 );
