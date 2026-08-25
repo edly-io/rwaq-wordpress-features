@@ -80,6 +80,7 @@ class Settings_Page {
 			'tutor_sso_programs_per_page'   => 'absint',
 			'tutor_sso_blogs_per_page'      => 'absint',
 			'tutor_sso_courses_per_page'    => 'absint',
+			'tutor_sso_partners_per_page'   => 'absint',
 			'tutor_sso_gtm_id'              => array( $this, 'sanitize_gtm_id' ),
 			'tutor_sso_ga_id'               => array( $this, 'sanitize_ga_id' ),
 		);
@@ -327,7 +328,35 @@ class Settings_Page {
 			)
 		);
 
-		// ── Section 9: Analytics ─────────────────────────────────────────────
+		// ── Section 9: Partners Catalog ──────────────────────────────────────
+		add_settings_section(
+			'tutor_sso_section_partners_catalog',
+			__( 'Partners Catalog', 'tutor-sso' ),
+			function () {
+				echo '<p>' . esc_html__(
+					'Display settings for the [rwaq_partners] catalog and the /partner/ archive page.',
+					'tutor-sso'
+				) . '</p>';
+			},
+			self::PAGE_SLUG
+		);
+
+		add_settings_field(
+			'tutor_sso_partners_per_page',
+			__( 'Partners per page', 'tutor-sso' ),
+			array( $this, 'render_number_field' ),
+			self::PAGE_SLUG,
+			'tutor_sso_section_partners_catalog',
+			array(
+				'option_name' => 'tutor_sso_partners_per_page',
+				'default'     => 24,
+				'min'         => 1,
+				'max'         => 96,
+				'description' => __( 'How many partners to load per page / infinite-scroll batch. Default: 24 (four rows of six, matching the design), maximum: 96. A per_page="…" attribute on the shortcode overrides this.', 'tutor-sso' ),
+			)
+		);
+
+		// ── Section 10: Analytics ────────────────────────────────────────────
 		add_settings_section(
 			'tutor_sso_section_analytics',
 			__( 'Analytics', 'tutor-sso' ),
@@ -612,6 +641,17 @@ class Settings_Page {
 					'columns'     => __( 'Grid column count. Default: 3.', 'tutor-sso' ),
 					'detail_base' => __( 'Path segment before the program slug; detail links become {site}/{detail_base}/{slug}/. Default: "program".', 'tutor-sso' ),
 					'title'       => __( 'Header title shown above the catalog. Leave blank to hide the header. Default: "البرامج".', 'tutor-sso' ),
+				),
+			),
+			array(
+				'tag'         => 'rwaq_partners',
+				'title'       => __( 'Partners Catalog', 'tutor-sso' ),
+				'example'     => '[rwaq_partners per_page="24" columns="6"]',
+				'description' => __( 'Partner / organization catalog from the LMS organizations API, with search, sorting and AJAX infinite scroll. Also serves the /partner/ archive automatically.', 'tutor-sso' ),
+				'attributes'  => array(
+					'per_page' => __( 'Partners per page. Defaults to the "Partners per page" setting above (24 if unset).', 'tutor-sso' ),
+					'columns'  => __( 'Grid column count. Default: 6.', 'tutor-sso' ),
+					'title'    => __( 'Heading shown in the hero band. Leave blank to hide it. Default: "تعرّف على شركائنا".', 'tutor-sso' ),
 				),
 			),
 			array(

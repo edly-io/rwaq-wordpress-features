@@ -1,0 +1,793 @@
+/**
+ * Partner detail styles.
+ *
+ * IBM Plex Sans Arabic is enqueued globally as 'tutor-sso-programs-font'.
+ */
+
+.rwaq-pt {
+	/* Design tokens from the Figma library, on the plugin's --rwaq-* convention. */
+	--rwaq-primary: #565199;          /* Brand-80 */
+	--rwaq-primary-soft: #F1F0F8;     /* Brand-10 */
+	--rwaq-pill-bg: #EFEEFA;          /* Count pill */
+	--rwaq-text: #242424;             /* NeutralForeground1.Rest */
+	--rwaq-text-2: #424242;           /* NeutralForeground2.Rest */
+	--rwaq-muted: #616161;            /* NeutralForeground3.Rest */
+	--rwaq-border: #D1D1D1;           /* NeutralStroke1.Rest */
+	--rwaq-surface: #FFFFFF;          /* NeutralBackground1.Rest */
+	--rwaq-surface-2: #FBFBFB;        /* NeutralBackground2.Rest */
+	--rwaq-shadow: 0 0 2px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.10);
+
+	/* The design's 1232px content column; the gutter is added on top so the
+	   columns keep their designed width at full width. */
+	--rwaq-pt-wide: 1232px;
+	--rwaq-pt-gutter: 16px;
+
+	position: relative;
+	color: var(--rwaq-text);
+	font-family: 'IBM Plex Sans Arabic', sans-serif;
+	-webkit-font-smoothing: antialiased;
+}
+
+.rwaq-pt *,
+.rwaq-pt *::before,
+.rwaq-pt *::after {
+	box-sizing: border-box;
+}
+
+.rwaq-pt img {
+	max-width: 100%;
+}
+
+/* ---- Template wrapper ----
+   Lifts the theme's content-width cap on the plugin's own template element, so
+   the 1232px column survives a narrow theme. See the note in partners.css: this
+   is done here rather than with `width: 100vw`, which overflows by the scrollbar
+   width where scrollbars take up space. */
+main.rwaq-partner-single,
+.rwaq-partner-single {
+	max-width: none !important;
+	width: auto !important;
+	margin-inline: 0 !important;
+	padding-inline: 0 !important;
+}
+
+/* Shared container. */
+.rwaq-pt__breadcrumb-bar > *,
+.rwaq-pt__hero-inner,
+.rwaq-pt__content-inner {
+	max-width: calc(var(--rwaq-pt-wide) + var(--rwaq-pt-gutter) * 2);
+	margin-inline: auto;
+	padding-inline: var(--rwaq-pt-gutter);
+}
+
+/* ---- Breadcrumb ---- */
+.rwaq-pt__breadcrumb {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 16px;
+	padding-block: 16px;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 16px;
+}
+
+.rwaq-pt__crumb {
+	color: var(--rwaq-primary);
+	text-decoration: none;
+}
+
+a.rwaq-pt__crumb:hover,
+a.rwaq-pt__crumb:focus-visible {
+	text-decoration: underline;
+}
+
+.rwaq-pt__crumb--current {
+	color: var(--rwaq-muted);
+}
+
+.rwaq-pt__crumb-sep {
+	display: inline-flex;
+}
+
+[dir='ltr'] .rwaq-pt__crumb-sep {
+	transform: scaleX(-1);
+}
+
+/* ---- Hero band ----
+   Full-bleed tint via a spread box-shadow, clipped vertically — the same
+   technique as the instructor and partners heroes, and for the same reason
+   (`width: 100vw` overflows by the scrollbar width). */
+.rwaq-pt__hero {
+	position: relative;
+	overflow: hidden;
+	background: var(--rwaq-surface-2);
+	box-shadow: 0 0 0 100vmax var(--rwaq-surface-2);
+	clip-path: inset(0 -100vmax);
+	min-height: 367px;
+	display: flex;
+	align-items: center;
+}
+
+/* Decorative blobs, reusing the instructor page's exported ellipses. Physical
+   offsets on purpose: visual composition, not content. */
+.rwaq-pt__blobs {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+}
+
+.rwaq-pt__blob {
+	position: absolute;
+	width: 297px;
+	height: 297px;
+}
+
+.rwaq-pt__blob--1 {
+	left: 0;
+	top: -141px;
+}
+
+.rwaq-pt__blob--2 {
+	left: 484px;
+	top: 146px;
+}
+
+.rwaq-pt__blob--3 {
+	left: 1053px;
+	top: -214px;
+}
+
+.rwaq-pt__blob--4 {
+	right: 0;
+	top: 17px;
+}
+
+.rwaq-pt__hero-inner {
+	position: relative;
+	z-index: 1;
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: 28px;
+	padding-block: 40px;
+}
+
+/* ---- Profile row: logo first in source order, so it sits at the start edge
+   (right, in RTL) as designed. ---- */
+.rwaq-pt__profile {
+	display: flex;
+	align-items: center;
+	gap: 40px;
+}
+
+/* Logo tile. The logo is an arbitrary upload, so it is bound by both axes and
+   `contain` keeps every one undistorted — 128x59 is the design's own leaf inside
+   the 212x146 tile. */
+.rwaq-pt__logo {
+	flex: 0 0 auto;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 212px;
+	height: 146px;
+	border-radius: 10px;
+	background: var(--rwaq-surface);
+	box-shadow: var(--rwaq-shadow);
+}
+
+.rwaq-pt__logo-image {
+	max-width: 128px;
+	max-height: 60px;
+	width: auto;
+	height: auto;
+	object-fit: contain;
+}
+
+.rwaq-pt__summary {
+	flex: 1 1 auto;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 16px;
+	text-align: start;
+}
+
+.rwaq-pt__name {
+	margin: 0;
+	font-size: 28px;
+	font-weight: 600;
+	line-height: 36px;
+	color: var(--rwaq-text);
+}
+
+/* Description. Clamped to two lines; past that the "read more" button opens the
+   full text in a modal rather than expanding in place. */
+.rwaq-pt__bio {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 16px;
+	max-width: 658px;
+}
+
+.rwaq-pt__bio-text {
+	margin: 0;
+	font-size: 14px;
+	font-weight: 400;
+	line-height: 28px;
+	color: var(--rwaq-muted);
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+
+.rwaq-pt__bio-toggle {
+	appearance: none;
+	border: 0;
+	padding: 0;
+	background: none;
+	cursor: pointer;
+	font-family: inherit;
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 22px;
+}
+
+/* No hover treatment. Restated across the states and pinned, and prefixed with
+   .rwaq-pt so it outranks a theme's `button:hover` — !important alone is a tie
+   that specificity then decides. */
+.rwaq-pt .rwaq-pt__bio-toggle,
+.rwaq-pt .rwaq-pt__bio-toggle:hover,
+.rwaq-pt .rwaq-pt__bio-toggle:focus,
+.rwaq-pt .rwaq-pt__bio-toggle:active {
+	color: var(--rwaq-primary) !important;
+	background: none !important;
+	box-shadow: none !important;
+	text-decoration: none !important;
+	opacity: 1 !important;
+}
+
+.rwaq-pt__bio-toggle[hidden] {
+	display: none;
+}
+
+/* ---- Stats bar ---- */
+.rwaq-pt__stats {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 20px 60px;
+	border-radius: 10px;
+	background: var(--rwaq-surface);
+	box-shadow: var(--rwaq-shadow);
+}
+
+.rwaq-pt__stat {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+}
+
+.rwaq-pt__stat-icon {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 48px;
+	height: 48px;
+	border-radius: 10px;
+	background: var(--rwaq-primary-soft);
+}
+
+.rwaq-pt__stat-icon img {
+	width: 24px;
+	height: 24px;
+	display: block;
+}
+
+.rwaq-pt__stat-label {
+	font-size: 14px;
+	font-weight: 700;
+	line-height: 20px;
+	color: var(--rwaq-text);
+	white-space: nowrap;
+}
+
+.rwaq-pt__stats-divider {
+	flex: 0 0 auto;
+	width: 1px;
+	height: 22px;
+	background: var(--rwaq-border);
+}
+
+/* ---- Sections ---- */
+.rwaq-pt__content-inner {
+	padding-block: 48px 64px;
+	display: flex;
+	flex-direction: column;
+	gap: 48px;
+}
+
+.rwaq-pt__section-head {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-bottom: 16px;
+}
+
+.rwaq-pt__section-title {
+	margin: 0;
+	font-size: 24px;
+	font-weight: 600;
+	line-height: 32px;
+	color: var(--rwaq-text);
+}
+
+.rwaq-pt__count-pill {
+	display: inline-flex;
+	align-items: center;
+	padding: 6px 14px;
+	border-radius: 18px;
+	background: var(--rwaq-pill-bg);
+	color: var(--rwaq-primary);
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 16px;
+}
+
+/* Four columns in the 1232px container with a 16px gutter, 24px between rows.
+   The cells are the grid items; the catalog cards inside them stretch to fill,
+   so a card's own flex-basis rule (written for its listing) is bypassed. */
+.rwaq-pt__grid {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	column-gap: 16px;
+	row-gap: 24px;
+	/* The catalog roots ship a bottom margin for standalone use. */
+	margin: 0;
+}
+
+.rwaq-pt__cell {
+	display: flex;
+	min-width: 0;
+}
+
+.rwaq-pt__cell.is-hidden {
+	display: none;
+}
+
+/* The catalog cards size themselves by flex-basis for their own listing grid;
+   inside a cell they simply fill it. */
+.rwaq-pt__cell > .rwaq-course-card,
+.rwaq-pt__cell > .rwaq-program-card,
+.rwaq-pt__cell > .rwaq-pt-person {
+	flex: 1 1 auto;
+	min-width: 0;
+	width: 100%;
+}
+
+.rwaq-pt__section-foot {
+	display: flex;
+	/* The design sits the button flush to the container's right edge (x=1083 of
+	   1232), which under RTL is the start edge. */
+	justify-content: flex-start;
+	margin-top: 16px;
+}
+
+.rwaq-pt__more {
+	appearance: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	padding: 6px 12px;
+	border: 1px solid var(--rwaq-border);
+	border-radius: 6px;
+	background: var(--rwaq-surface);
+	cursor: pointer;
+	font-family: inherit;
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 22px;
+	white-space: nowrap;
+}
+
+/* Pinned against theme button styling, as above. */
+.rwaq-pt .rwaq-pt__more,
+.rwaq-pt .rwaq-pt__more:hover,
+.rwaq-pt .rwaq-pt__more:focus,
+.rwaq-pt .rwaq-pt__more:active {
+	color: var(--rwaq-text) !important;
+	background: var(--rwaq-surface) !important;
+	border-color: var(--rwaq-border) !important;
+	box-shadow: none !important;
+	text-decoration: none !important;
+	opacity: 1 !important;
+}
+
+.rwaq-pt__more[hidden] {
+	display: none;
+}
+
+.rwaq-pt__empty {
+	margin: 0;
+	padding: 32px 0;
+	font-size: 14px;
+	line-height: 22px;
+	color: var(--rwaq-muted);
+	text-align: center;
+}
+
+.rwaq-pt__empty--error {
+	color: var(--rwaq-text-2);
+}
+
+/* ---- Instructor card (296x350) ---- */
+.rwaq-pt-person {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	padding: 16px;
+	border: 1px solid var(--rwaq-border);
+	border-radius: 10px;
+	background: var(--rwaq-surface);
+	color: inherit;
+	text-decoration: none;
+	transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+/* The lift shared by every card in the plugin; only for cards that link. */
+a.rwaq-pt-person:hover {
+	box-shadow: 0 8px 22px rgba(16, 24, 40, 0.1);
+	transform: translateY(-2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.rwaq-pt-person {
+		transition: none;
+	}
+
+	a.rwaq-pt-person:hover {
+		transform: none;
+	}
+}
+
+.rwaq-pt-person__media {
+	flex: 0 0 auto;
+	display: block;
+	height: 180px;
+	border-radius: 8px;
+	overflow: hidden;
+	background: linear-gradient(135deg, #eef0f5, #e2e5ee);
+}
+
+.rwaq-pt-person__image {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+
+/* The fallback is a silhouette, not a photograph — `contain` and a little inset
+   stop it being cropped into an abstract shape by `cover`. */
+.rwaq-pt-person__image--fallback {
+	object-fit: contain;
+	padding: 24px;
+}
+
+.rwaq-pt-person__body {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	flex: 1 1 auto;
+}
+
+.rwaq-pt-person__name {
+	font-size: 16px;
+	font-weight: 600;
+	line-height: 26px;
+	color: var(--rwaq-text);
+	/* Two lines at most, so one long name cannot outgrow its row. */
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+
+.rwaq-pt-person__meta {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+/* Two counts side by side. The design's third (مقالات) is not rendered — no
+   article data exists in the API — so this single row carries both. */
+.rwaq-pt-person__meta-row {
+	display: flex;
+	align-items: flex-start;
+	gap: 16px;
+}
+
+.rwaq-pt-person__stat {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+	font-size: 12px;
+	font-weight: 400;
+	line-height: 16px;
+	color: var(--rwaq-muted);
+}
+
+.rwaq-pt-person__stat img {
+	flex: 0 0 auto;
+	width: 16px;
+	height: 16px;
+}
+
+.rwaq-pt-person__stat > span {
+	min-width: 0;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+
+/* The partner's own logo at the foot of the card. */
+.rwaq-pt-person__org {
+	flex: 0 0 auto;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 28px;
+}
+
+.rwaq-pt-person__org img {
+	max-width: 84px;
+	max-height: 19px;
+	width: auto;
+	height: auto;
+	object-fit: contain;
+}
+
+/* ---- Description modal ----
+   The instructor modal's component: 700px panel, brand-purple 72px header, then
+   the text at 14/28 in a 40px-padded body that scrolls when long. */
+.rwaq-pt__modal {
+	position: fixed;
+	inset: 0;
+	z-index: 99999;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
+}
+
+.rwaq-pt__modal[hidden] {
+	display: none;
+}
+
+.rwaq-pt__modal-overlay {
+	position: absolute;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.55);
+}
+
+.rwaq-pt__modal-panel {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	width: 700px;
+	max-width: 100%;
+	max-height: min(90vh, 640px);
+	overflow: hidden;
+	border-radius: 10px;
+	background: var(--rwaq-surface);
+	box-shadow: 0 2px 37px rgba(0, 0, 0, 0.07);
+}
+
+.rwaq-pt__modal-head {
+	flex: 0 0 auto;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 20px 30px;
+	background: var(--rwaq-primary);
+}
+
+.rwaq-pt__modal-title {
+	margin: 0;
+	font-size: 24px;
+	font-weight: 600;
+	line-height: 32px;
+	color: var(--rwaq-surface);
+}
+
+.rwaq-pt__modal-close {
+	flex: 0 0 auto;
+	appearance: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	padding: 0;
+	border: 0;
+	background: none;
+	cursor: pointer;
+}
+
+/* Every descendant is covered, not just the <svg>: the icon strokes with
+   currentColor, and a theme rule like `button:hover *` sets colour on the
+   <path> itself, which beats inheriting white from the svg. */
+.rwaq-pt .rwaq-pt__modal-close,
+.rwaq-pt .rwaq-pt__modal-close:hover,
+.rwaq-pt .rwaq-pt__modal-close:focus,
+.rwaq-pt .rwaq-pt__modal-close:active,
+.rwaq-pt .rwaq-pt__modal-close *,
+.rwaq-pt .rwaq-pt__modal-close:hover *,
+.rwaq-pt .rwaq-pt__modal-close:focus * {
+	color: var(--rwaq-surface) !important;
+	background: none !important;
+	box-shadow: none !important;
+	text-decoration: none !important;
+	opacity: 1 !important;
+}
+
+.rwaq-pt__modal-close svg {
+	display: block;
+	width: 24px;
+	height: 24px;
+}
+
+.rwaq-pt__modal-body {
+	flex: 1 1 auto;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	padding: 40px;
+	font-size: 14px;
+	font-weight: 400;
+	line-height: 28px;
+	color: var(--rwaq-muted);
+	text-align: start;
+}
+
+.rwaq-pt__modal-body > * {
+	margin: 0 0 10px;
+}
+
+.rwaq-pt__modal-body > *:last-child {
+	margin-bottom: 0;
+}
+
+/* While the modal is open the page behind it must not scroll. */
+.rwaq-pt-modal-open {
+	overflow: hidden;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 1279px) {
+	.rwaq-pt__blob--2 {
+		left: 34%;
+	}
+
+	.rwaq-pt__stats {
+		padding-inline: 32px;
+	}
+
+	.rwaq-pt__grid {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 1023px) {
+	.rwaq-pt__profile {
+		gap: 32px;
+	}
+
+	.rwaq-pt__stats {
+		flex-wrap: wrap;
+		justify-content: flex-start;
+		gap: 20px 32px;
+		padding-inline: 24px;
+	}
+
+	/* Wrapped rows make the vertical rules meaningless. */
+	.rwaq-pt__stats-divider {
+		display: none;
+	}
+
+	.rwaq-pt__grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 767px) {
+	.rwaq-pt__hero {
+		min-height: 0;
+	}
+
+	.rwaq-pt__hero-inner {
+		padding-block: 28px;
+	}
+
+	/* Logo above the summary, both centred. */
+	.rwaq-pt__profile {
+		flex-direction: column;
+		align-items: center;
+		gap: 24px;
+	}
+
+	.rwaq-pt__summary {
+		align-items: center;
+		text-align: center;
+	}
+
+	.rwaq-pt__bio {
+		align-items: center;
+	}
+
+	.rwaq-pt__bio-text {
+		text-align: start;
+	}
+
+	.rwaq-pt__name {
+		font-size: 24px;
+		line-height: 32px;
+	}
+
+	.rwaq-pt__section-title {
+		font-size: 20px;
+		line-height: 28px;
+	}
+
+	.rwaq-pt__content-inner {
+		padding-block: 32px 48px;
+		gap: 36px;
+	}
+
+	.rwaq-pt__blob--2,
+	.rwaq-pt__blob--3 {
+		display: none;
+	}
+
+	.rwaq-pt__stat {
+		gap: 12px;
+	}
+}
+
+@media (max-width: 599px) {
+	.rwaq-pt__logo {
+		width: 180px;
+		height: 124px;
+	}
+
+	.rwaq-pt__stats {
+		gap: 16px 24px;
+		padding: 16px 20px;
+	}
+
+	.rwaq-pt__grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.rwaq-pt__modal-head {
+		padding: 16px 20px;
+	}
+
+	.rwaq-pt__modal-title {
+		font-size: 19px;
+		line-height: 26px;
+	}
+
+	.rwaq-pt__modal-body {
+		padding: 24px 20px;
+	}
+}
