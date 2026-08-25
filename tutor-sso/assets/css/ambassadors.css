@@ -693,8 +693,11 @@
 }
 
 /* The phone number keeps LTR digit order but sits at the inline-start edge,
-   next to the country badge. */
+   next to the country badge. The margin restores the 10px caption-to-control
+   gap that `label > .wpcf7-form-control-wrap` gives the other fields — the
+   phone field's caption does not wrap its control, so that rule misses it. */
 .rwaq-amb__form-card .wpcf7-form input[type='tel'] {
+	margin-top: 10px;
 	direction: ltr;
 	text-align: right;
 }
@@ -932,9 +935,11 @@
 	cursor: default;
 }
 
-/* Centered submit row — wrap the submit tag in <div class="rwaq-amb-submit">. */
-.rwaq-amb__form-card .rwaq-amb-submit > p {
+.rwaq-amb__form-card .rwaq-amb-submit > p,
+.rwaq-amb__form-card .rwaq-amb-submit > .rwaq-amb-hint {
+	width: 100%;
 	margin: 0;
+	text-align: center;
 }
 
 .rwaq-amb__form-card .rwaq-amb-submit {
@@ -946,8 +951,16 @@
 	text-align: center;
 }
 
+/* CF7 ships the spinner as `visibility: hidden`, so it still reserves its 24px
+   box next to the button and knocks the centred submit row off the centre line.
+   Take it out of flow entirely until CF7 puts `.submitting` on the form. */
 .rwaq-amb__form-card .wpcf7-spinner {
+	display: none;
 	margin-inline-start: 10px;
+}
+
+.rwaq-amb__form-card .wpcf7-form.submitting .wpcf7-spinner {
+	display: inline-block;
 }
 
 /* --- Validation + response messages ------------------------------------ */
