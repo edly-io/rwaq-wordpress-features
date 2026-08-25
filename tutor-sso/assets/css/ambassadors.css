@@ -595,6 +595,15 @@
 	color: var(--rwaq-amb-text);
 }
 
+/* CF7 runs the Form tab through wpautop, which turns the newline between a
+   caption and the control that follows it into a <br> — an extra ~20px gap
+   above the drop zone / checkbox row. The markup should keep the two on one
+   line, but this drops the <br> either way so an edit in the admin cannot
+   reopen the gap. */
+.rwaq-amb__form-card .rwaq-amb-caption + br {
+	display: none;
+}
+
 /* Layout helpers for the CF7 form template. */
 .rwaq-amb__form-card .rwaq-amb-row {
 	display: grid;
@@ -668,6 +677,7 @@
 .rwaq-amb__form-card .wpcf7-form input::placeholder,
 .rwaq-amb__form-card .wpcf7-form textarea::placeholder {
 	color: #A3A3A3;
+	font-weight: 400;
 	opacity: 1;
 }
 
