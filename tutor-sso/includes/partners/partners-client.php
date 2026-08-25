@@ -1,35 +1,6 @@
 <?php
 /**
  * Public Organizations (Partners) API client + catalog data layer.
- *
- * Thin wrapper around the LMS public organizations endpoint:
- *
- *   GET /rwaq/api/organizations/public/
- *
- * The endpoint is public (no authentication / cookies required), so like the
- * courses and programs clients we do not forward any edX session cookies.
- * Responses are short-lived-cached in a transient to keep the catalog fast and
- * avoid hammering the LMS.
- *
- * List response shape (verified against the stage API). Note that, unlike the
- * courses list, the pagination block is NESTED rather than top-level, and there
- * is no `active` field:
- *   {
- *     "results": [ { id, name, short_name, arabic_name, logo, created }, ... ],
- *     "pagination": { next, previous, count, num_pages }
- *   }
- *
- * partners_pagination() reads either shape, so a response that moves the keys
- * back to the top level keeps working.
- *
- * partners_fetch() maps those rows onto the flat card shape the catalog and the
- * AJAX handler consume — only what the card actually renders:
- *   { id, name, subtitle, logo, url }
- *
- * The card shows `arabic_name` as its title and `short_name` underneath. Only one
- * organization on stage has `arabic_name` set, so the title falls back to `name`
- * then `short_name` — a card is never nameless.
- *
  * `url` points at the local partner detail page ({site}/partner/{slug}/), built
  * from the API slug — see partner_detail_url().
  *
@@ -79,12 +50,6 @@ function partners_cache_key( $url ) {
 
 /**
  * Whitelisted `ordering` values: friendly sort key => DRF ordering expression.
- *
- * `name` is the only field this endpoint's OrderingFilter honours — verified:
- * `ordering=arabic_name` returns the default order unchanged, because DRF drops
- * unknown fields silently. So the sort is on the Latin name even though the
- * cards prefer the Arabic one, which is the closest correct behaviour available
- * until `arabic_name` is added to the endpoint's `ordering_fields`.
  *
  * Filterable so the field can be swapped without touching the catalog.
  *
@@ -191,7 +156,135 @@ function partners_request( $url, $cache_key ) {
 }
 
 /**
+ * Normalise a search term for Arabic typing variance.
+ *
+ * The endpoint's `search` is a plain case-insensitive substring match over the
+ * organization's Latin and Arabic names (verified against stage: searching
+ * "رواق" returns an organization whose Latin name has no Arabic in it at all).
+ * A substring match takes the query literally, so a term decorated with
+ * tashkeel or tatweel — "رِواق", "روااق" as typed with a kashida — fails against
+ * plainly-stored text even though a reader would call them the same word.
+ *
+ * Removed here, therefore:
+ *   - tashkeel / harakat and the Quranic annotation marks
+ *   - tatweel (kashida), which is pure typographic stretching
+ * Mapped here:
+ *   - Persian/Urdu letterforms that look identical to Arabic ones on screen
+ *     (ک→ك, ی→ي, ہ→ه), a very common keyboard-layout mismatch
+ *   - Arabic-Indic digits onto ASCII, so "١٢" finds "12"
+ *
+ * NOT touched: alef hamza forms (أ إ آ ا) and taa marbuta vs haa (ة/ه). Folding
+ * those would be wrong here rather than merely unhelpful — the *stored* value
+ * is equally likely to carry the hamza, so rewriting the query would break
+ * searches that work today. Matching across those needs the same normalisation
+ * applied to the column, which is an LMS-side change.
+ *
+ * @param string $term Raw search term.
+ * @return string Normalised term (may be identical to the input).
+ */
+function partners_normalize_search( $term ) {
+	$term = trim( (string) $term );
+
+	if ( '' === $term ) {
+		return '';
+	}
+
+	// Tashkeel (U+064B–U+0652), superscript alef, the extended combining marks,
+	// and the Quranic annotation range — all non-spacing decoration.
+	$stripped = preg_replace( '/[\x{0610}-\x{061A}\x{064B}-\x{065F}\x{0670}\x{06D6}-\x{06ED}]/u', '', $term );
+	if ( null !== $stripped ) {
+		$term = $stripped;
+	}
+
+	$term = strtr(
+		$term,
+		array(
+			"\u{0640}" => '',        // Tatweel (kashida).
+			"\u{06A9}" => "\u{0643}", // Keheh    → kaf.
+			"\u{06AA}" => "\u{0643}", // Swash kaf → kaf.
+			"\u{06CC}" => "\u{064A}", // Farsi yeh → yeh.
+			"\u{06D2}" => "\u{064A}", // Yeh barree → yeh.
+			"\u{06C0}" => "\u{0629}", // Heh with hamza → taa marbuta.
+			"\u{06C1}" => "\u{0647}", // Heh goal → heh.
+			"\u{06BE}" => "\u{0647}", // Heh doachashmee → heh.
+			// Arabic-Indic and Eastern Arabic-Indic digits → ASCII.
+			"\u{0660}" => '0',
+			"\u{0661}" => '1',
+			"\u{0662}" => '2',
+			"\u{0663}" => '3',
+			"\u{0664}" => '4',
+			"\u{0665}" => '5',
+			"\u{0666}" => '6',
+			"\u{0667}" => '7',
+			"\u{0668}" => '8',
+			"\u{0669}" => '9',
+			"\u{06F0}" => '0',
+			"\u{06F1}" => '1',
+			"\u{06F2}" => '2',
+			"\u{06F3}" => '3',
+			"\u{06F4}" => '4',
+			"\u{06F5}" => '5',
+			"\u{06F6}" => '6',
+			"\u{06F7}" => '7',
+			"\u{06F8}" => '8',
+			"\u{06F9}" => '9',
+		)
+	);
+
+	// Collapse the runs of whitespace the removals can leave behind.
+	$collapsed = preg_replace( '/\s+/u', ' ', $term );
+	if ( null !== $collapsed ) {
+		$term = $collapsed;
+	}
+
+	/**
+	 * Filter the normalised partner search term.
+	 *
+	 * @param string $term Normalised term.
+	 */
+	return trim( (string) apply_filters( 'tutor_sso_partners_search_term', $term ) );
+}
+
+/**
+ * Request one page of organizations for an exact search term.
+ *
+ * @param string $base     LMS base URL, already trimmed.
+ * @param int    $page     1-based page number.
+ * @param int    $per_page Rows per page.
+ * @param string $search   Search term, used verbatim.
+ * @param string $ordering Normalised ordering param, or ''.
+ * @return array|\WP_Error Raw decoded body, or WP_Error on failure.
+ */
+function partners_request_page( $base, $page, $per_page, $search, $ordering ) {
+	$query = array(
+		'page'      => max( 1, (int) $page ),
+		'page_size' => max( 1, (int) $per_page ),
+	);
+
+	if ( '' !== $search ) {
+		$query['search'] = $search;
+	}
+
+	if ( '' !== $ordering ) {
+		$query['ordering'] = $ordering;
+	}
+
+	// courses_build_query() joins array values into one comma-separated param,
+	// which is the format these catalog endpoints expect for multi-select
+	// filters. Reused rather than duplicated.
+	$url = $base . PARTNERS_PUBLIC_ENDPOINT . '?' . courses_build_query( $query );
+
+	return partners_request( $url, partners_cache_key( $url ) );
+}
+
+/**
  * Fetch one raw page of organizations.
+ *
+ * The term is sent exactly as typed first. Only if that finds nothing, and
+ * normalising it actually changes it, is the normalised form tried — so this
+ * can only ever add results, never lose a match the literal term would have
+ * found. The cost is one extra request on a miss, and both responses are cached
+ * by URL like any other page.
  *
  * @param int   $page     1-based page number.
  * @param int   $per_page Rows per page.
@@ -205,26 +298,32 @@ function partners_fetch_public( $page = 1, $per_page = 24, $args = array() ) {
 		return new \WP_Error( 'tutor_sso_no_base', __( 'LMS Base URL is not configured.', 'tutor-sso' ) );
 	}
 
-	$query = array(
-		'page'      => max( 1, (int) $page ),
-		'page_size' => max( 1, (int) $per_page ),
-	);
-
-	if ( isset( $args['search'] ) && '' !== trim( (string) $args['search'] ) ) {
-		$query['search'] = trim( (string) $args['search'] );
-	}
-
+	$search   = isset( $args['search'] ) ? trim( (string) $args['search'] ) : '';
 	$ordering = isset( $args['ordering'] ) ? partners_normalize_ordering( $args['ordering'] ) : '';
-	if ( '' !== $ordering ) {
-		$query['ordering'] = $ordering;
+
+	$body = partners_request_page( $base, $page, $per_page, $search, $ordering );
+
+	if ( '' === $search || is_wp_error( $body ) ) {
+		return $body;
 	}
 
-	// courses_build_query() joins array values into one comma-separated param,
-	// which is the format these catalog endpoints expect for multi-select
-	// filters. Reused rather than duplicated.
-	$url = $base . PARTNERS_PUBLIC_ENDPOINT . '?' . courses_build_query( $query );
+	$normalised = partners_normalize_search( $search );
 
-	return partners_request( $url, partners_cache_key( $url ) );
+	if ( $normalised === $search || '' === $normalised ) {
+		return $body;
+	}
+
+	$meta  = partners_pagination( $body );
+	$found = isset( $meta['count'] ) ? (int) $meta['count'] : 0;
+
+	if ( $found > 0 ) {
+		return $body;
+	}
+
+	$retry = partners_request_page( $base, $page, $per_page, $normalised, $ordering );
+
+	// A failed retry must not turn a legitimately empty result into an error.
+	return is_wp_error( $retry ) ? $body : $retry;
 }
 
 /**
@@ -242,10 +341,6 @@ function partners_detail_base() {
 /**
  * Resolve the link for a partner card: the local `partner` post detail page,
  * built from the API `slug` as {site}/partner/{slug}/.
- *
- * The slug is lowercased to match the WordPress post_name, which WP lowercases
- * on save. A row with no slug yields '' and the card renders as a plain,
- * non-clickable tile rather than linking somewhere broken.
  *
  * @param array $row Raw organization row.
  * @return string URL, or ''.
@@ -299,13 +394,6 @@ function partners_normalize_partner( $row ) {
 /**
  * Whether a raw row should be shown.
  *
- * Drops explicitly inactive organizations and internal ones (see
- * sso_hidden_org_prefixes(), which the courses and programs catalogs use — the
- * rows already carry the { short_name, name } shape it reads).
- *
- * `active` is only honoured when present — the stage endpoint does not return
- * it, so today this comes down to the hidden-organization check alone.
- *
  * @param array $row Raw organization row.
  * @return bool
  */
@@ -341,19 +429,6 @@ function partners_pagination( $response ) {
 
 /**
  * Fetch a page of partners, mapped onto the card shape used by the catalog.
- *
- * `tutor_sso_partners_results` stays available as a short-circuit seam: return
- * an array from it to bypass the API call entirely.
- *
- * Note on `total`. Internal organizations are filtered out locally, because the
- * API has no "exclude" parameter, so the API's `count` overstates what a visitor
- * can actually see — on stage it reports 18 while 15 are visible.
- *
- * When the whole result set fits on one page the visible rows *are* the whole
- * catalog, so the filtered count is exact and is what gets reported. Across
- * multiple pages that is unknowable without fetching them all, so the API's
- * count is used instead: overstating keeps pagination working, whereas reporting
- * a per-page figure as the total would be plainly wrong.
  *
  * @param int   $page     1-based page number.
  * @param int   $per_page Partners per page.
@@ -416,4 +491,245 @@ function partners_fetch( $page = 1, $per_page = 24, $args = array() ) {
 		'num_pages' => $num_pages,
 		'error'     => '',
 	);
+}
+
+/**
+ * Public organization detail endpoint path. The organization's numeric LMS id
+ * and a trailing slash complete it.
+ */
+const PARTNER_DETAIL_ENDPOINT = '/rwaq/api/organizations/public/';
+
+/**
+ * Fetch one organization's raw detail object by LMS id.
+ *
+ * @param int $lms_id Organization id on the LMS.
+ * @return array|\WP_Error Raw API object, or WP_Error on failure.
+ */
+function partner_fetch_detail( $lms_id ) {
+	$lms_id = (int) $lms_id;
+
+	if ( $lms_id <= 0 ) {
+		return new \WP_Error(
+			'tutor_sso_partner_no_id',
+			__( 'لم يتم ضبط معرّف الشريك في منصة التعلّم.', 'tutor-sso' )
+		);
+	}
+
+	$base = partners_lms_base_url();
+
+	if ( '' === $base ) {
+		return new \WP_Error( 'tutor_sso_no_base', __( 'LMS Base URL is not configured.', 'tutor-sso' ) );
+	}
+
+	$url = $base . PARTNER_DETAIL_ENDPOINT . $lms_id . '/';
+
+	$body = partners_request( $url, partners_cache_key( $url ) );
+
+	// partners_request() maps a 404 onto an empty *list* shape, which is right for
+	// the catalog but meaningless here — a detail 404 means the id is wrong.
+	if ( ! is_wp_error( $body ) && ! isset( $body['id'] ) ) {
+		return new \WP_Error(
+			'tutor_sso_partner_not_found',
+			__( 'لم يتم العثور على هذا الشريك في منصة التعلّم.', 'tutor-sso' )
+		);
+	}
+
+	return $body;
+}
+
+/**
+ * Map an instructor row from the organization detail payload onto the card shape.
+ *
+ * @param array $row     Raw instructor row.
+ * @param array $partner Raw organization payload, for the card's org logo.
+ * @return array Card row: { id, name, image, url, counts[], logo }.
+ */
+function partners_map_instructor_card( $row, $partner ) {
+	$id   = isset( $row['id'] ) ? (int) $row['id'] : 0;
+	$name = isset( $row['name'] ) ? trim( (string) $row['name'] ) : '';
+
+	// Keyed so a filter can replace individual values without knowing the render
+	// order. Missing on an older API build → 0, never invented.
+	$counts = array(
+		'courses'  => isset( $row['total_courses'] ) ? (int) $row['total_courses'] : 0,
+		'learners' => isset( $row['total_enrolled_learners'] ) ? (int) $row['total_enrolled_learners'] : 0,
+	);
+
+	/**
+	 * Filter an instructor card's counts.
+	 *
+	 * @param array $counts { courses, learners }.
+	 * @param array $row    Raw instructor row from the organization payload.
+	 * @param array $partner Raw organization payload.
+	 */
+	$counts = (array) apply_filters( 'tutor_sso_partner_instructor_counts', $counts, $row, $partner );
+
+	return array(
+		'id'     => $id,
+		'name'   => $name,
+		'image'  => isset( $row['image'] ) ? trim( (string) $row['image'] ) : '',
+		'url'    => $id > 0 ? (string) apply_filters( 'tutor_sso_partner_instructor_url', '', $row ) : '',
+		'counts' => $counts,
+		// The design puts the partner's own logo at the foot of each card.
+		'logo'   => isset( $partner['logo'] ) ? trim( (string) $partner['logo'] ) : '',
+	);
+}
+
+/**
+ * Fetch an organization and map it onto the detail view model.
+ *
+ * `tutor_sso_partner_detail_source` is a short-circuit seam: return an array
+ * from it to bypass the request entirely.
+ *
+ * @param int $lms_id Organization id on the LMS.
+ * @return array{
+ *     name:string, logo:string, bio:string, bio_html:string, stats:array[],
+ *     totals:array{courses:int,programs:int,instructors:int},
+ *     programs:array[], courses:array[], instructors:array[], error:string
+ * }
+ */
+function partner_fetch( $lms_id ) {
+	$empty = array(
+		'name'        => '',
+		'logo'        => '',
+		'bio'         => '',
+		'bio_html'    => '',
+		'stats'       => array(),
+		'totals'      => array(
+			'courses'     => 0,
+			'programs'    => 0,
+			'instructors' => 0,
+		),
+		'programs'    => array(),
+		'courses'     => array(),
+		'instructors' => array(),
+		'error'       => '',
+	);
+
+	$external = apply_filters( 'tutor_sso_partner_detail_source', null, $lms_id );
+	if ( is_array( $external ) ) {
+		return wp_parse_args( $external, $empty );
+	}
+
+	$body = partner_fetch_detail( $lms_id );
+
+	if ( is_wp_error( $body ) ) {
+		$empty['error'] = $body->get_error_message();
+		return $empty;
+	}
+
+	// The Arabic name is what the design shows; Latin name then short code are the
+	// fallbacks, so the hero is never nameless.
+	$name = '';
+	foreach ( array( 'arabic_name', 'name', 'short_name' ) as $key ) {
+		if ( ! empty( $body[ $key ] ) ) {
+			$name = trim( (string) $body[ $key ] );
+			break;
+		}
+	}
+
+	// `description` is HTML-capable, so two forms are kept for the same reason as
+	// the instructor biography: the hero clamps plain text, the modal renders
+	// paragraphs. It is empty for every organization on stage today.
+	$detail   = isset( $body['description'] ) ? (string) $body['description'] : '';
+	$bio      = trim( wp_strip_all_tags( $detail ) );
+	$bio_html = trim( wp_kses_post( $detail ) );
+
+	$courses  = isset( $body['courses'] ) && is_array( $body['courses'] ) ? $body['courses'] : array();
+	$programs = isset( $body['programs'] ) && is_array( $body['programs'] ) ? $body['programs'] : array();
+	$people   = isset( $body['instructors'] ) && is_array( $body['instructors'] ) ? $body['instructors'] : array();
+
+	// The API's own totals when present, otherwise what the embedded arrays hold —
+	// the two agree today, but the totals stay right if the rows are ever paginated.
+	$total_courses     = isset( $body['total_courses'] ) ? (int) $body['total_courses'] : count( $courses );
+	$total_programs    = isset( $body['total_programs'] ) ? (int) $body['total_programs'] : count( $programs );
+	$total_instructors = isset( $body['total_instructors'] ) ? (int) $body['total_instructors'] : count( $people );
+
+	// Stats in the design's RTL order. The design's third cell is the partner's
+	// country, which this endpoint does not carry, so it is omitted rather than
+	// invented — leaving a clean three-cell bar.
+	$stats = array(
+		array(
+			'icon'  => 'stat-courses.svg',
+			/* translators: %s: number of courses. */
+			'label' => sprintf( __( '%s دورة', 'tutor-sso' ), number_format_i18n( $total_courses ) ),
+		),
+		array(
+			'icon'  => 'stat-programs.svg',
+			/* translators: %s: number of programs. */
+			'label' => sprintf( __( '%s برنامجًا', 'tutor-sso' ), number_format_i18n( $total_programs ) ),
+		),
+	);
+
+	$joined = partner_joined_text( $body );
+	if ( '' !== $joined ) {
+		$stats[] = array(
+			'icon'  => 'stat-joined.svg',
+			'label' => $joined,
+		);
+	}
+
+	$data = array(
+		'name'        => $name,
+		'logo'        => isset( $body['logo'] ) ? trim( (string) $body['logo'] ) : '',
+		'bio'         => $bio,
+		'bio_html'    => $bio_html,
+		'stats'       => $stats,
+		'totals'      => array(
+			'courses'     => $total_courses,
+			'programs'    => $total_programs,
+			'instructors' => $total_instructors,
+		),
+		// Both card rows go straight into the catalogs' own renderers: course rows
+		// through courses_normalize_course(), program rows untouched.
+		'courses'     => array_map( __NAMESPACE__ . '\\courses_normalize_course', $courses ),
+		'programs'    => array_values( $programs ),
+		'instructors' => array_map(
+			function ( $row ) use ( $body ) {
+				return partners_map_instructor_card( $row, $body );
+			},
+			$people
+		),
+		'error'       => '',
+	);
+
+	/**
+	 * Filter the mapped partner detail view model.
+	 *
+	 * @param array $data   Mapped view model.
+	 * @param array $body   Raw organization object from the API.
+	 * @param int   $lms_id Organization id on the LMS.
+	 */
+	return (array) apply_filters( 'tutor_sso_partner_detail_data', $data, $body, (int) $lms_id );
+}
+
+/**
+ * The stats bar's "joined in" cell, from the organization's `created` timestamp.
+ *
+ * Returns '' when absent or unparseable, which drops the cell rather than
+ * printing a wrong year. Mirrors instructors_joined_text().
+ *
+ * @param array $body Raw API object.
+ * @return string
+ */
+function partner_joined_text( $body ) {
+	$created = isset( $body['created'] ) ? trim( (string) $body['created'] ) : '';
+	$text    = '';
+
+	if ( '' !== $created ) {
+		$timestamp = strtotime( $created );
+
+		if ( false !== $timestamp ) {
+			/* translators: %s: four-digit year the partner joined. */
+			$text = sprintf( __( 'انضم في عام %s', 'tutor-sso' ), date_i18n( 'Y', $timestamp ) );
+		}
+	}
+
+	/**
+	 * Filter the partner's "joined in" stat label.
+	 *
+	 * @param string $text Label, or '' when the API carried no usable date.
+	 * @param array  $body Raw organization object.
+	 */
+	return (string) apply_filters( 'tutor_sso_partner_joined_text', $text, $body );
 }

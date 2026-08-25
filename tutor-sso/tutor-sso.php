@@ -63,6 +63,7 @@ require_once TUTOR_SSO_PATH . 'includes/partners/partners-catalog.php';
 require_once TUTOR_SSO_PATH . 'includes/partners/partners-ajax.php';
 require_once TUTOR_SSO_PATH . 'includes/partners/partners-page-template.php';
 require_once TUTOR_SSO_PATH . 'includes/partners/partners-archive.php';
+require_once TUTOR_SSO_PATH . 'includes/partners/partner-detail.php';
 require_once TUTOR_SSO_PATH . 'includes/instructors/instructors-client.php';
 require_once TUTOR_SSO_PATH . 'includes/instructors/instructor-detail.php';
 require_once TUTOR_SSO_PATH . 'includes/instructors/rest/routes.php';
