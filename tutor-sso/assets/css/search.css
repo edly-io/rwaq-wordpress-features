@@ -1,0 +1,615 @@
+/**
+ * Search bar + search results page styles.
+ *
+ * IBM Plex Sans Arabic is enqueued globally as 'tutor-sso-programs-font'.
+ */
+
+/* ── Shared tokens ───────────────────────────────────────────────────────────
+   Declared on both roots so the search bar works standalone in the header,
+   where the results wrapper is not present. */
+.rwaq-searchbar,
+.rwaq-search {
+	--rwaq-primary: #565199;          /* Brand-80 */
+	--rwaq-primary-soft: #F1F0F8;     /* Brand-10 */
+	--rwaq-text: #242424;             /* NeutralForeground1.Rest */
+	--rwaq-muted: #616161;            /* NeutralForeground3.Rest */
+	--rwaq-placeholder: #707070;      /* NeutralForeground4.Rest */
+	--rwaq-border: #D1D1D1;           /* NeutralStroke1.Rest */
+	--rwaq-surface: #FFFFFF;          /* NeutralBackground1.Rest */
+
+	font-family: 'IBM Plex Sans Arabic', sans-serif;
+	-webkit-font-smoothing: antialiased;
+	color: var(--rwaq-text);
+}
+
+.rwaq-searchbar *,
+.rwaq-search *,
+.rwaq-search *::before,
+.rwaq-search *::after {
+	box-sizing: border-box;
+}
+
+/* Screen-reader-only, in case the theme does not define the class. */
+.rwaq-searchbar .screen-reader-text,
+.rwaq-search .screen-reader-text {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* ── Search bar (navigation) ──────────────────────────────────────────────────
+   304x40 from the design. Source order puts the input first so the icon button
+   lands at the inline end — the left, in RTL — as the design shows. */
+.rwaq-searchbar {
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	width: 304px;
+	max-width: 100%;
+	height: 40px;
+	margin: 0;
+	padding-inline: 10px;
+	border: 1px solid var(--rwaq-border);
+	border-radius: 8px;
+	background: var(--rwaq-surface);
+}
+
+
+.rwaq-searchbar .rwaq-searchbar__input,
+.rwaq-searchbar .rwaq-searchbar__input:hover,
+.rwaq-searchbar .rwaq-searchbar__input:focus,
+.rwaq-searchbar .rwaq-searchbar__input:focus-visible,
+.rwaq-searchbar .rwaq-searchbar__input:active {
+	appearance: none !important;
+	-webkit-appearance: none !important;
+	border: 0 !important;
+	border-radius: 0 !important;
+	background: none !important;
+	box-shadow: none !important;
+	outline: none !important;
+	min-height: 0 !important;
+	max-width: none !important;
+}
+
+.rwaq-searchbar__input {
+	flex: 1 1 auto;
+	min-width: 0;
+	width: auto;
+	height: 100%;
+	margin: 0;
+	padding: 0 2px;
+	font-family: inherit;
+	font-size: 16px;
+	line-height: 28px;
+	color: var(--rwaq-text);
+	text-align: start;
+}
+
+.rwaq-searchbar__input::placeholder {
+	color: var(--rwaq-placeholder);
+	opacity: 1;
+}
+
+/* Chrome adds its own clear button on type=search; the design has none. */
+.rwaq-searchbar__input::-webkit-search-cancel-button {
+	appearance: none;
+}
+
+.rwaq-searchbar__submit {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	padding: 0;
+	border: 0;
+	background: none;
+	cursor: pointer;
+}
+
+/* No hover treatment; pinned so a theme's button styling cannot tint it. */
+.rwaq-searchbar .rwaq-searchbar__submit,
+.rwaq-searchbar .rwaq-searchbar__submit:hover,
+.rwaq-searchbar .rwaq-searchbar__submit:focus,
+.rwaq-searchbar .rwaq-searchbar__submit:active {
+	background: none !important;
+	box-shadow: none !important;
+	opacity: 1 !important;
+}
+
+.rwaq-searchbar__submit svg {
+	display: block;
+}
+
+/* ── Results page ─────────────────────────────────────────────────────────── */
+.rwaq-search {
+	--rwaq-search-wide: 1232px;
+	--rwaq-search-gutter: 16px;
+
+	position: relative;
+}
+
+.rwaq-search__inner {
+	max-width: calc(var(--rwaq-search-wide) + var(--rwaq-search-gutter) * 2);
+	margin-inline: auto;
+	padding-inline: var(--rwaq-search-gutter);
+	padding-block: 24px 64px;
+}
+
+/* Lifts a theme's content-width cap on the plugin's own template element, so the
+   1232px column survives a narrow theme. Done here rather than with
+   `width: 100vw`, which overflows by the scrollbar width where scrollbars take
+   up space. */
+main.rwaq-search-page,
+.rwaq-search-page {
+	max-width: none !important;
+	width: auto !important;
+	margin-inline: 0 !important;
+	padding-inline: 0 !important;
+}
+
+/* ── Title row ─────────────────────────────────────────────────────────────── */
+.rwaq-search__titlerow {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 16px;
+	margin-bottom: 24px;
+}
+
+.rwaq-search__title {
+	margin: 0;
+	font-size: 32px;
+	font-weight: 600;
+	line-height: 40px;
+	color: var(--rwaq-text);
+}
+
+/* The searched term, picked out in brand purple. */
+.rwaq-search__query {
+	color: var(--rwaq-primary);
+}
+
+/* Source order puts the total first, so under RTL it sits at the right edge and
+   the "browse also" links follow — as the design shows. */
+.rwaq-search__subrow {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 24px;
+}
+
+.rwaq-search__total {
+	margin: 0;
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 22px;
+	color: var(--rwaq-text);
+}
+
+.rwaq-search__also {
+	margin: 0;
+	display: inline-flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 12px;
+	font-size: 14px;
+	line-height: 22px;
+}
+
+.rwaq-search__also-label {
+	color: var(--rwaq-muted);
+	font-weight: 400;
+}
+
+.rwaq-search__also-link {
+	color: var(--rwaq-primary);
+	font-weight: 600;
+	text-decoration: none;
+}
+
+.rwaq-search__also-link:hover,
+.rwaq-search__also-link:focus-visible {
+	text-decoration: underline;
+}
+
+.rwaq-search__also-dot {
+	width: 5px;
+	height: 5px;
+	border-radius: 999px;
+	background: var(--rwaq-primary);
+}
+
+/* ── Toolbar ───────────────────────────────────────────────────────────────── */
+.rwaq-search__toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 16px;
+	margin-bottom: 20px;
+}
+
+.rwaq-search__types {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+/* Pill badges: outlined when inactive, filled brand when active. */
+.rwaq-search__type {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 32px;
+	height: 32px;
+	padding-inline: 12px;
+	border: 1px solid var(--rwaq-border);
+	border-radius: 999px;
+	background: var(--rwaq-surface);
+	color: var(--rwaq-muted);
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 16px;
+	white-space: nowrap;
+	text-decoration: none;
+	cursor: pointer;
+}
+
+.rwaq-search__type.is-active {
+	border-color: var(--rwaq-primary);
+	background: var(--rwaq-primary);
+	color: var(--rwaq-surface);
+}
+
+/* No hover treatment — selection is the only thing that changes appearance.
+   Pinned, and prefixed so it outranks a theme's anchor styling. */
+.rwaq-search .rwaq-search__type,
+.rwaq-search .rwaq-search__type:hover,
+.rwaq-search .rwaq-search__type:focus,
+.rwaq-search .rwaq-search__type:active {
+	background: var(--rwaq-surface) !important;
+	border-color: var(--rwaq-border) !important;
+	color: var(--rwaq-muted) !important;
+	text-decoration: none !important;
+	box-shadow: none !important;
+	opacity: 1 !important;
+}
+
+.rwaq-search .rwaq-search__type.is-active,
+.rwaq-search .rwaq-search__type.is-active:hover,
+.rwaq-search .rwaq-search__type.is-active:focus,
+.rwaq-search .rwaq-search__type.is-active:active {
+	background: var(--rwaq-primary) !important;
+	border-color: var(--rwaq-primary) !important;
+	color: var(--rwaq-surface) !important;
+}
+
+/* Sort pill + menu, the same shape as the partners toolbar. */
+.rwaq-search__sort {
+	position: relative;
+}
+
+.rwaq-search__pill {
+	appearance: none;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 14px;
+	border: 1px solid var(--rwaq-border);
+	border-radius: 8px;
+	background: var(--rwaq-surface);
+	cursor: pointer;
+	font-family: inherit;
+	font-size: 14px;
+	line-height: 22px;
+	white-space: nowrap;
+}
+
+.rwaq-search .rwaq-search__pill,
+.rwaq-search .rwaq-search__pill:hover,
+.rwaq-search .rwaq-search__pill:focus,
+.rwaq-search .rwaq-search__pill:active {
+	background: var(--rwaq-surface) !important;
+	border-color: var(--rwaq-border) !important;
+	box-shadow: none !important;
+	text-decoration: none !important;
+	opacity: 1 !important;
+}
+
+.rwaq-search__pill-caption {
+	font-weight: 400;
+	color: var(--rwaq-muted);
+}
+
+.rwaq-search__pill-value {
+	font-weight: 600;
+	color: var(--rwaq-text);
+}
+
+.rwaq-search__pill-chevron {
+	display: inline-flex;
+	transition: transform 0.15s ease;
+}
+
+.rwaq-search__sort.is-open .rwaq-search__pill-chevron {
+	transform: rotate(180deg);
+}
+
+.rwaq-search__menu {
+	position: absolute;
+	top: calc(100% + 8px);
+	inset-inline-start: 0;
+	z-index: 20;
+	width: 220px;
+	max-width: 80vw;
+	padding: 8px;
+	border: 1px solid #e5e5e5;
+	border-radius: 12px;
+	background: var(--rwaq-surface);
+	box-shadow: 0 12px 28px rgba(16, 24, 40, 0.14);
+	display: none;
+}
+
+.rwaq-search__sort.is-open .rwaq-search__menu {
+	display: block;
+}
+
+.rwaq-search__option {
+	display: block;
+	padding: 10px 14px;
+	border-radius: 8px;
+	font-size: 14px;
+	line-height: 22px;
+	text-align: start;
+	text-decoration: none;
+}
+
+/* No hover treatment; selection is the only state that reads. */
+.rwaq-search .rwaq-search__option,
+.rwaq-search .rwaq-search__option:hover,
+.rwaq-search .rwaq-search__option:focus,
+.rwaq-search .rwaq-search__option:active {
+	background: none !important;
+	color: var(--rwaq-text) !important;
+	text-decoration: none !important;
+}
+
+.rwaq-search .rwaq-search__option.is-selected,
+.rwaq-search .rwaq-search__option.is-selected:hover,
+.rwaq-search .rwaq-search__option.is-selected:focus {
+	background: #f4f4f6 !important;
+	font-weight: 600;
+}
+
+/* ── Result grid ───────────────────────────────────────────────────────────
+   Four columns in the 1232px container with a 16px gutter, 20px between rows.
+   The cells are the grid items; the catalog cards inside stretch to fill, so a
+   card's own flex-basis rule (written for its listing) is bypassed. */
+.rwaq-search__panel[hidden] {
+	display: none;
+}
+
+.rwaq-search__grid {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	column-gap: 16px;
+	row-gap: 20px;
+	/* The catalog roots ship a bottom margin for standalone use. */
+	margin: 0;
+}
+
+.rwaq-search__cell {
+	display: flex;
+	min-width: 0;
+}
+
+.rwaq-search__cell > .rwaq-course-card,
+.rwaq-search__cell > .rwaq-program-card {
+	flex: 1 1 auto;
+	min-width: 0;
+	width: 100%;
+}
+
+/* Infinite-scroll tripwire: needs a sliver of layout to be observable. */
+.rwaq-search__sentinel {
+	width: 100%;
+	height: 1px;
+}
+
+.rwaq-search__loader {
+	display: flex;
+	justify-content: center;
+	padding: 24px 0;
+}
+
+.rwaq-search__loader[hidden] {
+	display: none;
+}
+
+.rwaq-search__spinner {
+	width: 24px;
+	height: 24px;
+	border: 2px solid var(--rwaq-border);
+	border-top-color: var(--rwaq-primary);
+	border-radius: 999px;
+	animation: rwaq-search-spin 0.8s linear infinite;
+}
+
+@keyframes rwaq-search-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.rwaq-search__spinner {
+		animation-duration: 2.4s;
+	}
+}
+
+.rwaq-search__empty {
+	margin: 0;
+	padding: 48px 0;
+	font-size: 14px;
+	line-height: 22px;
+	color: var(--rwaq-muted);
+	text-align: center;
+}
+
+.rwaq-search__empty--error {
+	color: #424242;
+}
+
+/* ── Closing CTA band ─────────────────────────────────────────────────────── */
+.rwaq-search__cta {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 24px;
+	margin-top: 48px;
+	padding: 32px;
+	border-radius: 10px;
+	background: var(--rwaq-primary-soft);
+}
+
+.rwaq-search__cta-text {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 8px;
+}
+
+.rwaq-search__cta-title {
+	margin: 0;
+	font-size: 28px;
+	font-weight: 600;
+	line-height: 36px;
+	color: var(--rwaq-text);
+}
+
+.rwaq-search__cta-copy {
+	margin: 0;
+	font-size: 14px;
+	font-weight: 400;
+	line-height: 22px;
+	color: var(--rwaq-text);
+}
+
+.rwaq-search__cta-actions {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.rwaq-search__btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 10px 16px 10px 20px;
+	border-radius: 8px;
+	font-size: 16px;
+	font-weight: 600;
+	line-height: 26px;
+	white-space: nowrap;
+	text-decoration: none;
+}
+
+.rwaq-search__btn--primary {
+	background: var(--rwaq-primary);
+	color: var(--rwaq-surface);
+}
+
+.rwaq-search__btn--subtle {
+	background: transparent;
+	color: var(--rwaq-primary);
+}
+
+/* Pinned so a theme's anchor/button styling cannot recolour them. */
+.rwaq-search .rwaq-search__btn--primary,
+.rwaq-search .rwaq-search__btn--primary:hover,
+.rwaq-search .rwaq-search__btn--primary:focus,
+.rwaq-search .rwaq-search__btn--primary:active {
+	background: var(--rwaq-primary) !important;
+	color: var(--rwaq-surface) !important;
+	text-decoration: none !important;
+	box-shadow: none !important;
+	opacity: 1 !important;
+}
+
+.rwaq-search .rwaq-search__btn--subtle,
+.rwaq-search .rwaq-search__btn--subtle:hover,
+.rwaq-search .rwaq-search__btn--subtle:focus,
+.rwaq-search .rwaq-search__btn--subtle:active {
+	background: transparent !important;
+	color: var(--rwaq-primary) !important;
+	text-decoration: none !important;
+	box-shadow: none !important;
+	opacity: 1 !important;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 1279px) {
+	.rwaq-search__grid {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 1023px) {
+	.rwaq-search__grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.rwaq-search__title {
+		font-size: 28px;
+		line-height: 36px;
+	}
+}
+
+@media (max-width: 767px) {
+	.rwaq-search__inner {
+		padding-block: 20px 48px;
+	}
+
+	.rwaq-search__title {
+		font-size: 24px;
+		line-height: 32px;
+	}
+
+	.rwaq-search__cta {
+		padding: 24px;
+		margin-top: 32px;
+	}
+
+	.rwaq-search__cta-title {
+		font-size: 22px;
+		line-height: 30px;
+	}
+
+	/* Buttons fill the row rather than crowding. */
+	.rwaq-search__cta-actions,
+	.rwaq-search__btn {
+		width: 100%;
+	}
+}
+
+@media (max-width: 599px) {
+	.rwaq-search__grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.rwaq-searchbar {
+		width: 100%;
+	}
+}
