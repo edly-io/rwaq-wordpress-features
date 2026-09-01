@@ -40,6 +40,98 @@ function enroll_ajax_guard() {
 }
 
 /**
+ * Normalize an LMS message for matching.
+ *
+ * The LMS localizes its error bodies, and the Arabic translations vary in
+ * diacritics (تعذّرت vs تعذرت) and letter forms (أ/ا, ة/ه), so raw string
+ * comparison is unreliable. Strip the marks and unify the variants so both the
+ * haystack and the needles reduce to the same shape.
+ *
+ * @param string $text Raw message text.
+ * @return string Normalized text.
+ */
+function enroll_normalize_message_text( $text ) {
+	$text = wp_strip_all_tags( (string) $text );
+
+	// Drop Arabic diacritics (tashkeel) and the tatweel elongation character.
+	$stripped = preg_replace( '/[\x{0610}-\x{061A}\x{064B}-\x{065F}\x{0670}\x{06D6}-\x{06ED}\x{0640}]/u', '', $text );
+	if ( null !== $stripped ) {
+		$text = $stripped;
+	}
+
+	// Unify letter forms that differ between translations of the same phrase.
+	$text = str_replace(
+		array( 'أ', 'إ', 'آ', 'ٱ', 'ى', 'ة' ),
+		array( 'ا', 'ا', 'ا', 'ا', 'ي', 'ه' ),
+		$text
+	);
+
+	$collapsed = preg_replace( '/\s+/u', ' ', $text );
+	if ( null !== $collapsed ) {
+		$text = $collapsed;
+	}
+
+	return strtolower( trim( $text ) );
+}
+
+/**
+ * Whether a failed change_enrollment response means the course is full.
+ *
+ * @param int        $status  HTTP status returned by the LMS.
+ * @param string     $body    Raw response body.
+ * @param array|null $decoded Body decoded as JSON, when it was JSON.
+ * @return bool
+ */
+function enroll_is_course_full_response( $status, $body, $decoded = null ) {
+	if ( 400 !== (int) $status ) {
+		return false;
+	}
+
+	$text = is_array( $decoded )
+		? (string) ( isset( $decoded['message'] ) ? $decoded['message'] : ( isset( $decoded['detail'] ) ? $decoded['detail'] : '' ) )
+		: $body;
+
+	$text = enroll_normalize_message_text( $text );
+
+	if ( '' === $text ) {
+		// A bare 400 from change_enrollment is a refused enrollment; full course
+		// is by far the most common cause.
+		return true;
+	}
+
+	/**
+	 * Filter the phrases that identify a "course is full" rejection.
+	 *
+	 * Matched against the normalized response body, so entries are normalized
+	 * the same way before comparison.
+	 *
+	 * @param string[] $needles Phrases to look for.
+	 */
+	$needles = apply_filters(
+		'tutor_sso_course_full_phrases',
+		array(
+			// English (default LMS locale).
+			'could not enroll',
+			'course is full',
+			'enrollment is full',
+			// Arabic (the LMS translates the body per the session's language).
+			'تعذّرت عمليّة التسجيل',
+			'الدورة ممتلئة',
+		)
+	);
+
+	foreach ( $needles as $needle ) {
+		$needle = enroll_normalize_message_text( $needle );
+
+		if ( '' !== $needle && false !== strpos( $text, $needle ) ) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/**
  * Map an enroll/unenroll result into a JSON response.
  *
  * @param array|\WP_Error $result      Result from enroll_change_enrollment().
@@ -53,11 +145,17 @@ function enroll_send_change_result( $result, $course_id, $success_msg ) {
 
 	if ( empty( $result['success'] ) ) {
 		$status = isset( $result['status'] ) ? (int) $result['status'] : 0;
+		$body   = (string) $result['body'];
 
 		// Try to surface a meaningful LMS message if the body is JSON.
-		$decoded = json_decode( (string) $result['body'], true );
+		$decoded = json_decode( $body, true );
+		$is_full = enroll_is_course_full_response( $status, $body, $decoded );
 
-		if ( is_array( $decoded ) && ! empty( $decoded['message'] ) ) {
+		if ( $is_full ) {
+			// change_enrollment answers a full course with a bare 400 /
+			// "Could not enroll"; translate that into something actionable.
+			$message = __( 'تم الوصول إلى الحد الأقصى لعدد المسجلين في الدورة. الدورة مكتملة العدد.', 'tutor-sso' );
+		} elseif ( is_array( $decoded ) && ! empty( $decoded['message'] ) ) {
 			$message = $decoded['message'];
 		} elseif ( 403 === $status ) {
 			// change_enrollment is session + CSRF protected; a 403 means the LMS
@@ -67,13 +165,19 @@ function enroll_send_change_result( $result, $course_id, $success_msg ) {
 			$message = __( 'The request failed. Please try again later.', 'tutor-sso' );
 		}
 
-		wp_send_json_error(
-			array(
-				'message' => $message,
-				'status'  => $status,
-			),
-			502
+		$payload = array(
+			'message' => $message,
+			'status'  => $status,
+			'full'    => $is_full,
 		);
+
+		// Surface the raw LMS reply to developers only, so an unrecognised
+		// failure can be diagnosed from the browser's network tab.
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			$payload['lms_body'] = wp_strip_all_tags( $body );
+		}
+
+		wp_send_json_error( $payload, 502 );
 	}
 
 	wp_send_json_success(
