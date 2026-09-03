@@ -299,12 +299,22 @@ function instructor_render_hero( $data ) {
 
 		<div class="rwaq-ins__hero-inner">
 			<div class="rwaq-ins__profile">
-				<?php if ( '' !== $avatar ) : ?>
-					<div class="rwaq-ins__avatar">
-						<span class="rwaq-ins__avatar-card" aria-hidden="true"></span>
-						<img class="rwaq-ins__avatar-image" src="<?php echo esc_url( $avatar ); ?>" width="238" height="238" alt="<?php echo esc_attr( $name ); ?>" />
-					</div>
-				<?php endif; ?>
+				<?php
+				$avatar_fallback = TUTOR_SSO_URL . 'assets/images/avatar-fallback-author.svg';
+				$avatar_src      = '' !== $avatar ? $avatar : $avatar_fallback;
+				$avatar_classes  = 'rwaq-ins__avatar-image' . ( '' !== $avatar ? '' : ' rwaq-ins__avatar-image--fallback' );
+				?>
+				<div class="rwaq-ins__avatar">
+					<span class="rwaq-ins__avatar-card" aria-hidden="true"></span>
+					<img
+						class="<?php echo esc_attr( $avatar_classes ); ?>"
+						src="<?php echo esc_url( $avatar_src ); ?>"
+						width="238"
+						height="238"
+						alt="<?php echo esc_attr( $name ); ?>"
+						onerror="this.onerror=null;this.src='<?php echo esc_url( $avatar_fallback ); ?>';this.classList.add('rwaq-ins__avatar-image--fallback');"
+					/>
+				</div>
 
 				<div class="rwaq-ins__summary">
 					<?php if ( '' !== $name ) : ?>
