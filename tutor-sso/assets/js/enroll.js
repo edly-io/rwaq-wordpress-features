@@ -45,7 +45,7 @@
 		var originalLabel = $btn.text();
 
 		$btn.prop( 'disabled', true ).text( busyLabel || originalLabel );
-		$msg.text( '' );
+		$msg.text( '' ).removeClass( 'tutor-sso-enroll-message--error' );
 
 		$.ajax( {
 			url: cfg.ajaxurl,
@@ -63,13 +63,11 @@
 					$msg.text( successMsg || ( response.data && response.data.message ) || '' );
 					onSuccess( response.data || {} );
 				} else {
-					$btn.prop( 'disabled', false ).text( originalLabel );
-					$msg.text( errorText( response ) );
+					showError( $btn, $msg, response, originalLabel );
 				}
 			} )
 			.fail( function ( jqXHR ) {
-				$btn.prop( 'disabled', false ).text( originalLabel );
-				$msg.text( errorText( jqXHR.responseJSON ) );
+				showError( $btn, $msg, jqXHR.responseJSON, originalLabel );
 			} );
 	}
 
@@ -119,6 +117,20 @@
 			.appendTo( $wrap );
 
 		$wrap.append( $msg );
+	}
+
+	/**
+	 * Render a failed request: show the message and restore the button — except
+	 * when the LMS reported the course is full, where retrying cannot succeed,
+	 * so the button stays disabled.
+	 */
+	function showError( $btn, $msg, response, originalLabel ) {
+		var isFull = !! ( response && response.data && response.data.full );
+
+		$btn.text( originalLabel ).prop( 'disabled', isFull );
+		$msg
+			.addClass( 'tutor-sso-enroll-message--error' )
+			.text( errorText( response ) );
 	}
 
 	function errorText( data ) {

@@ -24,6 +24,8 @@
  *   - course_start_date  → ACF field              (required on create)
  *   - course_end_date    → ACF field              (required on create)
  *   - instructor         → ACF field
+ *   - instructor_slug    → ACF field; stored as a root-relative instructor
+ *                          path, e.g. "almajeed" → "/instructor/almajeed/"
  *   - youtube_link       → ACF field (URL)
  *   - course_duration    → ACF field
  *   - total_enrollment   → ACF field
@@ -65,6 +67,13 @@ class Courses_REST_Controller extends \WP_REST_Controller {
 	const INSTRUCTOR_IMAGE_FIELD = 'instructor_image';
 
 	/**
+	 * Post type the instructor slug points at. The LMS sends the bare slug
+	 * ("almajeed"); it is stored prefixed with this so the ACF value is a
+	 * ready-to-use link path ("/instructor/almajeed/").
+	 */
+	const INSTRUCTOR_POST_TYPE = 'instructor';
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -95,6 +104,7 @@ class Courses_REST_Controller extends \WP_REST_Controller {
 				'course_start_date' => 'course_start_date',
 				'course_end_date'   => 'course_end_date',
 				'instructor'        => 'instructor',
+				'instructor_slug'   => 'instructor_slug',
 				'youtube_link'      => 'youtube_link',
 				'course_duration'   => 'course_duration',
 				'total_enrollment'  => 'total_enrollment',
@@ -198,6 +208,12 @@ class Courses_REST_Controller extends \WP_REST_Controller {
 				'required'          => false,
 				'sanitize_callback' => 'sanitize_text_field',
 			),
+			'instructor_slug'   => array(
+				'description'       => __( 'Instructor slug as sent by the LMS. Stored as a root-relative instructor path', 'tutor-sso' ),
+				'type'              => 'string',
+				'required'          => false,
+				'sanitize_callback' => array( $this, 'sanitize_instructor_slug' ),
+			),
 			'youtube_link'      => array(
 				'description'       => __( 'YouTube URL.', 'tutor-sso' ),
 				'type'              => 'string',
@@ -242,6 +258,47 @@ class Courses_REST_Controller extends \WP_REST_Controller {
 				'sanitize_callback' => 'esc_url_raw',
 			),
 		);
+	}
+
+	/**
+	 * Normalize an instructor slug into a root-relative instructor path.
+	 *
+	 * Re-sending a value that already carries the prefix — a bare slug, a full
+	 * path, or an absolute URL — is idempotent rather than doubled up.
+	 *
+	 * @param mixed $value Raw slug from the request.
+	 * @return string Instructor path, or '' when nothing usable was sent.
+	 */
+	public function sanitize_instructor_slug( $value ) {
+		if ( ! is_scalar( $value ) ) {
+			return '';
+		}
+
+		$prefix = self::INSTRUCTOR_POST_TYPE;
+
+		// Reduce an absolute URL to its path, so a full instructor URL round
+		// trips as cleanly as a bare slug.
+		$slug = trim( wp_make_link_relative( trim( (string) $value ) ), '/' );
+
+		// On a subdirectory install the stored value carries the install path
+		// ("/lms/instructor/almajeed/"); strip it before looking for the prefix.
+		$base = trim( (string) wp_make_link_relative( home_url( '/' ) ), '/' );
+		if ( '' !== $base && 0 === strpos( $slug, $base . '/' ) ) {
+			$slug = trim( substr( $slug, strlen( $base ) ), '/' );
+		}
+
+		// Drop an already-present post type prefix so it is not applied twice.
+		if ( 0 === strpos( $slug, $prefix . '/' ) ) {
+			$slug = trim( substr( $slug, strlen( $prefix ) ), '/' );
+		}
+
+		$slug = sanitize_title( $slug );
+
+		if ( '' === $slug ) {
+			return '';
+		}
+
+		return wp_make_link_relative( home_url( '/' . $prefix . '/' . $slug . '/' ) );
 	}
 
 	/**

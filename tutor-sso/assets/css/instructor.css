@@ -435,6 +435,16 @@ a.rwaq-ins__crumb:focus-visible {
 	display: block;
 }
 
+/* The fallback is a silhouette, not a photograph — `contain` plus an inset stop
+   `cover` cropping it into an abstract shape, and the neutral tile reads as a
+   deliberate placeholder rather than as a real photo on the white card. */
+.rwaq-ins__avatar-image--fallback {
+	object-fit: contain;
+	padding: 44px;
+	background: var(--rwaq-surface-4);
+	opacity: 0.85;
+}
+
 /* ---- Stats bar ---- */
 .rwaq-ins__stats {
 	display: flex;
