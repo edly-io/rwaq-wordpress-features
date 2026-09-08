@@ -69,6 +69,7 @@ require_once TUTOR_SSO_PATH . 'includes/instructors/instructors-client.php';
 require_once TUTOR_SSO_PATH . 'includes/instructors/instructor-detail.php';
 require_once TUTOR_SSO_PATH . 'includes/instructors/rest/routes.php';
 require_once TUTOR_SSO_PATH . 'includes/blocks/quote-block.php';
+require_once TUTOR_SSO_PATH . 'includes/not-found/not-found.php';
 
 // Boot the admin settings UI.
 add_action( 'plugins_loaded', function () {

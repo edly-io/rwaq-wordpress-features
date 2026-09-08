@@ -1,0 +1,238 @@
+/**
+ * "Page not found" (404) styles.
+ *
+ * IBM Plex Sans Arabic is enqueued globally as 'tutor-sso-programs-font';
+ * Otomanopee One (the "404" numeral only) as 'tutor-sso-not-found-font'.
+ * Logical properties throughout, so no RTL companion stylesheet is needed.
+ */
+
+.rwaq-404 {
+	/* Design tokens from the Figma library, mapped onto the plugin's --rwaq-*
+	   convention (see instructor.css / courses.css / programs.css). */
+	--rwaq-primary: #565199;          /* BrandBackground.Rest / Brand-80 */
+	--rwaq-primary-hover: #474377;    /* Brand-80 darkened for hover */
+	--rwaq-primary-soft: #F1F0F8;     /* Brand-10 */
+	--rwaq-text: #242424;             /* NeutralForeground1.Rest */
+	--rwaq-muted: #616161;            /* NeutralForeground3.Rest */
+	--rwaq-on-brand: #FFFFFF;         /* NeutralForegroundOnBrand.Rest */
+
+	/* The design's frame is 1440x672 with the content column at 592px. */
+	--rwaq-404-min-height: 672px;
+	--rwaq-404-column: 592px;
+	--rwaq-404-actions: 208px;
+
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: var(--rwaq-404-min-height);
+	padding: 48px 16px;
+	overflow: hidden;
+	color: var(--rwaq-text);
+	font-family: 'IBM Plex Sans Arabic', sans-serif;
+	text-align: center;
+	-webkit-font-smoothing: antialiased;
+}
+
+.rwaq-404 *,
+.rwaq-404 *::before,
+.rwaq-404 *::after {
+	box-sizing: border-box;
+}
+
+.rwaq-404__inner {
+	position: relative;
+	width: 100%;
+	max-width: var(--rwaq-404-column);
+}
+
+/* ---- Decorative blob: a 551px radial circle sitting behind the content.
+   Physical offsets on purpose — the design is authored RTL and the artwork is
+   a symmetric circle, so it should not flip with the writing direction. ---- */
+.rwaq-404__blob {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	width: 551px;
+	height: 551px;
+	max-width: none;
+	margin-left: 50px;
+	margin-top: -70px;
+	transform: translate(-50%, -50%);
+	pointer-events: none;
+	z-index: 0;
+}
+
+.rwaq-404__stack {
+	position: relative;
+	z-index: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 32px;                        /* spacingHorizontalXXXL */
+}
+
+/* ---- The 404 mark: the numeral centered inside the corner brackets ---- */
+.rwaq-404__mark {
+	position: relative;
+	flex: 0 0 auto;
+	width: 220px;
+	height: 170px;
+}
+
+.rwaq-404__brackets {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	width: 220px;
+	height: 150px;
+	max-width: none;
+	transform: translate(-50%, -50%);
+}
+
+.rwaq-404__code {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	/* Title 1, but in the display face the design uses for the numeral. */
+	font-family: 'Otomanopee One', 'IBM Plex Sans Arabic', sans-serif;
+	font-size: 78px;
+	line-height: 88px;
+	font-weight: 400;
+	color: var(--rwaq-primary);
+	white-space: nowrap;
+}
+
+/* ---- Heading + description ---- */
+.rwaq-404__text {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;                        /* spacingHorizontalL */
+	width: 100%;
+}
+
+.rwaq-404__title {
+	margin: 0;
+	font-size: 32px;                  /* typography/font-size/800 */
+	line-height: 40px;                /* typography/line-height/800 */
+	font-weight: 600;
+	color: var(--rwaq-text);
+}
+
+.rwaq-404__desc {
+	margin: 0;
+	font-size: 16px;                  /* typography/font-size/400 */
+	line-height: 28px;                /* typography/line-height/500 */
+	font-weight: 400;
+	color: var(--rwaq-muted);
+}
+
+/* ---- Actions: a 208px column, primary filled then a subtle link ---- */
+.rwaq-404__actions {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 16px;                        /* spacingHorizontalL */
+	width: var(--rwaq-404-actions);
+	max-width: 100%;
+}
+
+/* Both actions navigate, so they are links styled as buttons (per the Fluent
+   Button guidance in the design library). The design's asymmetric padding is
+   expressed logically: 16px on the start side, 12px on the end side. */
+.rwaq-404__btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;                         /* spacingHorizontalSNudge */
+	padding-block: 10px;
+	padding-inline-start: 16px;
+	padding-inline-end: 12px;
+	border: 0;
+	border-radius: 8px;               /* Global.Corner.Radius.120 */
+	font-size: 16px;
+	font-weight: 600;
+	text-decoration: none;
+	cursor: pointer;
+	transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+/* The label box is 24px tall inside 10px of block padding, giving the design's
+   44px control height. The 1px lift is the net effect of the design's 2px
+   bottom offset on the label wrapper, which optically centres the Arabic text —
+   applied as a transform so it does not add to the button's height. */
+.rwaq-404__btn-label {
+	display: block;
+	height: 24px;
+	line-height: 24px;
+	transform: translateY(-1px);
+}
+
+.rwaq-404__btn--primary {
+	width: 100%;
+	background: var(--rwaq-primary);
+	color: var(--rwaq-on-brand);
+}
+
+.rwaq-404__btn--primary:hover,
+.rwaq-404__btn--primary:focus {
+	background: var(--rwaq-primary-hover);
+	color: var(--rwaq-on-brand);
+}
+
+.rwaq-404__btn--subtle {
+	background: transparent;          /* SubtleBackground.Rest */
+	color: var(--rwaq-primary);
+}
+
+.rwaq-404__btn--subtle:hover,
+.rwaq-404__btn--subtle:focus {
+	background: var(--rwaq-primary-soft);
+	color: var(--rwaq-primary);
+}
+
+.rwaq-404__btn:focus-visible {
+	outline: 2px solid var(--rwaq-primary);
+	outline-offset: 2px;
+}
+
+/* ---- Narrow screens: the design is desktop-only, so scale the mark and
+   headline down and let the blob shrink with the viewport. ---- */
+@media (max-width: 767px) {
+	.rwaq-404 {
+		--rwaq-404-min-height: 520px;
+		padding: 40px 16px;
+	}
+
+	.rwaq-404__blob {
+		width: 380px;
+		height: 380px;
+		margin-left: 24px;
+		margin-top: -48px;
+	}
+
+	.rwaq-404__stack {
+		gap: 24px;
+	}
+
+	.rwaq-404__mark {
+		width: 176px;
+		height: 128px;
+	}
+
+	.rwaq-404__brackets {
+		width: 176px;
+		height: 120px;
+	}
+
+	.rwaq-404__code {
+		font-size: 56px;
+		line-height: 64px;
+	}
+
+	.rwaq-404__title {
+		font-size: 24px;
+		line-height: 32px;
+	}
+}
