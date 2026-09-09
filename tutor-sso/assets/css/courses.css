@@ -154,7 +154,7 @@
 	flex: 0 0 280px;
 	width: 280px;
 	border: 1px solid var(--rwaq-border);
-	border-radius: 18px;
+	border-radius: 10px;
 	padding: 22px 22px 26px;
 }
 
@@ -570,7 +570,7 @@
 	display: flex;
 	flex-direction: column;
 	border: 1px solid var(--rwaq-border);
-	border-radius: 18px;
+	border-radius: 10px;
 	padding: 16px;
 	background: #fff;
 	box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
