@@ -5,12 +5,14 @@
  * Each `.rwaq-courses` block is self-contained; per-instance config lives in
  * data-* attributes, shared config (ajaxurl / nonce / i18n) in tutorSsoCourses.
  *
- * Filters: organization (multi-select checkboxes) in the sidebar, matching the
- * programs catalog, plus an in-group search box that narrows the (fixed-height,
- * scrolling) organization list client-side. Any change re-queries page 1 via AJAX
- * immediately; active selections render as removable chips and "clear all"
- * resets them. Catalog search and sort apply instantly too; the grid paginates
- * on scroll.
+ * Filters: one sidebar group per data-filter (organizations, categories), each a
+ * set of multi-select checkboxes matching the programs catalog. Groups are read
+ * generically from the DOM, so adding a group in PHP needs no change here. The
+ * organization group adds an in-group search box that narrows its (fixed-height,
+ * scrolling) list client-side; the category group caps its list with a
+ * "show more" link. Any change re-queries page 1 via AJAX immediately; active
+ * selections render as removable chips and "clear all" resets them. Catalog
+ * search and sort apply instantly too; the grid paginates on scroll.
  */
 ( function ( $ ) {
 	'use strict';
@@ -44,17 +46,37 @@
 		var $sortValue = $root.find( '.rwaq-courses__sort-value' ).first();
 		var $sortMenu = $root.find( '.rwaq-courses__sort-menu' ).first();
 
+		// The filter groups the sidebar rendered, in DOM order — each group's
+		// data-filter is the request param its values are sent as.
+		var groupKeys = $root
+			.find( '.rwaq-courses__filter-group' )
+			.map( function () {
+				return String( $( this ).data( 'filter' ) || '' );
+			} )
+			.get()
+			.filter( function ( key ) {
+				return '' !== key;
+			} );
+
 		var state = {
 			page: parseInt( $root.data( 'page' ), 10 ) || 1, // Last page in the grid.
 			perPage: parseInt( $root.data( 'per-page' ), 10 ) || 8,
 			search: '',
 			ordering: $sort.length ? $sort.val() : ( $root.data( 'default-sort' ) || '' ),
-			filters: { org: [] },
+			filters: emptyFilters(),
 			hasMore: toBool( $root.data( 'has-more' ) ),
 			loading: false
 		};
 
 		// ── Filter helpers ───────────────────────────────────────────────────────
+		function emptyFilters() {
+			var f = {};
+			groupKeys.forEach( function ( key ) {
+				f[ key ] = [];
+			} );
+			return f;
+		}
+
 		function groupInputs( group ) {
 			return $root.find(
 				'.rwaq-courses__filter-group[data-filter="' + group + '"] .rwaq-courses__filter-input'
@@ -62,9 +84,9 @@
 		}
 
 		function readFilters() {
-			var f = { org: [] };
+			var f = emptyFilters();
 			$root.find( '.rwaq-courses__filter-group' ).each( function () {
-				var group = $( this ).data( 'filter' );
+				var group = String( $( this ).data( 'filter' ) || '' );
 				$( this ).find( '.rwaq-courses__filter-input:checked' ).each( function () {
 					if ( f[ group ] ) {
 						f[ group ].push( $( this ).val() );
@@ -90,15 +112,17 @@
 		function renderChips() {
 			$chips.empty();
 
-			state.filters.org.forEach( function ( value ) {
-				var label = labelFor( 'org', value );
-				var $chip = $( '<button type="button" class="rwaq-courses__chip"></button>' )
-					.attr( 'data-group', 'org' )
-					.attr( 'data-value', value )
-					.attr( 'aria-label', ( i18n.removeFilter || 'Remove' ) + ': ' + label );
-				$( '<span></span>' ).text( label ).appendTo( $chip );
-				$( '<span class="rwaq-courses__chip-x" aria-hidden="true"></span>' ).html( CHIP_X_SVG ).appendTo( $chip );
-				$chips.append( $chip );
+			groupKeys.forEach( function ( group ) {
+				( state.filters[ group ] || [] ).forEach( function ( value ) {
+					var label = labelFor( group, value );
+					var $chip = $( '<button type="button" class="rwaq-courses__chip"></button>' )
+						.attr( 'data-group', group )
+						.attr( 'data-value', value )
+						.attr( 'aria-label', ( i18n.removeFilter || 'Remove' ) + ': ' + label );
+					$( '<span></span>' ).text( label ).appendTo( $chip );
+					$( '<span class="rwaq-courses__chip-x" aria-hidden="true"></span>' ).html( CHIP_X_SVG ).appendTo( $chip );
+					$chips.append( $chip );
+				} );
 			} );
 		}
 
@@ -140,19 +164,26 @@
 
 			var nextPage = reset ? 1 : state.page + 1;
 
+			var data = {
+				action: 'tutor_sso_load_courses',
+				nonce: cfg.nonce,
+				page: nextPage,
+				per_page: state.perPage,
+				search: state.search,
+				ordering: state.ordering
+			};
+
+			// One param per filter group (org=…&category=…); jQuery drops the
+			// empty arrays, so unselected groups are simply not sent.
+			groupKeys.forEach( function ( group ) {
+				data[ group ] = state.filters[ group ] || [];
+			} );
+
 			$.ajax( {
 				url: cfg.ajaxurl,
 				type: 'GET',
 				dataType: 'json',
-				data: {
-					action: 'tutor_sso_load_courses',
-					nonce: cfg.nonce,
-					page: nextPage,
-					per_page: state.perPage,
-					search: state.search,
-					ordering: state.ordering,
-					org: state.filters.org
-				}
+				data: data
 			} )
 				.done( function ( response ) {
 					if ( ! response || ! response.success ) {
@@ -315,9 +346,9 @@
 			applyFilters();
 		} );
 
-		// ── In-group search: narrow a long option list by label. The whole list is
-		//    rendered (it scrolls past a fixed height), so filtering is just a
-		//    class toggle plus the "nothing matched" message.
+		// ── In-group search: narrow a group's option list by label. The whole
+		//    list is rendered (it scrolls past a fixed height), so filtering is
+		//    just a class toggle plus the group's "nothing matched" message.
 		$root.on( 'input', '.rwaq-courses__filter-search-input', function () {
 			var $group = $( this ).closest( '.rwaq-courses__filter-group' );
 			var $empty = $group.find( '.rwaq-courses__filter-empty' );

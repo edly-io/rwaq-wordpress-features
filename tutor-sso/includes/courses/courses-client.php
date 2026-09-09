@@ -4,8 +4,9 @@
  *
  * Thin wrapper around the LMS public course catalog endpoints:
  *
- *   GET /api/v1/courses/          — paginated, searchable, org-filterable list
- *   GET /api/v1/courses/filters/  — available filter options (organizations)
+ *   GET /api/v1/courses/          — paginated, searchable, org/category-filterable list
+ *   GET /api/v1/courses/filters/  — available filter options (organizations,
+ *                                   categories)
  *
  * The endpoint is public (no authentication / cookies required), so like the
  * programs client (see includes/programs/programs-client.php) we do not forward
@@ -25,6 +26,7 @@
  *   search=<term>              free-text search
  *   org=<A>,<B>                organization short names, comma-joined = OR
  *                              (names/short names only — ids are not matched)
+ *   category=<A>,<B>           category names, comma-joined = OR (names only)
  *   ordering=title|-title      alphabetical sort
  *
  * Ordering is title-only by design of the endpoint: its OPTIONS metadata states
@@ -46,6 +48,11 @@
  *
  * Organization shape (filter options, from the filters endpoint):
  *   { slug, name, logo, count }
+ *
+ * Category shape (filter options, from the filters endpoint):
+ *   { slug, name, count }, where `slug` is the category name the list
+ *   endpoint's `category` param matches (it also matches the Arabic name, but
+ *   the English one is sent as the stable identifier).
  *
  * Internal organizations (name/short name starting with "test" — see
  * sso_hidden_org_prefixes()) are hidden from both the filter list and the
@@ -252,6 +259,7 @@ function courses_request( $url, $cache_key ) {
  *     @type string   $search   Free-text search term.
  *     @type string   $ordering Ordering key (see courses_allowed_ordering()).
  *     @type string[] $org      Organization codes to filter by (OR).
+ *     @type string[] $category Category names to filter by (OR).
  * }
  * @return array|\WP_Error { count, next, previous, results } or WP_Error.
  */
@@ -280,6 +288,10 @@ function courses_fetch_public( $page = 1, $per_page = 8, $args = array() ) {
 		$query['org'] = (array) $args['org'];
 	}
 
+	if ( ! empty( $args['category'] ) ) {
+		$query['category'] = (array) $args['category'];
+	}
+
 	$url = $base . COURSES_PUBLIC_ENDPOINT . '?' . courses_build_query( $query );
 
 	return courses_request( $url, courses_cache_key( 'tutor_sso_courses_', $url ) );
@@ -294,7 +306,7 @@ function courses_fetch_public( $page = 1, $per_page = 8, $args = array() ) {
  *
  * @param int   $page     1-based page number.
  * @param int   $per_page Courses per page.
- * @param array $args     { search, ordering, org (string[]) }.
+ * @param array $args     { search, ordering, org (string[]), category (string[]) }.
  * @return array{results:array[],total:int,num_pages:int,error:string}
  */
 function courses_fetch( $page = 1, $per_page = 8, $args = array() ) {
@@ -449,6 +461,7 @@ function courses_start_date_text( $start ) {
  * @return array|\WP_Error {
  *     @type array[] $organizations [ { id, name, short_name, organization_arabic_name,
  *                                     organization_logo, total_courses }, ... ].
+ *     @type array[] $categories    [ { id, name, arabic_name, total_courses }, ... ].
  * } or WP_Error on failure.
  */
 function courses_fetch_filters() {
@@ -467,6 +480,7 @@ function courses_fetch_filters() {
 
 	return array(
 		'organizations' => ( isset( $body['organizations'] ) && is_array( $body['organizations'] ) ) ? $body['organizations'] : array(),
+		'categories'    => ( isset( $body['categories'] ) && is_array( $body['categories'] ) ) ? $body['categories'] : array(),
 	);
 }
 
@@ -613,4 +627,70 @@ function courses_organizations() {
 	}
 
 	return apply_filters( 'tutor_sso_courses_organizations', $orgs );
+}
+
+/**
+ * Categories for the filter dropdown, from the catalog filters API.
+ *
+ * Mirrors courses_organizations(): the option value is the category *name* — the
+ * string the list endpoint's `category` param matches — and labels prefer the
+ * Arabic name. Sorted by course count descending, then by label, matching the
+ * design. Cached with the rest of the filters response (see courses_request()).
+ *
+ *
+ * Filterable so alternative data can be injected without editing this file.
+ *
+ * @return array<int,array{slug:string,name:string,count:int}>
+ */
+function courses_categories() {
+	$filters    = courses_fetch_filters();
+	$categories = array();
+
+	if ( ! is_wp_error( $filters ) ) {
+		foreach ( $filters['categories'] as $category ) {
+			if ( ! is_array( $category ) ) {
+				continue;
+			}
+
+			$name = isset( $category['name'] ) ? trim( (string) $category['name'] ) : '';
+
+			if ( '' === $name ) {
+				continue;
+			}
+
+			// Multi-select filters are sent comma-joined (category=A,B), so a
+			// name containing a comma would reach the API as two names and match
+			// nothing. Such a category cannot be offered as an option.
+			if ( false !== strpos( $name, ',' ) ) {
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+						sprintf( '[tutor-sso] course category "%s" skipped: the API filter cannot express a comma', $name )
+					);
+				}
+
+				continue;
+			}
+
+			$arabic = isset( $category['arabic_name'] ) ? trim( (string) $category['arabic_name'] ) : '';
+
+			$categories[] = array(
+				'slug'  => $name,
+				'name'  => '' !== $arabic ? $arabic : $name,
+				'count' => isset( $category['total_courses'] ) ? (int) $category['total_courses'] : 0,
+			);
+		}
+	}
+
+	usort(
+		$categories,
+		function ( $a, $b ) {
+			if ( $a['count'] === $b['count'] ) {
+				return strnatcasecmp( $a['name'], $b['name'] );
+			}
+
+			return $b['count'] - $a['count'];
+		}
+	);
+
+	return apply_filters( 'tutor_sso_courses_categories', $categories );
 }

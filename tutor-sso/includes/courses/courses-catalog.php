@@ -1,11 +1,13 @@
 <?php
 /**
- * Courses catalog: assets, shortcode, search / sort / organization filter.
+ * Courses catalog: assets, shortcode, search / sort / organization + category
+ * filters.
  *
  * The whole UI follows the programs catalog: a full-width search bar above a
- * two-column layout — a filter sidebar (organization checkboxes with counts, a
- * collapsible group, an in-group search box and a fixed-height scrolling option
- * list) beside the results (active-filter chips, result count + sort, grid). Page 1 is
+ * two-column layout — a filter sidebar (collapsible organization and category
+ * groups: checkboxes with course counts, an in-group search box and a
+ * fixed-height scrolling option list) beside the results (active-filter chips,
+ * result count + sort, grid). Page 1 is
  * server-rendered; further pages + every search / sort / filter change go via
  * AJAX (see courses-ajax.php and assets/js/courses.js). Data comes from the LMS
  * public courses API via courses-client.php.
@@ -228,20 +230,139 @@ function courses_render_cards( $courses ) {
 }
 
 /**
- * Render the filter sidebar: the organization group (checkboxes with course
- * counts) inside a collapsible panel, plus a search box for long lists. The
- * option list scrolls past a fixed height (see .rwaq-courses__filter-options in
- * courses.css) so the sidebar keeps the same height however many organizations
- * the API returns. Behaviour (collapse, search, apply-on-change, chips) lives in
+ * Filter group definitions for the sidebar, in render order.
+ *
+ * Each group is { key, title, options, search? } where `key` is the
+ * request/AJAX param the group's values are sent as, `options` are
+ * { slug, name, count } rows, and `search` (when present) adds the in-group
+ * search box that narrows the group's scrolling list.
+ *
+ * @return array<int,array<string,mixed>> Group definitions (options may be empty).
+ */
+function courses_filter_groups() {
+	$groups = array(
+		array(
+			'key'     => 'org',
+			'title'   => __( 'الجهة', 'tutor-sso' ),
+			'options' => courses_organizations(),
+			// Organizations are searchable inside a fixed-height scroll area, so
+			// the sidebar keeps its height however many the API returns.
+			'search'  => array(
+				'placeholder' => __( 'ابحث عن جهة…', 'tutor-sso' ),
+				'label'       => __( 'ابحث عن جهة', 'tutor-sso' ),
+				'empty'       => __( 'لا توجد جهات مطابقة', 'tutor-sso' ),
+			),
+		),
+		array(
+			'key'     => 'category',
+			'title'   => __( 'الفئات', 'tutor-sso' ),
+			'options' => courses_categories(),
+			'search'  => array(
+				'placeholder' => __( 'ابحث عن فئة…', 'tutor-sso' ),
+				'label'       => __( 'ابحث عن فئة', 'tutor-sso' ),
+				'empty'       => __( 'لا توجد فئات مطابقة', 'tutor-sso' ),
+			),
+		),
+	);
+
+	/**
+	 * Filter the courses sidebar filter groups.
+	 *
+	 * @param array $groups Group definitions.
+	 */
+	return apply_filters( 'tutor_sso_courses_filter_groups', $groups );
+}
+
+/**
+ * Render one filter group: a collapsible panel of checkboxes with course counts,
+ * optionally preceded by an in-group search box that narrows the list.
+ *
+ * @param array $group Group definition (see courses_filter_groups()).
+ * @return string HTML, or '' when the group has no options.
+ */
+function courses_render_filter_group( $group ) {
+	$key     = isset( $group['key'] ) ? (string) $group['key'] : '';
+	$title   = isset( $group['title'] ) ? (string) $group['title'] : '';
+	$options = isset( $group['options'] ) && is_array( $group['options'] ) ? $group['options'] : array();
+	$search  = isset( $group['search'] ) && is_array( $group['search'] ) ? $group['search'] : array();
+
+	// Drop unusable rows up front.
+	$options = array_values(
+		array_filter(
+			$options,
+			function ( $option ) {
+				return is_array( $option )
+					&& ! empty( $option['slug'] )
+					&& ! empty( $option['name'] );
+			}
+		)
+	);
+
+	if ( '' === $key || empty( $options ) ) {
+		return '';
+	}
+
+	ob_start();
+	?>
+	<div class="rwaq-courses__filter-group" data-filter="<?php echo esc_attr( $key ); ?>">
+		<h3 class="rwaq-courses__filter-title" role="button" tabindex="0" aria-expanded="true">
+			<span><?php echo esc_html( $title ); ?></span>
+			<span class="rwaq-courses__filter-chevron" aria-hidden="true"><?php echo courses_icon( 'chevron' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
+		</h3>
+
+		<?php if ( ! empty( $search ) ) : ?>
+			<div class="rwaq-courses__filter-search">
+				<span class="rwaq-courses__filter-search-icon" aria-hidden="true"><?php echo courses_icon( 'search' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
+				<input type="search" class="rwaq-courses__filter-search-input" placeholder="<?php echo esc_attr( isset( $search['placeholder'] ) ? $search['placeholder'] : '' ); ?>" autocomplete="off" aria-label="<?php echo esc_attr( isset( $search['label'] ) ? $search['label'] : '' ); ?>" />
+			</div>
+		<?php endif; ?>
+
+		<div class="rwaq-courses__filter-options" tabindex="0">
+			<?php
+			foreach ( $options as $option ) :
+				$slug  = (string) $option['slug'];
+				$name  = (string) $option['name'];
+				$count = isset( $option['count'] ) ? (int) $option['count'] : 0;
+				?>
+				<label class="rwaq-courses__filter-option" data-label="<?php echo esc_attr( $name ); ?>">
+					<input type="checkbox" class="rwaq-courses__filter-input" value="<?php echo esc_attr( $slug ); ?>" />
+					<span class="rwaq-courses__filter-box" aria-hidden="true"><?php echo courses_icon( 'check' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
+					<span class="rwaq-courses__filter-label"><?php echo esc_html( $name ); ?></span>
+					<?php if ( $count > 0 ) : ?>
+						<span class="rwaq-courses__filter-count"><?php echo esc_html( number_format_i18n( $count ) ); ?></span>
+					<?php endif; ?>
+				</label>
+				<?php
+			endforeach;
+			?>
+
+			<?php if ( ! empty( $search ) ) : ?>
+				<div class="rwaq-courses__filter-empty" hidden><?php echo esc_html( isset( $search['empty'] ) ? $search['empty'] : '' ); ?></div>
+			<?php endif; ?>
+		</div>
+	</div>
+	<?php
+	return ob_get_clean();
+}
+
+/**
+ * Render the filter sidebar: one collapsible panel per filter group —
+ * organizations and categories — each a set of checkboxes with course counts in
+ * a searchable, fixed-height scrolling list. Groups the API returned nothing for
+ * are skipped. Behaviour (collapse, search, apply-on-change, chips) lives in
  * courses.js.
  *
  * @return string HTML, or '' when there is nothing to filter by.
  */
 function courses_render_sidebar() {
-	$organizations = courses_organizations();
+	$groups = '';
+
+	foreach ( courses_filter_groups() as $group ) {
+		$groups .= courses_render_filter_group( $group );
+	}
 
 	// Nothing to filter by (empty catalog / API unreachable): skip the sidebar.
-	if ( empty( $organizations ) ) {
+	if ( '' === $groups ) {
 		return '';
 	}
 
@@ -256,41 +377,7 @@ function courses_render_sidebar() {
 			<button type="button" class="rwaq-courses__clear"><?php echo esc_html__( 'مسح الكل', 'tutor-sso' ); ?></button>
 		</div>
 
-		<div class="rwaq-courses__filter-group" data-filter="org">
-			<h3 class="rwaq-courses__filter-title" role="button" tabindex="0" aria-expanded="true">
-				<span><?php echo esc_html__( 'الجهة', 'tutor-sso' ); ?></span>
-				<span class="rwaq-courses__filter-chevron" aria-hidden="true"><?php echo courses_icon( 'chevron' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
-			</h3>
-
-			<div class="rwaq-courses__filter-search">
-				<span class="rwaq-courses__filter-search-icon" aria-hidden="true"><?php echo courses_icon( 'search' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
-				<input type="search" class="rwaq-courses__filter-search-input" placeholder="<?php echo esc_attr__( 'ابحث عن جهة…', 'tutor-sso' ); ?>" autocomplete="off" aria-label="<?php echo esc_attr__( 'ابحث عن جهة', 'tutor-sso' ); ?>" />
-			</div>
-
-			<div class="rwaq-courses__filter-options" tabindex="0">
-				<?php foreach ( $organizations as $org ) : ?>
-					<?php
-					$slug  = isset( $org['slug'] ) ? (string) $org['slug'] : '';
-					$name  = isset( $org['name'] ) ? (string) $org['name'] : '';
-					$count = isset( $org['count'] ) ? (int) $org['count'] : 0;
-
-					if ( '' === $slug || '' === $name ) {
-						continue;
-					}
-					?>
-					<label class="rwaq-courses__filter-option" data-label="<?php echo esc_attr( $name ); ?>">
-						<input type="checkbox" class="rwaq-courses__filter-input" value="<?php echo esc_attr( $slug ); ?>" />
-						<span class="rwaq-courses__filter-box" aria-hidden="true"><?php echo courses_icon( 'check' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
-						<span class="rwaq-courses__filter-label"><?php echo esc_html( $name ); ?></span>
-						<?php if ( $count > 0 ) : ?>
-							<span class="rwaq-courses__filter-count"><?php echo esc_html( number_format_i18n( $count ) ); ?></span>
-						<?php endif; ?>
-					</label>
-				<?php endforeach; ?>
-
-				<div class="rwaq-courses__filter-empty" hidden><?php echo esc_html__( 'لا توجد جهات مطابقة', 'tutor-sso' ); ?></div>
-			</div>
-		</div>
+		<?php echo $groups; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 	</aside>
 	<?php
 	return ob_get_clean();
@@ -452,7 +539,7 @@ function courses_register_admin_shortcode( $shortcodes ) {
 		'tag'         => 'rwaq_courses',
 		'title'       => __( 'Courses Catalog', 'tutor-sso' ),
 		'example'     => '[rwaq_courses per_page="9" columns="3"]',
-		'description' => __( 'Courses catalog pulled from the LMS public courses API, with a filter sidebar (searchable, scrollable organization list with course counts), search, sorting, active-filter chips, and AJAX infinite scroll.', 'tutor-sso' ),
+		'description' => __( 'Courses catalog pulled from the LMS public courses API, with a filter sidebar (searchable, scrollable organization and category lists with course counts), search, sorting, active-filter chips, and AJAX infinite scroll.', 'tutor-sso' ),
 		'attributes'  => array(
 			'per_page' => __( 'Courses per page / infinite-scroll batch. Defaults to the "Courses per page" setting (8 if unset).', 'tutor-sso' ),
 			'columns'  => __( 'Grid column count. Default: 3 (the filter sidebar takes the rest of the row).', 'tutor-sso' ),

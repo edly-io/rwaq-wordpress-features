@@ -2,10 +2,11 @@
  * Courses catalog styles.
  *
  * Mirrors the programs catalog: a full-width search bar above a two-column
- * layout — filter sidebar (organization checkboxes with counts, collapsible,
- * with an in-group search box and a fixed-height scrolling option list) beside
- * the results (chips, count + sort, card grid). Structural class names are the
- * plugin's stable contract shared with courses-catalog.php and courses.js.
+ * layout — filter sidebar (collapsible organization and category groups:
+ * checkboxes with course counts, an in-group search box and a fixed-height
+ * scrolling option list) beside the results (chips, count + sort, card grid).
+ * Structural class names are the plugin's stable contract shared with
+ * courses-catalog.php and courses.js.
  *
  * Targets Arabic (RTL) pages but uses logical/flex rules. IBM Plex Sans Arabic
  * is enqueued globally as 'tutor-sso-programs-font' (see tutor-sso.php).
@@ -233,7 +234,7 @@
 	transform: rotate(180deg);
 }
 
-/* In-group search for long option lists (organizations). */
+/* In-group search for long option lists. */
 .rwaq-courses__filter-search {
 	position: relative;
 	margin-top: 14px;
@@ -279,7 +280,7 @@
 	appearance: none;
 }
 
-/* "No organizations match" message (toggled by the in-group search). */
+/* "Nothing matched" message (toggled by the in-group search). */
 .rwaq-courses__filter-empty {
 	padding: 4px 0;
 	font-size: 13px;
@@ -291,7 +292,7 @@
 }
 
 /* Fixed-height scroll area: the sidebar stays the same height no matter how many
-   organizations the API returns (the search box narrows a long list).
+   organizations / categories the API returns (the search box narrows a long list).
 
    Inline spacing does two jobs: the negative margin with matching start padding
    keeps the checkbox focus ring from being clipped by `overflow`, and the larger
