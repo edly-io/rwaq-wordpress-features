@@ -1,7 +1,8 @@
 <?php
 /**
- * AJAX handler for the courses catalog (infinite scroll + search + sort + org
- * filter). Registered for logged-in and logged-out visitors; verifies a nonce.
+ * AJAX handler for the courses catalog (infinite scroll + search + sort +
+ * organization / category filters). Registered for logged-in and logged-out
+ * visitors; verifies a nonce.
  * Returns rendered card HTML for the requested page plus a `has_more` flag.
  *
  * @package tutor-sso
@@ -46,6 +47,7 @@ function ajax_load_courses() {
 	$search   = isset( $_GET['search'] ) ? sanitize_text_field( wp_unslash( $_GET['search'] ) ) : '';
 	$ordering = isset( $_GET['ordering'] ) ? sanitize_key( wp_unslash( $_GET['ordering'] ) ) : '';
 	$org      = courses_ajax_sanitize_list( isset( $_GET['org'] ) ? wp_unslash( $_GET['org'] ) : array() );
+	$category = courses_ajax_sanitize_list( isset( $_GET['category'] ) ? wp_unslash( $_GET['category'] ) : array() );
 
 	$per_page = min( $per_page, 48 );
 
@@ -56,6 +58,7 @@ function ajax_load_courses() {
 			'search'   => $search,
 			'ordering' => $ordering,
 			'org'      => $org,
+			'category' => $category,
 		)
 	);
 
