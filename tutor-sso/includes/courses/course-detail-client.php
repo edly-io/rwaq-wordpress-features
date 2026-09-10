@@ -231,7 +231,7 @@ function course_detail_data_remote( $course_key ) {
 			'id'     => $id,
 			'name'   => $name,
 			'image'  => isset( $person['image'] ) ? trim( (string) $person['image'] ) : '',
-			'url'    => course_instructor_url( isset( $person['slug'] ) ? $person['slug'] : '' ),
+			'url'    => sso_instructor_url( isset( $person['slug'] ) ? $person['slug'] : '' ),
 			'counts' => array(
 				'courses'  => isset( $person['course_count'] ) ? (int) $person['course_count'] : 0,
 				'learners' => isset( $person['student_count'] ) ? (int) $person['student_count'] : 0,
@@ -267,38 +267,4 @@ function course_detail_data_remote( $course_key ) {
 	);
 
 	return $data;
-}
-
-/**
- * Path segment the instructor detail pages live under, i.e. /{base}/{slug}/.
- *
- * @return string
- */
-function course_instructor_base() {
-	return (string) apply_filters( 'tutor_sso_instructor_detail_base', 'instructor' );
-}
-
-/**
- * Link for an instructor: the local instructor post, built from the API slug as
- * {site}/instructor/{slug}/ (mirrors course_detail_url()).
- *
- * @param string $slug Instructor slug from the API.
- * @return string URL, or '' when the row carries no slug.
- */
-function course_instructor_url( $slug ) {
-	$slug = trim( (string) $slug );
-
-	if ( '' === $slug ) {
-		return '';
-	}
-
-	// Lowercase so the URL matches the WordPress post_name, which WP lowercases
-	// on save. Multibyte-aware: slugs are Arabic, and byte-wise strtolower()
-	// corrupts their UTF-8.
-	$slug = function_exists( 'mb_strtolower' ) ? mb_strtolower( $slug, 'UTF-8' ) : $slug;
-
-	$base = trim( course_instructor_base(), '/' );
-	$path = '/' . ( '' !== $base ? $base . '/' : '' ) . rawurlencode( $slug ) . '/';
-
-	return (string) apply_filters( 'tutor_sso_course_instructor_url', home_url( $path ), $slug );
 }

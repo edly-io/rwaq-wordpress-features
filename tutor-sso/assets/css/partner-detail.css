@@ -447,6 +447,18 @@ a.rwaq-pt-person:hover {
 	transform: translateY(-2px);
 }
 
+/* Now that the card links, a theme `a:hover` / `a:hover *` rule must not
+   recolor its text. Prefixed so it outranks one. */
+.rwaq-pt a.rwaq-pt-person:hover .rwaq-pt-person__name,
+.rwaq-pt a.rwaq-pt-person:hover .rwaq-pt-person__name * {
+	color: var(--rwaq-text);
+}
+
+.rwaq-pt a.rwaq-pt-person:hover .rwaq-pt-person__stat,
+.rwaq-pt a.rwaq-pt-person:hover .rwaq-pt-person__stat * {
+	color: var(--rwaq-muted);
+}
+
 @media (prefers-reduced-motion: reduce) {
 	.rwaq-pt-person {
 		transition: none;

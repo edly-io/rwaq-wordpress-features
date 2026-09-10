@@ -568,7 +568,7 @@ function partners_map_instructor_card( $row, $partner ) {
 		'id'     => $id,
 		'name'   => $name,
 		'image'  => isset( $row['image'] ) ? trim( (string) $row['image'] ) : '',
-		'url'    => $id > 0 ? (string) apply_filters( 'tutor_sso_partner_instructor_url', '', $row ) : '',
+		'url'    => sso_instructor_url( isset( $row['slug'] ) ? $row['slug'] : '' ),
 		'counts' => $counts,
 		// The design puts the partner's own logo at the foot of each card.
 		'logo'   => isset( $partner['logo'] ) ? trim( (string) $partner['logo'] ) : '',
