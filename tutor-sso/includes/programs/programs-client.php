@@ -227,7 +227,6 @@ function programs_restrict_org_args( $args ) {
 		return $args;
 	}
 
-	// Every alias of every visible organization (see sso_org_alias_groups()).
 	$groups  = sso_org_alias_groups( programs_visible_orgs(), $filters['organizations'] );
 	$allowed = array_merge( array(), ...$groups );
 
@@ -243,10 +242,8 @@ function programs_restrict_org_args( $args ) {
 		return $args;
 	}
 
-	// Keep only requested organizations that are visible (case-insensitive, since
-	// the value may arrive from a hand-built request), and send every alias of
-	// each match so a single-organization filter cannot miss for the same reason
-	// the allowlist could.
+	// Keep only visible requested organizations (case-insensitive), and send
+	// every alias of each match.
 	$lookup = array();
 	foreach ( $groups as $index => $group ) {
 		foreach ( $group as $alias ) {
@@ -369,9 +366,6 @@ function programs_fetch_public( $page = 1, $per_page = 6, $args = array() ) {
 
 	// Internal organizations are excluded by turning `org` into an allowlist of
 	// visible ones; null means nothing is visible, so skip the request.
-	$unfiltered = empty( $args['org'] ) && empty( $args['program_type'] )
-		&& empty( $args['featured'] ) && '' === trim( (string) ( isset( $args['search'] ) ? $args['search'] : '' ) );
-
 	$args = programs_restrict_org_args( $args );
 	if ( null === $args ) {
 		return programs_empty_response();
@@ -419,49 +413,10 @@ function programs_fetch_public( $page = 1, $per_page = 6, $args = array() ) {
 
 	$pagination = ( isset( $body['pagination'] ) && is_array( $body['pagination'] ) ) ? $body['pagination'] : array();
 
-	if ( $unfiltered && 1 === $page && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-		programs_check_allowlist( isset( $pagination['count'] ) ? (int) $pagination['count'] : 0, $per_page );
-	}
-
 	return array(
 		'results'    => ( isset( $body['results'] ) && is_array( $body['results'] ) ) ? $body['results'] : array(),
 		'pagination' => $pagination,
 	);
-}
-
-/**
- * WP_DEBUG tripwire: re-request the catalog with no `org` and compare totals.
- *
- * @param int $allowlisted Total the allowlisted request returned.
- * @param int $per_page    Page size, so the extra request stays cheap.
- */
-function programs_check_allowlist( $allowlisted, $per_page ) {
-	$filters = programs_fetch_filters();
-
-	if ( is_wp_error( $filters ) ) {
-		return;
-	}
-
-	$hidden = 0;
-	foreach ( $filters['organizations'] as $org ) {
-		if ( is_array( $org ) && sso_is_hidden_org( $org ) ) {
-			$hidden += isset( $org['total_programs'] ) ? (int) $org['total_programs'] : 0;
-		}
-	}
-
-	$url  = programs_lms_base_url() . PROGRAMS_PUBLIC_ENDPOINT . '?' . programs_build_query(
-		array(
-			'page'      => 1,
-			'page_size' => $per_page,
-		)
-	);
-	$body = programs_request( $url, programs_cache_key( 'tutor_sso_programs_', $url ), 'allowlist check' );
-
-	if ( is_wp_error( $body ) || ! isset( $body['pagination']['count'] ) ) {
-		return;
-	}
-
-	sso_check_org_allowlist( 'programs', $allowlisted, (int) $body['pagination']['count'], $hidden );
 }
 
 /**
