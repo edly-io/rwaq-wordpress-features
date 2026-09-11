@@ -158,7 +158,7 @@ function course_absolutize_overview( $html ) {
  * @param string $course_key edX course key.
  * @return array {
  *     @type string   $title, $description, $overview (HTML), $image
- *     @type string   $org_name, $org_logo, $video
+ *     @type string   $org_name, $org_logo, $org_url, $video
  *     @type int      $enrolled
  *     @type bool     $certificate
  *     @type string[] $categories
@@ -175,6 +175,7 @@ function course_detail_data_remote( $course_key ) {
 		'image'       => '',
 		'org_name'    => '',
 		'org_logo'    => '',
+		'org_url'     => '',
 		'video'       => '',
 		'enrolled'    => 0,
 		'certificate' => false,
@@ -253,6 +254,9 @@ function course_detail_data_remote( $course_key ) {
 		'image'       => isset( $row['course_image'] ) ? trim( (string) $row['course_image'] ) : '',
 		'org_name'    => $org_name,
 		'org_logo'    => isset( $row['org_logo'] ) ? trim( (string) $row['org_logo'] ) : '',
+		// The organization's own detail page, built from `org_slug` by the
+		// partners client so the URL matches the partner cards exactly.
+		'org_url'     => partner_detail_url( array( 'slug' => isset( $row['org_slug'] ) ? $row['org_slug'] : '' ) ),
 		'video'       => course_youtube_embed_url( isset( $row['youtube_intro_video_link'] ) ? $row['youtube_intro_video_link'] : '' ),
 		'enrolled'    => isset( $row['enrollment_count'] ) ? (int) $row['enrollment_count'] : 0,
 		'certificate' => ! empty( $row['certificate_enabled'] ),

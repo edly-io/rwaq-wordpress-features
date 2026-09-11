@@ -213,12 +213,17 @@ main.rwaq-course-single,
 	line-height: 14px;
 }
 
-.rwaq-cd__org-name {
+/* Prefixed, and colours pinned on hover, so a theme link rule cannot recolor
+   either the name or the logo tile now that both link. */
+.rwaq-cd .rwaq-cd__org-name,
+.rwaq-cd .rwaq-cd__org-name:hover {
+	display: inline-block;
 	padding-bottom: 6px;
 	border-bottom: 1px solid var(--rwaq-primary);
 	color: var(--rwaq-primary);
 	font-size: 14px;
 	line-height: 22px;
+	text-decoration: none;
 }
 
 .rwaq-cd__org-logo {
@@ -228,6 +233,20 @@ main.rwaq-course-single,
 	border: 1px solid var(--rwaq-border);
 	border-radius: 8px;
 	background: var(--rwaq-surface);
+}
+
+.rwaq-cd a.rwaq-cd__org-logo {
+	transition: box-shadow 0.15s ease;
+}
+
+.rwaq-cd a.rwaq-cd__org-logo:hover {
+	box-shadow: 0 4px 12px rgba(16, 24, 40, 0.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.rwaq-cd a.rwaq-cd__org-logo {
+		transition: none;
+	}
 }
 
 .rwaq-cd__org-logo img {
