@@ -198,6 +198,7 @@ function course_render_header( $data ) {
 	$description = isset( $data['description'] ) ? (string) $data['description'] : '';
 	$org_name    = isset( $data['org_name'] ) ? (string) $data['org_name'] : '';
 	$org_logo    = isset( $data['org_logo'] ) ? (string) $data['org_logo'] : '';
+	$org_url     = isset( $data['org_url'] ) ? (string) $data['org_url'] : '';
 	$categories  = isset( $data['categories'] ) ? (array) $data['categories'] : array();
 	$enrolled    = isset( $data['enrolled'] ) ? (int) $data['enrolled'] : 0;
 	$certificate = ! empty( $data['certificate'] );
@@ -226,14 +227,19 @@ function course_render_header( $data ) {
 			<div class="rwaq-cd__org">
 				<?php // RTL: first child sits at the right edge, where the design puts the logo. ?>
 				<?php if ( '' !== $org_logo ) : ?>
-					<div class="rwaq-cd__org-logo">
+					<?php // The logo repeats the name's link, so it stays out of the tab order. ?>
+					<<?php echo '' !== $org_url ? 'a' : 'div'; ?> class="rwaq-cd__org-logo"<?php echo '' !== $org_url ? ' href="' . esc_url( $org_url ) . '" tabindex="-1" aria-hidden="true"' : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
 						<img src="<?php echo esc_url( $org_logo ); ?>" alt="<?php echo esc_attr( $org_name ); ?>" loading="lazy" decoding="async" />
-					</div>
+					</<?php echo '' !== $org_url ? 'a' : 'div'; ?>>
 				<?php endif; ?>
 				<?php if ( '' !== $org_name ) : ?>
 					<div class="rwaq-cd__org-text">
 						<span class="rwaq-cd__org-label"><?php echo esc_html__( 'مُقدَّم من', 'tutor-sso' ); ?></span>
-						<span class="rwaq-cd__org-name"><?php echo esc_html( $org_name ); ?></span>
+						<?php if ( '' !== $org_url ) : ?>
+							<a class="rwaq-cd__org-name" href="<?php echo esc_url( $org_url ); ?>"><?php echo esc_html( $org_name ); ?></a>
+						<?php else : ?>
+							<span class="rwaq-cd__org-name"><?php echo esc_html( $org_name ); ?></span>
+						<?php endif; ?>
 					</div>
 				<?php endif; ?>
 			</div>
