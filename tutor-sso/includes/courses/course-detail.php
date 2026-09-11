@@ -224,15 +224,16 @@ function course_render_header( $data ) {
 
 		<?php if ( '' !== $org_name || '' !== $org_logo ) : ?>
 			<div class="rwaq-cd__org">
+				<?php // RTL: first child sits at the right edge, where the design puts the logo. ?>
+				<?php if ( '' !== $org_logo ) : ?>
+					<div class="rwaq-cd__org-logo">
+						<img src="<?php echo esc_url( $org_logo ); ?>" alt="<?php echo esc_attr( $org_name ); ?>" loading="lazy" decoding="async" />
+					</div>
+				<?php endif; ?>
 				<?php if ( '' !== $org_name ) : ?>
 					<div class="rwaq-cd__org-text">
 						<span class="rwaq-cd__org-label"><?php echo esc_html__( 'مُقدَّم من', 'tutor-sso' ); ?></span>
 						<span class="rwaq-cd__org-name"><?php echo esc_html( $org_name ); ?></span>
-					</div>
-				<?php endif; ?>
-				<?php if ( '' !== $org_logo ) : ?>
-					<div class="rwaq-cd__org-logo">
-						<img src="<?php echo esc_url( $org_logo ); ?>" alt="<?php echo esc_attr( $org_name ); ?>" loading="lazy" decoding="async" />
 					</div>
 				<?php endif; ?>
 			</div>
