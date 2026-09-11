@@ -223,12 +223,7 @@ function programs_org_value( $org ) {
 		return (string) $org;
 	}
 
-	// The `org` param matches a program's `organization`, which is the
-	// organization's short name — not its display name, and never the Arabic one
-	// (that is only for programs_org_label()). Where the two differ (e.g.
-	// "QA Org" / "QAO-1") sending the name matches nothing, silently dropping
-	// that organization's programs from the catalog. Mirrors
-	// courses_org_filter_value().
+	// `org` matches a program's `organization`, i.e. the short name.
 	$short = isset( $org['short_name'] ) ? trim( (string) $org['short_name'] ) : '';
 	$name  = isset( $org['name'] ) ? trim( (string) $org['name'] ) : '';
 

@@ -329,9 +329,6 @@ function courses_fetch( $page = 1, $per_page = 8, $args = array() ) {
 	// Hidden organizations (see sso_hidden_org_prefixes()) are excluded by
 	// turning the `org` filter into an allowlist of visible ones. null means
 	// nothing is visible at all, so there is no request worth making.
-	$unfiltered = empty( $args['org'] )
-		&& '' === trim( (string) ( isset( $args['search'] ) ? $args['search'] : '' ) );
-
 	$args = courses_restrict_org_args( $args );
 	if ( null === $args ) {
 		return $empty;
@@ -346,10 +343,6 @@ function courses_fetch( $page = 1, $per_page = 8, $args = array() ) {
 
 	$rows  = isset( $response['results'] ) && is_array( $response['results'] ) ? $response['results'] : array();
 	$total = isset( $response['count'] ) ? (int) $response['count'] : count( $rows );
-
-	if ( $unfiltered && 1 === $page && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-		courses_check_allowlist( $total, $per_page );
-	}
 
 	$rows = apply_filters( 'tutor_sso_courses_source', $rows, $args );
 
@@ -367,35 +360,6 @@ function courses_fetch( $page = 1, $per_page = 8, $args = array() ) {
 		'num_pages' => $total > 0 ? (int) ceil( $total / $per_page ) : 0,
 		'error'     => '',
 	);
-}
-
-/**
- * WP_DEBUG tripwire: re-request the catalog with no `org` and compare totals.
- *
- * @param int $allowlisted Total the allowlisted request returned.
- * @param int $per_page    Page size, so the extra request stays cheap.
- */
-function courses_check_allowlist( $allowlisted, $per_page ) {
-	$filters = courses_fetch_filters();
-
-	if ( is_wp_error( $filters ) ) {
-		return;
-	}
-
-	$hidden = 0;
-	foreach ( $filters['organizations'] as $org ) {
-		if ( is_array( $org ) && sso_is_hidden_org( $org ) ) {
-			$hidden += isset( $org['total_courses'] ) ? (int) $org['total_courses'] : 0;
-		}
-	}
-
-	$response = courses_fetch_public( 1, $per_page, array() );
-
-	if ( is_wp_error( $response ) || ! isset( $response['count'] ) ) {
-		return;
-	}
-
-	sso_check_org_allowlist( 'courses', $allowlisted, (int) $response['count'], $hidden );
 }
 
 /**
@@ -588,7 +552,6 @@ function courses_restrict_org_args( $args ) {
 		return $args;
 	}
 
-	// Every alias of every visible organization (see sso_org_alias_groups()).
 	$groups  = sso_org_alias_groups( courses_visible_orgs(), $filters['organizations'] );
 	$allowed = array_merge( array(), ...$groups );
 
@@ -604,10 +567,8 @@ function courses_restrict_org_args( $args ) {
 		return $args;
 	}
 
-	// Keep only requested organizations that are visible (case-insensitive, since
-	// the value may arrive from a hand-built request), and send every alias of
-	// each match so a single-organization filter cannot miss for the same reason
-	// the allowlist could.
+	// Keep only visible requested organizations (case-insensitive), and send
+	// every alias of each match.
 	$lookup = array();
 	foreach ( $groups as $index => $group ) {
 		foreach ( $group as $alias ) {

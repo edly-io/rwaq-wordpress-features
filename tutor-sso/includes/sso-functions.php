@@ -113,10 +113,7 @@ function sso_instructor_base() {
 }
 
 /**
- * Link to an instructor's detail page, built from the LMS slug.
- *
- * The `instructor` post's name is the LMS slug, so the URL can be built without
- * looking the post up.
+ * Build an instructor detail URL from the LMS slug.
  *
  * @param string $slug Instructor slug from the API.
  * @return string URL, or '' when no slug is available.
@@ -128,9 +125,7 @@ function sso_instructor_url( $slug ) {
 		return '';
 	}
 
-	// Lowercase to match the WordPress post_name, which WP lowercases on save.
-	// Multibyte-aware: slugs are often Arabic, and byte-wise strtolower()
-	// corrupts their UTF-8.
+	// Lowercase to match post_name; mb-aware because slugs are often Arabic.
 	$slug = function_exists( 'mb_strtolower' ) ? mb_strtolower( $slug, 'UTF-8' ) : $slug;
 
 	$base = trim( sso_instructor_base(), '/' );
@@ -141,15 +136,7 @@ function sso_instructor_url( $slug ) {
 
 /**
  * Every string a catalog's `org` filter might match for an organization.
- *
- * The filters endpoints expose both `short_name` and `name`, and the list
- * endpoints match on whichever one a row carries — today the short name. Sending
- * both makes an allowlist immune to that difference: an alias that matches
- * nothing narrows nothing, whereas a missing one silently drops the whole
- * organization from the catalog.
- *
- * short_name comes first, so it stays the canonical value for checkbox values
- * and chips.
+ * short_name first, so it stays the canonical value.
  *
  * @param array $org Organization object from a filters endpoint.
  * @return string[] Unique, non-empty values.
@@ -173,17 +160,15 @@ function sso_org_filter_aliases( $org ) {
 }
 
 /**
- * Group the `org` filter values of the visible organizations, one group per
- * organization, for building a catalog allowlist.
- *
- * An alias a hidden organization also answers to would let it back in, so those
- * are dropped from every group.
+ * Group the `org` filter values of the visible organizations, one group each.
+ * Aliases a hidden organization also answers to are dropped.
  *
  * @param array[] $visible Visible organization objects.
  * @param array[] $all     Every organization object from the filters endpoint.
  * @return array<int,string[]> Non-empty groups.
  */
 function sso_org_alias_groups( $visible, $all ) {
+	// Aliases a hidden organization answers to must not appear in any group.
 	$blocked = array();
 
 	foreach ( (array) $all as $org ) {
@@ -211,42 +196,6 @@ function sso_org_alias_groups( $visible, $all ) {
 	}
 
 	return $groups;
-}
-
-/**
- * Warn when an `org` allowlist is dropping rows it should not.
- *
- * The catalogs exclude internal organizations by allowlisting the visible ones,
- * which silently loses anything the allowlist fails to name — an organization
- * whose rows carry a value the filters endpoint does not expose, or one missing
- * from that endpoint altogether. Comparing the allowlisted total against the
- * unfiltered one turns that into a log line instead of a quietly short catalog.
- *
- * WP_DEBUG only: callers skip the extra unfiltered request in production.
- *
- * @param string $label       Catalog name, for the log line.
- * @param int    $allowlisted Total the allowlisted request returned.
- * @param int    $unfiltered  Total the same request returns with no `org`.
- * @param int    $hidden      Rows the hidden organizations account for.
- */
-function sso_check_org_allowlist( $label, $allowlisted, $unfiltered, $hidden ) {
-	$expected = max( 0, (int) $unfiltered - (int) $hidden );
-
-	if ( $expected === (int) $allowlisted ) {
-		return;
-	}
-
-	error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-		sprintf(
-			'[tutor-sso] %s org allowlist drift: showing %d of an expected %d (%d total, %d hidden). '
-			. 'An organization is missing from the filters endpoint, or its rows carry a value the endpoint does not expose.',
-			$label,
-			(int) $allowlisted,
-			$expected,
-			(int) $unfiltered,
-			(int) $hidden
-		)
-	);
 }
 
 /**
