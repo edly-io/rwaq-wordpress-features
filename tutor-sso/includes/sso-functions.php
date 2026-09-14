@@ -104,6 +104,101 @@ function sso_is_hidden_org( $org ) {
 }
 
 /**
+ * Path segment the instructor detail pages live under, i.e. /{base}/{slug}/.
+ *
+ * @return string
+ */
+function sso_instructor_base() {
+	return (string) apply_filters( 'tutor_sso_instructor_detail_base', 'instructor' );
+}
+
+/**
+ * Build an instructor detail URL from the LMS slug.
+ *
+ * @param string $slug Instructor slug from the API.
+ * @return string URL, or '' when no slug is available.
+ */
+function sso_instructor_url( $slug ) {
+	$slug = trim( (string) $slug );
+
+	if ( '' === $slug ) {
+		return '';
+	}
+
+	// Lowercase to match post_name; mb-aware because slugs are often Arabic.
+	$slug = function_exists( 'mb_strtolower' ) ? mb_strtolower( $slug, 'UTF-8' ) : $slug;
+
+	$base = trim( sso_instructor_base(), '/' );
+	$path = '/' . ( '' !== $base ? $base . '/' : '' ) . rawurlencode( $slug ) . '/';
+
+	return (string) apply_filters( 'tutor_sso_instructor_url', home_url( $path ), $slug );
+}
+
+/**
+ * Every string a catalog's `org` filter might match for an organization.
+ * short_name first, so it stays the canonical value.
+ *
+ * @param array $org Organization object from a filters endpoint.
+ * @return string[] Unique, non-empty values.
+ */
+function sso_org_filter_aliases( $org ) {
+	$aliases = array();
+
+	if ( ! is_array( $org ) ) {
+		return $aliases;
+	}
+
+	foreach ( array( 'short_name', 'name' ) as $key ) {
+		$value = isset( $org[ $key ] ) ? trim( (string) $org[ $key ] ) : '';
+
+		if ( '' !== $value && ! in_array( $value, $aliases, true ) ) {
+			$aliases[] = $value;
+		}
+	}
+
+	return $aliases;
+}
+
+/**
+ * Group the `org` filter values of the visible organizations, one group each.
+ * Aliases a hidden organization also answers to are dropped.
+ *
+ * @param array[] $visible Visible organization objects.
+ * @param array[] $all     Every organization object from the filters endpoint.
+ * @return array<int,string[]> Non-empty groups.
+ */
+function sso_org_alias_groups( $visible, $all ) {
+	// Aliases a hidden organization answers to must not appear in any group.
+	$blocked = array();
+
+	foreach ( (array) $all as $org ) {
+		if ( is_array( $org ) && sso_is_hidden_org( $org ) ) {
+			foreach ( sso_org_filter_aliases( $org ) as $alias ) {
+				$blocked[ strtolower( $alias ) ] = true;
+			}
+		}
+	}
+
+	$groups = array();
+
+	foreach ( (array) $visible as $org ) {
+		$group = array();
+
+		foreach ( sso_org_filter_aliases( $org ) as $alias ) {
+			if ( ! isset( $blocked[ strtolower( $alias ) ] ) ) {
+				$group[] = $alias;
+			}
+		}
+
+		if ( ! empty( $group ) ) {
+			$groups[] = $group;
+		}
+	}
+
+	return $groups;
+}
+
+/**
  * Inverse of sso_is_hidden_org(), for use as an array_filter() callback.
  *
  * @param array $org Organization object from a filters endpoint.

@@ -552,7 +552,8 @@ function courses_restrict_org_args( $args ) {
 		return $args;
 	}
 
-	$allowed = array_values( array_filter( array_map( __NAMESPACE__ . '\\courses_org_filter_value', courses_visible_orgs() ) ) );
+	$groups  = sso_org_alias_groups( courses_visible_orgs(), $filters['organizations'] );
+	$allowed = array_merge( array(), ...$groups );
 
 	if ( empty( $allowed ) ) {
 		return null; // The list was readable and every organization is hidden.
@@ -566,18 +567,27 @@ function courses_restrict_org_args( $args ) {
 		return $args;
 	}
 
-	// Keep only requested organizations that are visible (case-insensitive, since
-	// the value may arrive from a hand-built request).
+	// Keep only visible requested organizations (case-insensitive), and send
+	// every alias of each match.
 	$lookup = array();
-	foreach ( $allowed as $value ) {
-		$lookup[ strtolower( $value ) ] = $value;
+	foreach ( $groups as $index => $group ) {
+		foreach ( $group as $alias ) {
+			$lookup[ strtolower( $alias ) ] = $index;
+		}
 	}
 
 	$keep = array();
 	foreach ( $requested as $value ) {
 		$key = strtolower( $value );
-		if ( isset( $lookup[ $key ] ) ) {
-			$keep[] = $lookup[ $key ];
+
+		if ( ! isset( $lookup[ $key ] ) ) {
+			continue;
+		}
+
+		foreach ( $groups[ $lookup[ $key ] ] as $alias ) {
+			if ( ! in_array( $alias, $keep, true ) ) {
+				$keep[] = $alias;
+			}
 		}
 	}
 
