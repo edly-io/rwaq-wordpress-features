@@ -556,7 +556,8 @@ a.rwaq-pt-person:hover {
 	flex: 0 0 auto;
 	display: flex;
 	align-items: center;
-	justify-content: center;
+	/* RTL: flex-start is the right edge, where the design puts the logo. */
+	justify-content: flex-start;
 	height: 28px;
 }
 
