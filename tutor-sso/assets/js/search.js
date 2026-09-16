@@ -14,6 +14,25 @@
 	'use strict';
 
 	/**
+	 * Point the sort links at a type. They are rendered server-side with the type
+	 * from page load, so without this a sort would jump back to that tab.
+	 *
+	 * @param {Element} root The .rwaq-search wrapper.
+	 * @param {string}  type Active type.
+	 */
+	function syncSortLinks(root, type) {
+		Array.prototype.forEach.call(root.querySelectorAll('.rwaq-search__option'), function (option) {
+			try {
+				var url = new URL(option.href, window.location.href);
+				url.searchParams.set('type', type);
+				option.href = url.toString();
+			} catch (e) {
+				// A malformed URL is not worth failing the toggle over.
+			}
+		});
+	}
+
+	/**
 	 * Wire one search results block.
 	 *
 	 * @param {Element} root The .rwaq-search wrapper.
@@ -51,6 +70,7 @@
 					});
 
 					root.setAttribute('data-active-type', type);
+					syncSortLinks(root, type);
 
 					// Keep the URL honest without reloading, so a copied link or a
 					// refresh lands on the same type.
