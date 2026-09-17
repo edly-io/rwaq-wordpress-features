@@ -45,6 +45,8 @@ require_once TUTOR_SSO_PATH . 'includes/courses/courses-client.php';
 require_once TUTOR_SSO_PATH . 'includes/courses/courses-catalog.php';
 require_once TUTOR_SSO_PATH . 'includes/courses/courses-ajax.php';
 require_once TUTOR_SSO_PATH . 'includes/courses/courses-archive.php';
+require_once TUTOR_SSO_PATH . 'includes/courses/course-detail-client.php';
+require_once TUTOR_SSO_PATH . 'includes/courses/course-detail.php';
 require_once TUTOR_SSO_PATH . 'includes/programs/programs-catalog.php';
 require_once TUTOR_SSO_PATH . 'includes/programs/programs-ajax.php';
 require_once TUTOR_SSO_PATH . 'includes/programs/programs-archive.php';
@@ -65,10 +67,14 @@ require_once TUTOR_SSO_PATH . 'includes/partners/partners-page-template.php';
 require_once TUTOR_SSO_PATH . 'includes/partners/partners-archive.php';
 require_once TUTOR_SSO_PATH . 'includes/partners/partner-detail.php';
 require_once TUTOR_SSO_PATH . 'includes/partners/rest/routes.php';
+require_once TUTOR_SSO_PATH . 'includes/search/search-client.php';
+require_once TUTOR_SSO_PATH . 'includes/search/search-page.php';
+require_once TUTOR_SSO_PATH . 'includes/search/search-ajax.php';
 require_once TUTOR_SSO_PATH . 'includes/instructors/instructors-client.php';
 require_once TUTOR_SSO_PATH . 'includes/instructors/instructor-detail.php';
 require_once TUTOR_SSO_PATH . 'includes/instructors/rest/routes.php';
 require_once TUTOR_SSO_PATH . 'includes/blocks/quote-block.php';
+require_once TUTOR_SSO_PATH . 'includes/not-found/not-found.php';
 
 // Boot the admin settings UI.
 add_action( 'plugins_loaded', function () {

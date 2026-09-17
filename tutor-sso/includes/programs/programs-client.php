@@ -227,13 +227,8 @@ function programs_restrict_org_args( $args ) {
 		return $args;
 	}
 
-	$allowed = array();
-	foreach ( programs_visible_orgs() as $org ) {
-		$value = programs_org_value( $org );
-		if ( '' !== $value ) {
-			$allowed[] = $value;
-		}
-	}
+	$groups  = sso_org_alias_groups( programs_visible_orgs(), $filters['organizations'] );
+	$allowed = array_merge( array(), ...$groups );
 
 	if ( empty( $allowed ) ) {
 		return null; // The list was readable and every organization is hidden.
@@ -247,18 +242,27 @@ function programs_restrict_org_args( $args ) {
 		return $args;
 	}
 
-	// Keep only requested organizations that are visible (case-insensitive, since
-	// the value may arrive from a hand-built request).
+	// Keep only visible requested organizations (case-insensitive), and send
+	// every alias of each match.
 	$lookup = array();
-	foreach ( $allowed as $value ) {
-		$lookup[ strtolower( $value ) ] = $value;
+	foreach ( $groups as $index => $group ) {
+		foreach ( $group as $alias ) {
+			$lookup[ strtolower( $alias ) ] = $index;
+		}
 	}
 
 	$keep = array();
 	foreach ( $requested as $value ) {
 		$key = strtolower( $value );
-		if ( isset( $lookup[ $key ] ) ) {
-			$keep[] = $lookup[ $key ];
+
+		if ( ! isset( $lookup[ $key ] ) ) {
+			continue;
+		}
+
+		foreach ( $groups[ $lookup[ $key ] ] as $alias ) {
+			if ( ! in_array( $alias, $keep, true ) ) {
+				$keep[] = $alias;
+			}
 		}
 	}
 
@@ -407,9 +411,11 @@ function programs_fetch_public( $page = 1, $per_page = 6, $args = array() ) {
 		return 'tutor_sso_not_found' === $body->get_error_code() ? programs_empty_response() : $body;
 	}
 
+	$pagination = ( isset( $body['pagination'] ) && is_array( $body['pagination'] ) ) ? $body['pagination'] : array();
+
 	return array(
 		'results'    => ( isset( $body['results'] ) && is_array( $body['results'] ) ) ? $body['results'] : array(),
-		'pagination' => ( isset( $body['pagination'] ) && is_array( $body['pagination'] ) ) ? $body['pagination'] : array(),
+		'pagination' => $pagination,
 	);
 }
 

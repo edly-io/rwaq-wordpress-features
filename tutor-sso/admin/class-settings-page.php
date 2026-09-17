@@ -81,6 +81,7 @@ class Settings_Page {
 			'tutor_sso_blogs_per_page'      => 'absint',
 			'tutor_sso_courses_per_page'    => 'absint',
 			'tutor_sso_partners_per_page'   => 'absint',
+			'tutor_sso_search_page_url'     => 'esc_url_raw',
 			'tutor_sso_gtm_id'              => array( $this, 'sanitize_gtm_id' ),
 			'tutor_sso_ga_id'               => array( $this, 'sanitize_ga_id' ),
 		);
@@ -356,7 +357,33 @@ class Settings_Page {
 			)
 		);
 
-		// ── Section 10: Analytics ────────────────────────────────────────────
+		// ── Section 10: Search ───────────────────────────────────────────────
+		add_settings_section(
+			'tutor_sso_section_search',
+			__( 'Search', 'tutor-sso' ),
+			function () {
+				echo '<p>' . esc_html__(
+					'Where the [rwaq_search_bar] shortcode submits to. That page must contain [rwaq_search_results], or use the "Rwaq Search Results" page template.',
+					'tutor-sso'
+				) . '</p>';
+			},
+			self::PAGE_SLUG
+		);
+
+		add_settings_field(
+			'tutor_sso_search_page_url',
+			__( 'Search results page', 'tutor-sso' ),
+			array( $this, 'render_url_field' ),
+			self::PAGE_SLUG,
+			'tutor_sso_section_search',
+			array(
+				'option_name' => 'tutor_sso_search_page_url',
+				'placeholder' => home_url( '/search/' ),
+				'description' => __( 'Optional. Leave blank and the search bar finds the page using the "Rwaq Search Results" template automatically, whatever its slug. Set this only to point at a different page — e.g. one built with [rwaq_search_results] instead of the template. The search term is appended as ?q=…', 'tutor-sso' ),
+			)
+		);
+
+		// ── Section 11: Analytics ────────────────────────────────────────────
 		add_settings_section(
 			'tutor_sso_section_analytics',
 			__( 'Analytics', 'tutor-sso' ),
@@ -641,6 +668,25 @@ class Settings_Page {
 					'columns'     => __( 'Grid column count. Default: 3.', 'tutor-sso' ),
 					'detail_base' => __( 'Path segment before the program slug; detail links become {site}/{detail_base}/{slug}/. Default: "program".', 'tutor-sso' ),
 					'title'       => __( 'Header title shown above the catalog. Leave blank to hide the header. Default: "البرامج".', 'tutor-sso' ),
+				),
+			),
+			array(
+				'tag'         => 'rwaq_search_bar',
+				'title'       => __( 'Search Bar', 'tutor-sso' ),
+				'example'     => '[rwaq_search_bar]',
+				'description' => __( 'The navigation search input. A plain GET form pointed at the "Search results page" setting above, so it works with JavaScript disabled. Place it in the header.', 'tutor-sso' ),
+				'attributes'  => array(
+					'placeholder' => __( 'Input placeholder. Default: "ماذا تريد أن تتعلم؟".', 'tutor-sso' ),
+					'action'      => __( 'Override the submit URL for this instance, instead of the "Search results page" setting.', 'tutor-sso' ),
+				),
+			),
+			array(
+				'tag'         => 'rwaq_search_results',
+				'title'       => __( 'Search Results', 'tutor-sso' ),
+				'example'     => '[rwaq_search_results per_page="12"]',
+				'description' => __( 'Search results for the ?q= term: a heading with the query, a courses/programs toggle with counts, a sort control, the matching card grid, and a closing call-to-action band. One request returns both result types.', 'tutor-sso' ),
+				'attributes'  => array(
+					'per_page' => __( 'Results per type. Default: 12 (three rows of four, matching the design).', 'tutor-sso' ),
 				),
 			),
 			array(

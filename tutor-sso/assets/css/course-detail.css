@@ -1,0 +1,567 @@
+/**
+ * Course detail styles.
+ *
+ * IBM Plex Sans Arabic is enqueued globally as 'tutor-sso-programs-font'.
+ */
+
+.rwaq-cd {
+	/* Design tokens from the Figma library, on the plugin's --rwaq-* convention. */
+	--rwaq-primary: #565199;          /* Brand-80 */
+	--rwaq-primary-soft: #F1F0F8;     /* Brand-10 */
+	--rwaq-text: #242424;             /* NeutralForeground1.Rest */
+	--rwaq-muted: #616161;            /* NeutralForeground3.Rest */
+	--rwaq-border: #D1D1D1;           /* NeutralStroke1.Rest */
+	--rwaq-surface: #FFFFFF;          /* NeutralBackground1.Rest */
+
+	/* The design's 1232px content column; the gutter is added on top so the
+	   columns keep their designed width at full width. */
+	--rwaq-cd-wide: 1232px;
+	--rwaq-cd-gutter: 16px;
+
+	position: relative;
+	color: var(--rwaq-text);
+	font-family: 'IBM Plex Sans Arabic', sans-serif;
+	-webkit-font-smoothing: antialiased;
+	padding-block: 40px 64px;
+}
+
+.rwaq-cd *,
+.rwaq-cd *::before,
+.rwaq-cd *::after {
+	box-sizing: border-box;
+}
+
+.rwaq-cd img {
+	max-width: 100%;
+}
+
+/* ---- Template wrapper ----
+   Lifts the theme's content-width cap on the plugin's own template element so
+   the 1232px column survives a narrow theme. */
+main.rwaq-course-single,
+.rwaq-course-single {
+	max-width: none !important;
+	width: auto !important;
+	margin-inline: 0 !important;
+	padding-inline: 0 !important;
+}
+
+.rwaq-cd__inner {
+	max-width: calc(var(--rwaq-cd-wide) + var(--rwaq-cd-gutter) * 2);
+	margin-inline: auto;
+	padding-inline: var(--rwaq-cd-gutter);
+}
+
+/* ---- Breadcrumb ---- */
+.rwaq-cd__breadcrumb {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 16px;
+	padding-block: 16px;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 16px;
+}
+
+.rwaq-cd .rwaq-cd__crumb {
+	color: var(--rwaq-primary);
+	text-decoration: none;
+}
+
+.rwaq-cd .rwaq-cd__crumb--current {
+	max-width: 60ch;
+	overflow: hidden;
+	color: var(--rwaq-muted);
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.rwaq-cd__crumb-sep {
+	display: inline-flex;
+	/* The chevron points at the previous crumb, which is to the right in RTL. */
+	transform: scaleX(-1);
+}
+
+.rwaq-cd__crumb-sep svg {
+	display: block;
+}
+
+.rwaq-cd__error {
+	margin: 0;
+	padding: 24px;
+	border: 1px solid var(--rwaq-border);
+	border-radius: 10px;
+	background: var(--rwaq-surface);
+	color: var(--rwaq-muted);
+	font-size: 14px;
+	line-height: 22px;
+	text-align: center;
+}
+
+/* ---- Layout ----
+   742px main column on the right (RTL: first in source), 430px rail on the
+   left, 60px apart. */
+.rwaq-cd__layout {
+	display: flex;
+	align-items: flex-start;
+	gap: 60px;
+}
+
+.rwaq-cd__main {
+	flex: 1 1 742px;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 48px;
+}
+
+.rwaq-cd__rail {
+	flex: 0 0 430px;
+	max-width: 430px;
+	display: flex;
+	flex-direction: column;
+	gap: 24px;
+}
+
+/* ---- Intro video ---- */
+.rwaq-cd__video {
+	position: relative;
+	aspect-ratio: 742 / 384;
+	border-radius: 10px;
+	overflow: hidden;
+	background: #000;
+}
+
+.rwaq-cd__video iframe {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	border: 0;
+	display: block;
+}
+
+/* ---- Header block ---- */
+.rwaq-cd__header {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 24px;
+}
+
+.rwaq-cd__pills {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 16px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.rwaq-cd__pill {
+	padding: 9px 17px;
+	border: 1px solid var(--rwaq-primary-soft);
+	border-radius: 8px;
+	background: var(--rwaq-primary-soft);
+	color: var(--rwaq-primary);
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 16px;
+}
+
+.rwaq-cd__intro {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	max-width: 670px;
+}
+
+.rwaq-cd__title {
+	margin: 0;
+	color: var(--rwaq-text);
+	font-size: 32px;
+	font-weight: 600;
+	line-height: 40px;
+}
+
+.rwaq-cd__description {
+	margin: 0;
+	color: var(--rwaq-muted);
+	font-size: 14px;
+	font-weight: 400;
+	line-height: 28px;
+}
+
+/* ---- Organization ---- */
+.rwaq-cd__org {
+	display: flex;
+	align-items: center;
+	gap: 24px;
+}
+
+.rwaq-cd__org-text {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 4px;
+}
+
+.rwaq-cd__org-label {
+	color: var(--rwaq-text);
+	font-size: 10px;
+	line-height: 14px;
+}
+
+/* Prefixed, and colours pinned on hover, so a theme link rule cannot recolor
+   either the name or the logo tile now that both link. */
+.rwaq-cd .rwaq-cd__org-name,
+.rwaq-cd .rwaq-cd__org-name:hover {
+	display: inline-block;
+	padding-bottom: 6px;
+	border-bottom: 1px solid var(--rwaq-primary);
+	color: var(--rwaq-primary);
+	font-size: 14px;
+	line-height: 22px;
+	text-decoration: none;
+}
+
+.rwaq-cd__org-logo {
+	display: flex;
+	align-items: center;
+	padding: 16px;
+	border: 1px solid var(--rwaq-border);
+	border-radius: 8px;
+	background: var(--rwaq-surface);
+}
+
+.rwaq-cd a.rwaq-cd__org-logo {
+	transition: box-shadow 0.15s ease;
+}
+
+.rwaq-cd a.rwaq-cd__org-logo:hover {
+	box-shadow: 0 4px 12px rgba(16, 24, 40, 0.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.rwaq-cd a.rwaq-cd__org-logo {
+		transition: none;
+	}
+}
+
+.rwaq-cd__org-logo img {
+	display: block;
+	max-height: 26px;
+	width: auto;
+	object-fit: contain;
+}
+
+/* ---- Meta chips ---- */
+.rwaq-cd__chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 32px;
+	width: 100%;
+	padding: 24px;
+	border-radius: 8px;
+	background: var(--rwaq-surface);
+}
+
+.rwaq-cd__chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	color: var(--rwaq-text);
+	font-size: 14px;
+	line-height: 22px;
+}
+
+.rwaq-cd__chip img {
+	display: block;
+	flex: 0 0 20px;
+}
+
+.rwaq-cd__chip-value {
+	font-weight: 600;
+}
+
+/* ---- Sections (الوصف, related) ---- */
+.rwaq-cd__section-title {
+	margin: 0 0 24px;
+	color: var(--rwaq-text);
+	font-size: 24px;
+	font-weight: 600;
+	line-height: 32px;
+}
+
+.rwaq-cd__prose {
+	max-width: 670px;
+	color: var(--rwaq-muted);
+	font-size: 14px;
+	line-height: 28px;
+}
+
+.rwaq-cd__prose > *:first-child {
+	margin-top: 0;
+}
+
+.rwaq-cd__prose > *:last-child {
+	margin-bottom: 0;
+}
+
+.rwaq-cd__prose p {
+	margin: 0 0 24px;
+}
+
+.rwaq-cd__prose ul,
+.rwaq-cd__prose ol {
+	margin: 0 0 24px;
+	padding-inline-start: 22px;
+}
+
+.rwaq-cd__prose li {
+	margin-bottom: 8px;
+}
+
+.rwaq-cd__prose h1,
+.rwaq-cd__prose h2,
+.rwaq-cd__prose h3,
+.rwaq-cd__prose h4 {
+	margin: 24px 0 12px;
+	color: var(--rwaq-text);
+	font-size: 18px;
+	font-weight: 600;
+	line-height: 26px;
+}
+
+.rwaq-cd__prose a {
+	color: var(--rwaq-primary);
+}
+
+.rwaq-cd__prose img {
+	height: auto;
+	border-radius: 8px;
+}
+
+/* Related courses span the full 1232 column, below the two-column layout. */
+.rwaq-cd__section--related {
+	margin-top: 56px;
+}
+
+/* The catalog card sizes itself from these two vars, so a plain flex row gives
+   the same 4-up grid as the listing. */
+.rwaq-cd__related {
+	--rwaq-courses-columns: 4;
+	--rwaq-courses-gap: 24px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--rwaq-courses-gap);
+}
+
+/* ---- Rail cards ---- */
+.rwaq-cd__card {
+	border: 1px solid var(--rwaq-border);
+	border-radius: 10px;
+	background: var(--rwaq-surface);
+}
+
+/* Enroll card: 295px cover, then the [tutor_enroll_button] output. */
+.rwaq-cd__enroll {
+	padding: 16px;
+}
+
+.rwaq-cd__enroll-media {
+	height: 295px;
+	border-radius: 10px;
+	overflow: hidden;
+	background: var(--rwaq-primary-soft);
+}
+
+.rwaq-cd__enroll-media img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.rwaq-cd__enroll .tutor-sso-enroll-wrap {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-top: 16px;
+}
+
+/* Pin the shared enroll button to the design's brand block. Prefixed so it
+   outranks both the shared enroll styles and the theme's button rules. */
+.rwaq-cd .rwaq-cd__enroll .tutor-sso-enroll-btn,
+.rwaq-cd .rwaq-cd__enroll .tutor-sso-enroll-btn:hover,
+.rwaq-cd .rwaq-cd__enroll .tutor-sso-enroll-btn:focus {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	padding: 10px 16px 10px 20px;
+	border: 1px solid var(--rwaq-primary) !important;
+	border-radius: 8px !important;
+	background: var(--rwaq-primary) !important;
+	box-shadow: none !important;
+	color: #FFFFFF !important;
+	font-family: inherit;
+	font-size: 16px !important;
+	font-weight: 600;
+	line-height: 26px;
+	text-align: center;
+	text-decoration: none !important;
+	cursor: pointer;
+}
+
+/* Unenroll is the secondary action: brand outline on white. */
+.rwaq-cd .rwaq-cd__enroll .tutor-sso-enroll-btn--unenroll,
+.rwaq-cd .rwaq-cd__enroll .tutor-sso-enroll-btn--unenroll:hover,
+.rwaq-cd .rwaq-cd__enroll .tutor-sso-enroll-btn--unenroll:focus {
+	background: var(--rwaq-surface) !important;
+	color: var(--rwaq-primary) !important;
+}
+
+.rwaq-cd__enroll .tutor-sso-enroll-message:empty {
+	display: none;
+}
+
+.rwaq-cd__enroll .tutor-sso-enroll-message {
+	color: var(--rwaq-muted);
+	font-size: 12px;
+	line-height: 18px;
+	text-align: center;
+}
+
+/* ---- Instructor panel ---- */
+.rwaq-cd__people {
+	display: flex;
+	flex-direction: column;
+	gap: 24px;
+	padding: 16px 24px;
+}
+
+.rwaq-cd__people-title {
+	margin: 0;
+	color: var(--rwaq-text);
+	font-size: 20px;
+	font-weight: 600;
+	line-height: 28px;
+}
+
+.rwaq-cd__person {
+	display: flex;
+	align-items: flex-start;
+	gap: 16px;
+}
+
+/* 1px divider between instructors, not after the last one. */
+.rwaq-cd__person + .rwaq-cd__person {
+	padding-top: 24px;
+	border-top: 1px solid var(--rwaq-border);
+}
+
+.rwaq-cd__person-media {
+	flex: 0 0 60px;
+	width: 60px;
+	height: 60px;
+	border-radius: 50%;
+	overflow: hidden;
+	background: var(--rwaq-primary-soft);
+}
+
+.rwaq-cd__person-image {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.rwaq-cd__person-image.is-fallback {
+	object-fit: contain;
+	padding: 8px;
+}
+
+.rwaq-cd__person-body {
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.rwaq-cd .rwaq-cd__person-name {
+	align-self: flex-start;
+	border-bottom: 1px solid var(--rwaq-primary);
+	color: var(--rwaq-primary);
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 22px;
+	text-decoration: none;
+}
+
+.rwaq-cd__person-stats {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 16px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.rwaq-cd__person-stat {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	color: var(--rwaq-muted);
+	font-size: 12px;
+	line-height: 16px;
+}
+
+.rwaq-cd__person-stat img {
+	display: block;
+	flex: 0 0 16px;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 1100px) {
+	.rwaq-cd__layout {
+		flex-direction: column;
+		gap: 40px;
+	}
+
+	.rwaq-cd__main,
+	.rwaq-cd__rail {
+		flex: 1 1 auto;
+		width: 100%;
+		max-width: none;
+	}
+
+	.rwaq-cd__related {
+		--rwaq-courses-columns: 2;
+	}
+}
+
+@media (max-width: 720px) {
+	.rwaq-cd {
+		padding-block: 24px 48px;
+	}
+
+	.rwaq-cd__title {
+		font-size: 24px;
+		line-height: 34px;
+	}
+
+	.rwaq-cd__chips {
+		gap: 16px;
+		padding: 16px;
+	}
+
+	.rwaq-cd__related {
+		--rwaq-courses-columns: 1;
+	}
+
+	.rwaq-cd__main {
+		gap: 32px;
+	}
+}

@@ -223,15 +223,11 @@ function programs_org_value( $org ) {
 		return (string) $org;
 	}
 
-	// The `org` query param matches the organization's actual name, so never use
-	// the Arabic display name here (that is only for programs_org_label()).
-	foreach ( array( 'name', 'short_name' ) as $key ) {
-		if ( ! empty( $org[ $key ] ) ) {
-			return (string) $org[ $key ];
-		}
-	}
+	// `org` matches a program's `organization`, i.e. the short name.
+	$short = isset( $org['short_name'] ) ? trim( (string) $org['short_name'] ) : '';
+	$name  = isset( $org['name'] ) ? trim( (string) $org['name'] ) : '';
 
-	return '';
+	return '' !== $short ? $short : $name;
 }
 
 /**
