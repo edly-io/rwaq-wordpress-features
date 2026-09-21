@@ -15,24 +15,29 @@
  * already exists it is updated, otherwise a new one is created.
  *
  * Accepted body fields (JSON or form-encoded):
- *   - title              → post title             (required on create)
- *   - content            → post content
- *   - slug               → post slug (post_name)  (required on create; optional on update)
- *   - status             → post status (publish|draft)
- *   - openedx_course_id  → ACF field, upsert key  (required, immutable)
- *   - short_description  → ACF field              (required on create)
- *   - course_start_date  → ACF field              (required on create)
- *   - course_end_date    → ACF field              (required on create)
- *   - instructor         → ACF field
- *   - instructor_slug    → ACF field; stored as a root-relative instructor
+ *   - title                → post title             (required on create)
+ *   - content              → post content
+ *   - slug                 → post slug (post_name)  (required on create; optional on update)
+ *   - status               → post status (publish|draft)
+ *   - openedx_course_id    → ACF field, upsert key  (required, immutable)
+ *   - short_description    → ACF field              (required on create)
+ *   - course_start_date    → ACF field              (required on create)
+ *   - course_end_date      → ACF field              (required on create)
+ *   - instructor           → ACF field
+ *   - instructor_slug      → ACF field; stored as a root-relative instructor
  *                          path, e.g. "almajeed" → "/instructor/almajeed/"
- *   - youtube_link       → ACF field (URL)
- *   - course_duration    → ACF field
- *   - total_enrollment   → ACF field
- *   - category           → course-category term(s), matched by name / created if missing
- *   - org                → course-partner term,   matched by name / created if missing
- *   - featured_image     → sideloaded + set as the post's featured image
- *   - instructor_image   → sideloaded; attachment id stored in the ACF image field
+ *   - youtube_link         → ACF field (URL)
+ *   - course_duration      → ACF field
+ *   - total_enrollment     → ACF field
+ *   - is_paid              → ACF field (true/false), stored as 1 / 0
+ *   - part_of_program      → ACF field (text); the LMS program identifier, or
+ *                            "" when the course belongs to no program
+ *   - course_regular_price → ACF field (text)
+ *   - course_sale_price    → ACF field (text)
+ *   - category             → course-category term(s), matched by name / created if missing
+ *   - org                  → course-partner term,   matched by name / created if missing
+ *   - featured_image       → sideloaded + set as the post's featured image
+ *   - instructor_image     → sideloaded; attachment id stored in the ACF image field
  *
  * @package tutor-sso
  */
@@ -99,15 +104,19 @@ class Courses_REST_Controller extends \WP_REST_Controller {
 		return apply_filters(
 			'tutor_sso_course_acf_fields',
 			array(
-				'openedx_course_id' => 'openedx_course_id',
-				'short_description' => 'short_description',
-				'course_start_date' => 'course_start_date',
-				'course_end_date'   => 'course_end_date',
-				'instructor'        => 'instructor',
-				'instructor_slug'   => 'instructor_slug',
-				'youtube_link'      => 'youtube_link',
-				'course_duration'   => 'course_duration',
-				'total_enrollment'  => 'total_enrollment',
+				'openedx_course_id'    => 'openedx_course_id',
+				'short_description'    => 'short_description',
+				'course_start_date'    => 'course_start_date',
+				'course_end_date'      => 'course_end_date',
+				'instructor'           => 'instructor',
+				'instructor_slug'      => 'instructor_slug',
+				'youtube_link'         => 'youtube_link',
+				'course_duration'      => 'course_duration',
+				'total_enrollment'     => 'total_enrollment',
+				'is_paid'              => 'is_paid',
+				'part_of_program'      => 'part_of_program',
+				'course_regular_price' => 'course_regular_price',
+				'course_sale_price'    => 'course_sale_price',
 			)
 		);
 	}
@@ -152,105 +161,130 @@ class Courses_REST_Controller extends \WP_REST_Controller {
 	 */
 	public function get_endpoint_args() {
 		return array(
-			'title'             => array(
+			'title'                => array(
 				'description'       => __( 'Course title. Required on create.', 'tutor-sso' ),
 				'type'              => 'string',
 				'required'          => false,
 				'sanitize_callback' => 'sanitize_text_field',
 			),
-			'content'           => array(
+			'content'              => array(
 				'description'       => __( 'Course content (HTML allowed).', 'tutor-sso' ),
 				'type'              => 'string',
 				'required'          => false,
 				'sanitize_callback' => 'wp_kses_post',
 			),
-			'slug'              => array(
+			'slug'                 => array(
 				'description'       => __( 'Course slug (post_name). Required on create; on update it is only changed when supplied.', 'tutor-sso' ),
 				'type'              => 'string',
 				'required'          => false,
 				'sanitize_callback' => 'sanitize_title',
 			),
-			'status'            => array(
+			'status'               => array(
 				'description'       => __( 'Post status: publish or draft. Applied on create and update.', 'tutor-sso' ),
 				'type'              => 'string',
 				'required'          => false,
 				'enum'              => array( 'publish', 'draft' ),
 				'sanitize_callback' => 'sanitize_key',
 			),
-			'openedx_course_id' => array(
+			'openedx_course_id'    => array(
 				'description'       => __( 'Open edX course id. Unique upsert key; immutable on update.', 'tutor-sso' ),
 				'type'              => 'string',
 				'required'          => true,
 				'sanitize_callback' => 'sanitize_text_field',
 				'validate_callback' => array( $this, 'validate_non_empty' ),
 			),
-			'short_description' => array(
+			'short_description'    => array(
 				'description'       => __( 'Short description. Required on create.', 'tutor-sso' ),
 				'type'              => 'string',
 				'required'          => false,
 				'sanitize_callback' => 'sanitize_textarea_field',
 			),
-			'course_start_date' => array(
+			'course_start_date'    => array(
 				'description'       => __( 'Course start date. Required on create.', 'tutor-sso' ),
 				'type'              => 'string',
 				'required'          => false,
 				'sanitize_callback' => 'sanitize_text_field',
 			),
-			'course_end_date'   => array(
+			'course_end_date'      => array(
 				'description'       => __( 'Course end date. Required on create.', 'tutor-sso' ),
 				'type'              => 'string',
 				'required'          => false,
 				'sanitize_callback' => 'sanitize_text_field',
 			),
-			'instructor'        => array(
+			'instructor'           => array(
 				'description'       => __( 'Instructor name.', 'tutor-sso' ),
 				'type'              => 'string',
 				'required'          => false,
 				'sanitize_callback' => 'sanitize_text_field',
 			),
-			'instructor_slug'   => array(
+			'instructor_slug'      => array(
 				'description'       => __( 'Instructor slug as sent by the LMS. Stored as a root-relative instructor path', 'tutor-sso' ),
 				'type'              => 'string',
 				'required'          => false,
 				'sanitize_callback' => array( $this, 'sanitize_instructor_slug' ),
 			),
-			'youtube_link'      => array(
+			'youtube_link'         => array(
 				'description'       => __( 'YouTube URL.', 'tutor-sso' ),
 				'type'              => 'string',
 				'format'            => 'uri',
 				'required'          => false,
 				'sanitize_callback' => 'esc_url_raw',
 			),
-			'course_duration'   => array(
+			'course_duration'      => array(
 				'description'       => __( 'Course duration.', 'tutor-sso' ),
 				'type'              => 'string',
 				'required'          => false,
 				'sanitize_callback' => 'sanitize_text_field',
 			),
-			'total_enrollment'  => array(
+			'total_enrollment'     => array(
 				'description'       => __( 'Total enrollment count.', 'tutor-sso' ),
 				'type'              => 'integer',
 				'required'          => false,
 				'sanitize_callback' => 'absint',
 			),
-			'category'          => array(
+			'is_paid'              => array(
+				'description'       => __( 'Whether the course is paid. Accepts true/false, 1/0 or "yes"/"no"; stored as 1 / 0.', 'tutor-sso' ),
+				'type'              => 'boolean',
+				'required'          => false,
+				'sanitize_callback' => array( $this, 'sanitize_bool_flag' ),
+			),
+			'part_of_program'      => array(
+				// Stored verbatim: the LMS decides whether this is a program
+				'description'       => __( 'Identifier of the program this course belongs to, as sent by the LMS. Empty when it belongs to none.', 'tutor-sso' ),
+				'type'              => 'string',
+				'required'          => false,
+				'sanitize_callback' => 'sanitize_text_field',
+			),
+			'course_regular_price' => array(
+				'description'       => __( 'Regular price, as sent by the LMS.', 'tutor-sso' ),
+				'type'              => 'string',
+				'required'          => false,
+				'sanitize_callback' => 'sanitize_text_field',
+			),
+			'course_sale_price'    => array(
+				'description'       => __( 'Sale price, as sent by the LMS.', 'tutor-sso' ),
+				'type'              => 'string',
+				'required'          => false,
+				'sanitize_callback' => 'sanitize_text_field',
+			),
+			'category'             => array(
 				'description'       => __( 'course-category name(s) — string or array. Created if missing.', 'tutor-sso' ),
 				'required'          => false,
 			),
-			'org'               => array(
+			'org'                  => array(
 				'description'       => __( 'Organization → course-partner term name. Created if missing.', 'tutor-sso' ),
 				'type'              => 'string',
 				'required'          => false,
 				'sanitize_callback' => 'sanitize_text_field',
 			),
-			'featured_image'    => array(
+			'featured_image'       => array(
 				'description'       => __( 'URL of an image to download and set as the featured image.', 'tutor-sso' ),
 				'type'              => 'string',
 				'format'            => 'uri',
 				'required'          => false,
 				'sanitize_callback' => 'esc_url_raw',
 			),
-			'instructor_image'  => array(
+			'instructor_image'     => array(
 				'description'       => __( 'URL of the instructor image to download into the ACF image field.', 'tutor-sso' ),
 				'type'              => 'string',
 				'format'            => 'uri',
@@ -299,6 +333,21 @@ class Courses_REST_Controller extends \WP_REST_Controller {
 		}
 
 		return wp_make_link_relative( home_url( '/' . $prefix . '/' . $slug . '/' ) );
+	}
+
+	/**
+	 * Normalize a boolean-ish flag into the 1 / 0 an ACF true/false field stores.
+	 *
+	 * The LMS may send a JSON boolean, a number, or a string ("true", "yes",
+	 * "1"), depending on how the payload is encoded — rest_sanitize_boolean()
+	 * covers all of those, and the int cast keeps the stored value consistent
+	 * with what ACF writes from the admin UI.
+	 *
+	 * @param mixed $value Raw flag from the request.
+	 * @return int 1 or 0.
+	 */
+	public function sanitize_bool_flag( $value ) {
+		return rest_sanitize_boolean( $value ) ? 1 : 0;
 	}
 
 	/**
