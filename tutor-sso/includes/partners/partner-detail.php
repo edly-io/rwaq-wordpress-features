@@ -231,7 +231,6 @@ function partner_render_breadcrumb( $name ) {
 function partner_render_hero( $data ) {
 	$name  = isset( $data['name'] ) ? (string) $data['name'] : '';
 	$logo  = isset( $data['logo'] ) ? (string) $data['logo'] : '';
-	$bio   = isset( $data['bio'] ) ? (string) $data['bio'] : '';
 	$stats = isset( $data['stats'] ) ? (array) $data['stats'] : array();
 
 	ob_start();
@@ -256,15 +255,6 @@ function partner_render_hero( $data ) {
 						<h1 class="rwaq-pt__name"><?php echo esc_html( $name ); ?></h1>
 					<?php endif; ?>
 
-					<?php if ( '' !== $bio ) : ?>
-						<div class="rwaq-pt__bio">
-							<p class="rwaq-pt__bio-text"><?php echo esc_html( $bio ); ?></p>
-							<?php // Revealed by partner.js only when the clamp is actually hiding text. ?>
-							<button type="button" class="rwaq-pt__bio-toggle" aria-haspopup="dialog" aria-controls="rwaq-pt-bio-modal" hidden>
-								<?php echo esc_html__( 'اقرأ المزيد', 'tutor-sso' ); ?>
-							</button>
-						</div>
-					<?php endif; ?>
 				</div>
 			</div>
 
@@ -396,20 +386,24 @@ function partner_render_instructor_card( $person ) {
  * whole section in the HTML — no request, and no content that only exists for
  * visitors with JS.
  *
- * @param string  $key      Section key, for the button's data attribute.
- * @param string  $heading  Section heading.
- * @param array[] $items    Rows.
- * @param string  $kind     'courses' | 'programs' | 'instructors'.
- * @param string  $empty    Empty-state message.
- * @param int     $total    Count for the pill — the API's own total. Defaults to
- *                          the number of rows, which is what it equals while the
- *                          payload embeds them all.
+ * @param string  $key     Section key, for the button's data attribute.
+ * @param string  $heading Section heading.
+ * @param array[] $items   Rows. An empty set renders nothing at all.
+ * @param string  $kind    'courses' | 'programs' | 'instructors'.
+ * @param int     $total   Count for the pill — the API's own total. Defaults to
+ *                         the number of rows, which is what it equals while the
+ *                         payload embeds them all.
  * @return string HTML.
  */
-function partner_render_section( $key, $heading, $items, $kind, $empty, $total = 0 ) {
+function partner_render_section( $key, $heading, $items, $kind, $total = 0 ) {
 	$items = array_values( array_filter( (array) $items, 'is_array' ) );
 	$step  = partner_section_step();
 	$count = count( $items );
+
+	if ( 0 === $count ) {
+		return '';
+	}
+
 	$total = (int) $total > 0 ? (int) $total : $count;
 
 	ob_start();
@@ -420,10 +414,7 @@ function partner_render_section( $key, $heading, $items, $kind, $empty, $total =
 			<span class="rwaq-pt__count-pill"><?php echo esc_html( number_format_i18n( $total ) ); ?></span>
 		</div>
 
-		<?php if ( 0 === $count ) : ?>
-			<p class="rwaq-pt__empty"><?php echo esc_html( $empty ); ?></p>
-		<?php else : ?>
-			<?php
+		<?php
 			// The catalog card components need their catalog's root class for the
 			// --rwaq-* custom properties they resolve colours from.
 			$grid_class = 'rwaq-pt__grid';
@@ -459,58 +450,52 @@ function partner_render_section( $key, $heading, $items, $kind, $empty, $total =
 					</button>
 				</div>
 			<?php endif; ?>
-		<?php endif; ?>
 	</section>
 	<?php
 	return ob_get_clean();
 }
 
 /**
- * Render the description modal, behind the hero's "read more".
- *
- * Same component as the instructor biography modal: a 700px panel with a
- * brand-purple header and the full text at 14/28.
+ * Render the description, below the hero stats. The API supplies HTML.
  *
  * @param array $data View model.
  * @return string HTML.
  */
-function partner_render_bio_modal( $data ) {
-	$name = isset( $data['name'] ) ? (string) $data['name'] : '';
+function partner_render_bio( $data ) {
 	$html = isset( $data['bio_html'] ) ? (string) $data['bio_html'] : '';
-	$text = isset( $data['bio'] ) ? (string) $data['bio'] : '';
 
-	if ( '' === $html && '' === $text ) {
+	if ( '' === trim( wp_strip_all_tags( $html ) ) ) {
 		return '';
 	}
 
 	ob_start();
 	?>
-	<div class="rwaq-pt__modal" id="rwaq-pt-bio-modal" hidden>
-		<div class="rwaq-pt__modal-overlay" data-rwaq-pt-close></div>
+	<div class="rwaq-pt__bio">
+		<?php
+		// Sanitised in partner_fetch() via wp_kses_post().
+		echo $html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		?>
+	</div>
+	<?php
+	return ob_get_clean();
+}
 
-		<div class="rwaq-pt__modal-panel" role="dialog" aria-modal="true" aria-labelledby="rwaq-pt-modal-title">
-			<div class="rwaq-pt__modal-head">
-				<h2 class="rwaq-pt__modal-title" id="rwaq-pt-modal-title">
-					<?php
-					/* translators: %s: partner name. */
-					echo esc_html( '' !== $name ? sprintf( __( 'حول %s', 'tutor-sso' ), $name ) : __( 'نبذة', 'tutor-sso' ) );
-					?>
-				</h2>
-				<button type="button" class="rwaq-pt__modal-close" data-rwaq-pt-close aria-label="<?php echo esc_attr__( 'إغلاق', 'tutor-sso' ); ?>">
-					<?php echo partner_icon( 'close' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-				</button>
-			</div>
 
-			<div class="rwaq-pt__modal-body" tabindex="-1">
-				<?php
-				if ( '' !== $html ) {
-					// Sanitised in partner_fetch() via wp_kses_post().
-					echo $html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-				} else {
-					echo '<p>' . esc_html( $text ) . '</p>';
-				}
-				?>
-			</div>
+/**
+ * Render the "nothing here yet" card, shown only when all three sections are empty.
+ *
+ * @return string HTML.
+ */
+function partner_render_empty() {
+	ob_start();
+	?>
+	<div class="rwaq-pt__blank">
+		<span class="rwaq-pt__blank-icon" aria-hidden="true">
+			<img src="<?php echo esc_url( partner_asset( 'ic-soon.svg' ) ); ?>" width="24" height="24" alt="" />
+		</span>
+		<div class="rwaq-pt__blank-text">
+			<p class="rwaq-pt__blank-title"><?php echo esc_html__( 'مزيد من المعلومات قريبًا', 'tutor-sso' ); ?></p>
+			<p class="rwaq-pt__blank-note"><?php echo esc_html__( 'سيتم تحديث هذا القسم بالتفاصيل ذات الصلة قريبًا', 'tutor-sso' ); ?></p>
 		</div>
 	</div>
 	<?php
@@ -546,42 +531,42 @@ function partner_render_detail( $post_id ) {
 
 		<div class="rwaq-pt__content">
 			<div class="rwaq-pt__content-inner">
+				<?php echo partner_render_bio( $data ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+
 				<?php if ( '' !== $error ) : ?>
 					<p class="rwaq-pt__empty rwaq-pt__empty--error"><?php echo esc_html( $error ); ?></p>
 				<?php else : ?>
 					<?php
-					echo partner_render_section( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					$sections = partner_render_section( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 						'programs',
 						__( 'البرامج', 'tutor-sso' ),
 						$data['programs'],
 						'programs',
-						__( 'لا توجد برامج لهذا الشريك بعد.', 'tutor-sso' ),
 						isset( $totals['programs'] ) ? (int) $totals['programs'] : 0
 					);
 
-					echo partner_render_section( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					$sections .= partner_render_section(
 						'courses',
 						__( 'دورات', 'tutor-sso' ),
 						$data['courses'],
 						'courses',
-						__( 'لا توجد دورات لهذا الشريك بعد.', 'tutor-sso' ),
 						isset( $totals['courses'] ) ? (int) $totals['courses'] : 0
 					);
 
-					echo partner_render_section( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					$sections .= partner_render_section(
 						'instructors',
 						__( 'المدرّبون', 'tutor-sso' ),
 						$data['instructors'],
 						'instructors',
-						__( 'لا يوجد مدرّبون لهذا الشريك بعد.', 'tutor-sso' ),
 						isset( $totals['instructors'] ) ? (int) $totals['instructors'] : 0
 					);
+
+					// Every section empty: one "coming soon" card stands in for all three.
+					echo '' !== $sections ? $sections : partner_render_empty(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 					?>
 				<?php endif; ?>
 			</div>
 		</div>
-
-		<?php echo partner_render_bio_modal( $data ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 	</div>
 	<?php
 	return ob_get_clean();

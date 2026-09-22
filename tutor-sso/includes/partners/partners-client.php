@@ -628,9 +628,7 @@ function partner_fetch( $lms_id ) {
 		}
 	}
 
-	// `description` is HTML-capable, so two forms are kept for the same reason as
-	// the instructor biography: the hero clamps plain text, the modal renders
-	// paragraphs. It is empty for every organization on stage today.
+	// `description` is HTML; `bio` keeps a plain-text form for callers that want one.
 	$detail   = isset( $body['description'] ) ? (string) $body['description'] : '';
 	$bio      = trim( wp_strip_all_tags( $detail ) );
 	$bio_html = trim( wp_kses_post( $detail ) );
@@ -645,9 +643,7 @@ function partner_fetch( $lms_id ) {
 	$total_programs    = isset( $body['total_programs'] ) ? (int) $body['total_programs'] : count( $programs );
 	$total_instructors = isset( $body['total_instructors'] ) ? (int) $body['total_instructors'] : count( $people );
 
-	// Stats in the design's RTL order. The design's third cell is the partner's
-	// country, which this endpoint does not carry, so it is omitted rather than
-	// invented — leaving a clean three-cell bar.
+	// Stats in the design's RTL order: courses, programs, instructors.
 	$stats = array(
 		array(
 			'icon'  => 'stat-courses.svg',
@@ -659,15 +655,12 @@ function partner_fetch( $lms_id ) {
 			/* translators: %s: number of programs. */
 			'label' => sprintf( __( '%s برنامجًا', 'tutor-sso' ), number_format_i18n( $total_programs ) ),
 		),
+		array(
+			'icon'  => 'stat-instructors.svg',
+			/* translators: %s: number of instructors. */
+			'label' => sprintf( __( '%s المدرّبون', 'tutor-sso' ), number_format_i18n( $total_instructors ) ),
+		),
 	);
-
-	$joined = partner_joined_text( $body );
-	if ( '' !== $joined ) {
-		$stats[] = array(
-			'icon'  => 'stat-joined.svg',
-			'label' => $joined,
-		);
-	}
 
 	$data = array(
 		'name'        => $name,
