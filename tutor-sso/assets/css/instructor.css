@@ -224,183 +224,63 @@ a.rwaq-ins__crumb:focus-visible {
 	height: 6px;
 }
 
-/* Biography. Clamped to two lines; past that the "read more" button opens the
-   full text in a modal rather than expanding in place. */
+/* ---- Biography ----
+   Its own band between the hero and the tabs; the API supplies HTML. */
+.rwaq-ins__about-inner {
+	max-width: calc(var(--rwaq-ins-wide) + var(--rwaq-ins-gutter) * 2);
+	margin-inline: auto;
+	padding-inline: var(--rwaq-ins-gutter);
+	padding-block: 32px 0;
+}
+
 .rwaq-ins__bio {
-	display: flex;
-	flex-direction: column;
-	align-items: flex-start;
-	gap: 16px;
-	max-width: 658px;
-}
-
-.rwaq-ins__bio-text {
-	margin: 0;
+	max-width: 750px;
 	font-size: 14px;
 	font-weight: 400;
 	line-height: 28px;
 	color: var(--rwaq-muted);
-	display: -webkit-box;
-	-webkit-line-clamp: 2;
-	line-clamp: 2;
-	-webkit-box-orient: vertical;
-	overflow: hidden;
 }
 
-.rwaq-ins__bio-toggle {
-	appearance: none;
-	border: 0;
-	padding: 0;
-	background: none;
-	cursor: pointer;
-	font-family: inherit;
-	font-size: 14px;
-	font-weight: 600;
-	line-height: 22px;
+.rwaq-ins__bio > *:first-child {
+	margin-top: 0;
 }
 
-/* No hover treatment. Restated across every interaction state and pinned for
-   the same reason as the tabs: this is a bare <button>, so the theme's own
-   button styling reaches it and tints the label pink on hover. `cursor:
-   pointer` above and `outline` (untouched) are what still mark it actionable. */
-.rwaq-ins__bio-toggle,
-.rwaq-ins__bio-toggle:hover,
-.rwaq-ins__bio-toggle:focus,
-.rwaq-ins__bio-toggle:active {
-	color: var(--rwaq-primary) !important;
-	background: none !important;
-	box-shadow: none !important;
-	text-decoration: none !important;
-	opacity: 1 !important;
-}
-
-/* Hidden until instructor.js confirms the clamp is actually hiding text, so a
-   short biography never shows a button that opens nothing new. */
-.rwaq-ins__bio-toggle[hidden] {
-	display: none;
-}
-
-/* ---- Biography modal ----
-   700px panel from the design (node 9664:99416): a brand-purple header carrying
-   the title and the close button, over a 40px-padded body that scrolls when the
-   biography is long. The close button sits at the header's end edge — the left,
-   in RTL — which is where the design places it. */
-.rwaq-ins__modal {
-	position: fixed;
-	inset: 0;
-	z-index: 99999;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	padding: 16px;
-}
-
-.rwaq-ins__modal[hidden] {
-	display: none;
-}
-
-.rwaq-ins__modal-overlay {
-	position: absolute;
-	inset: 0;
-	background: rgba(0, 0, 0, 0.55);
-}
-
-.rwaq-ins__modal-panel {
-	position: relative;
-	display: flex;
-	flex-direction: column;
-	width: 700px;
-	max-width: 100%;
-	max-height: min(90vh, 640px);
-	overflow: hidden;
-	border-radius: 10px;
-	background: var(--rwaq-surface);
-	/* The design's own drop shadow. */
-	box-shadow: 0 2px 37px rgba(0, 0, 0, 0.07);
-}
-
-.rwaq-ins__modal-head {
-	flex: 0 0 auto;
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 16px;
-	/* 20px block padding on a 32px title line is the design's 72px header. */
-	padding: 20px 30px;
-	background: var(--rwaq-primary);
-}
-
-.rwaq-ins__modal-title {
-	margin: 0;
-	font-size: 24px;
-	font-weight: 600;
-	line-height: 32px;
-	color: var(--rwaq-surface);
-}
-
-.rwaq-ins__modal-close {
-	flex: 0 0 auto;
-	appearance: none;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	width: 24px;
-	height: 24px;
-	padding: 0;
-	border: 0;
-	background: none;
-	cursor: pointer;
-}
-
-/* No hover treatment, pinned as above.
-   Every descendant is covered, not just the <svg>: the icon's paths stroke with
-   currentColor, and a theme rule like `button:hover *` sets `color` on the
-   <path> itself — which beats inheriting white from the svg, so the × would go
-   pink while both the button and the svg still measured white. */
-.rwaq-ins__modal-close,
-.rwaq-ins__modal-close:hover,
-.rwaq-ins__modal-close:focus,
-.rwaq-ins__modal-close:active,
-.rwaq-ins__modal-close *,
-.rwaq-ins__modal-close:hover *,
-.rwaq-ins__modal-close:focus * {
-	color: var(--rwaq-surface) !important;
-	background: none !important;
-	box-shadow: none !important;
-	text-decoration: none !important;
-	opacity: 1 !important;
-}
-
-.rwaq-ins__modal-close svg {
-	display: block;
-	width: 24px;
-	height: 24px;
-}
-
-.rwaq-ins__modal-body {
-	flex: 1 1 auto;
-	overflow-y: auto;
-	overscroll-behavior: contain;
-	padding: 40px;
-	font-size: 14px;
-	font-weight: 400;
-	line-height: 28px;
-	color: var(--rwaq-muted);
-	text-align: start;
-}
-
-/* The API's own paragraphs, spaced as the design spaces them. */
-.rwaq-ins__modal-body > * {
-	margin: 0 0 10px;
-}
-
-.rwaq-ins__modal-body > *:last-child {
+.rwaq-ins__bio > *:last-child {
 	margin-bottom: 0;
 }
 
-/* While a modal is open the page behind it must not scroll. */
-.rwaq-ins-modal-open {
-	overflow: hidden;
+.rwaq-ins__bio p {
+	margin: 0 0 16px;
+}
+
+.rwaq-ins__bio ul,
+.rwaq-ins__bio ol {
+	margin: 0 0 16px;
+	padding-inline-start: 22px;
+}
+
+.rwaq-ins__bio li {
+	margin-bottom: 8px;
+}
+
+.rwaq-ins__bio h1,
+.rwaq-ins__bio h2,
+.rwaq-ins__bio h3,
+.rwaq-ins__bio h4 {
+	margin: 24px 0 12px;
+	color: var(--rwaq-text);
+	font-size: 18px;
+	font-weight: 600;
+	line-height: 26px;
+}
+
+.rwaq-ins__bio a {
+	color: var(--rwaq-primary);
+}
+
+.rwaq-ins__bio img {
+	height: auto;
+	border-radius: 8px;
 }
 
 /* ---- Avatar: the photo offset over a slightly larger tilted white card.
@@ -713,14 +593,7 @@ a.rwaq-ins__crumb:focus-visible {
 		text-align: center;
 	}
 
-	.rwaq-ins__bio {
-		width: 100%;
-		align-items: center;
-	}
 
-	.rwaq-ins__bio-text {
-		text-align: start;
-	}
 
 	.rwaq-ins__partners {
 		justify-content: center;
@@ -751,18 +624,8 @@ a.rwaq-ins__crumb:focus-visible {
 }
 
 @media (max-width: 599px) {
-	.rwaq-ins__modal-head {
-		padding: 16px 20px;
-	}
 
-	.rwaq-ins__modal-title {
-		font-size: 19px;
-		line-height: 26px;
-	}
 
-	.rwaq-ins__modal-body {
-		padding: 24px 20px;
-	}
 
 	.rwaq-ins__avatar {
 		width: 216px;
