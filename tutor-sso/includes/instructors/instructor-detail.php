@@ -283,7 +283,6 @@ function instructor_render_breadcrumb( $name ) {
 function instructor_render_hero( $data ) {
 	$name     = isset( $data['name'] ) ? (string) $data['name'] : '';
 	$avatar   = isset( $data['avatar'] ) ? (string) $data['avatar'] : '';
-	$bio      = isset( $data['bio'] ) ? (string) $data['bio'] : '';
 	$partners = isset( $data['partners'] ) ? (array) $data['partners'] : array();
 	$stats    = isset( $data['stats'] ) ? (array) $data['stats'] : array();
 
@@ -340,16 +339,6 @@ function instructor_render_hero( $data ) {
 							<?php endforeach; ?>
 						</div>
 					<?php endif; ?>
-
-					<?php if ( '' !== $bio ) : ?>
-						<div class="rwaq-ins__bio">
-							<p class="rwaq-ins__bio-text"><?php echo esc_html( $bio ); ?></p>
-							<?php // Revealed by instructor.js only when the clamp is actually hiding text. ?>
-							<button type="button" class="rwaq-ins__bio-toggle" aria-haspopup="dialog" aria-controls="rwaq-ins-bio-modal" hidden>
-								<?php echo esc_html__( 'اقرأ المزيد', 'tutor-sso' ); ?>
-							</button>
-						</div>
-					<?php endif; ?>
 				</div>
 			</div>
 
@@ -385,64 +374,34 @@ function instructor_render_hero( $data ) {
 }
 
 /**
- * Render the biography modal: the full text, behind the hero's "read more".
+ * Render the biography, below the hero stats. The API supplies HTML.
  *
- * Matches node 9664:99416: a 700px panel, brand-purple header with the title
- * "حول {name}" and the close button, then the full text at 14/28.
- *
- * Always emitted (hidden) when there is a biography, so the button has something
- * to open without a round trip. instructor.js reveals the button only when the
- * hero's two-line clamp is actually hiding text, so a short biography ships an
- * unused hidden dialog and no visible affordance.
- *
- * `bio_html` keeps the API's paragraphs (sanitised with wp_kses_post upstream);
- * the plain-text `bio` is the fallback when the HTML form is empty.
- *
- * @param array $data View model (see instructor_detail_data()).
+ * @param array $data View model.
  * @return string HTML.
  */
-function instructor_render_bio_modal( $data ) {
-	$name = isset( $data['name'] ) ? (string) $data['name'] : '';
+function instructor_render_bio( $data ) {
 	$html = isset( $data['bio_html'] ) ? (string) $data['bio_html'] : '';
-	$text = isset( $data['bio'] ) ? (string) $data['bio'] : '';
 
-	if ( '' === $html && '' === $text ) {
+	if ( '' === trim( wp_strip_all_tags( $html ) ) ) {
 		return '';
 	}
 
 	ob_start();
 	?>
-	<div class="rwaq-ins__modal" id="rwaq-ins-bio-modal" hidden>
-		<div class="rwaq-ins__modal-overlay" data-rwaq-ins-close></div>
-
-		<div class="rwaq-ins__modal-panel" role="dialog" aria-modal="true" aria-labelledby="rwaq-ins-modal-title">
-			<div class="rwaq-ins__modal-head">
-				<h2 class="rwaq-ins__modal-title" id="rwaq-ins-modal-title">
-					<?php
-					/* translators: %s: instructor name. */
-					echo esc_html( '' !== $name ? sprintf( __( 'حول %s', 'tutor-sso' ), $name ) : __( 'نبذة', 'tutor-sso' ) );
-					?>
-				</h2>
-				<button type="button" class="rwaq-ins__modal-close" data-rwaq-ins-close aria-label="<?php echo esc_attr__( 'إغلاق', 'tutor-sso' ); ?>">
-					<?php echo instructor_icon( 'close' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-				</button>
-			</div>
-
-			<div class="rwaq-ins__modal-body" tabindex="-1">
+	<section class="rwaq-ins__about">
+		<div class="rwaq-ins__about-inner">
+			<div class="rwaq-ins__bio">
 				<?php
-				if ( '' !== $html ) {
-					// Sanitised in instructors_fetch() via wp_kses_post().
-					echo $html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-				} else {
-					echo '<p>' . esc_html( $text ) . '</p>';
-				}
+				// Sanitised in instructors_fetch() via wp_kses_post().
+				echo $html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 				?>
 			</div>
 		</div>
-	</div>
+	</section>
 	<?php
 	return ob_get_clean();
 }
+
 
 /**
  * Number of cards per row in the tab panels.
@@ -598,8 +557,8 @@ function instructor_render_detail( $post_id ) {
 		<?php
 		echo instructor_render_breadcrumb( isset( $data['name'] ) ? (string) $data['name'] : '' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		echo instructor_render_hero( $data ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo instructor_render_bio( $data ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		echo instructor_render_tabs( $data ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		echo instructor_render_bio_modal( $data ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		?>
 	</div>
 	<?php
