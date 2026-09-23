@@ -418,13 +418,7 @@ function instructors_fetch( $lms_id ) {
 	$courses  = instructors_filter_hidden_orgs( isset( $body['courses'] ) ? $body['courses'] : array(), 'org' );
 	$programs = instructors_filter_hidden_orgs( isset( $body['programs'] ) ? $body['programs'] : array(), 'organization' );
 
-	// `detail` is HTML (the LMS wraps the biography in <p>). Two forms are kept:
-	//
-	//   bio      Plain text for the hero, whose two-line clamp uses
-	//            -webkit-line-clamp — that only works on a single text block, so
-	//            the markup has to go.
-	//   bio_html Sanitised HTML for the modal, so a multi-paragraph biography
-	//            renders as paragraphs there, as the design shows.
+	// `detail` is HTML; `bio` keeps a plain-text form for callers that want one.
 	$detail   = isset( $body['detail'] ) ? (string) $body['detail'] : '';
 	$bio      = trim( wp_strip_all_tags( $detail ) );
 	$bio_html = trim( wp_kses_post( $detail ) );
