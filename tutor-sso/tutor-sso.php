@@ -48,6 +48,7 @@ require_once TUTOR_SSO_PATH . 'includes/courses/courses-archive.php';
 require_once TUTOR_SSO_PATH . 'includes/courses/course-detail-client.php';
 require_once TUTOR_SSO_PATH . 'includes/courses/course-detail.php';
 require_once TUTOR_SSO_PATH . 'includes/courses/courses-admin-fields.php';
+require_once TUTOR_SSO_PATH . 'includes/courses/courses-product-sync.php';
 require_once TUTOR_SSO_PATH . 'includes/programs/programs-catalog.php';
 require_once TUTOR_SSO_PATH . 'includes/programs/programs-ajax.php';
 require_once TUTOR_SSO_PATH . 'includes/programs/programs-archive.php';

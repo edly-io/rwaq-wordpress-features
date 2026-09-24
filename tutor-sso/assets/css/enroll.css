@@ -19,13 +19,15 @@
 }
 
 .tutor-sso-enroll-btn--enroll,
-.tutor-sso-enroll-btn--login {
+.tutor-sso-enroll-btn--login,
+.tutor-sso-enroll-btn--buy {
 	background-color: #565199;
 	color: #ffffff;
 }
 
 .tutor-sso-enroll-btn--enroll:hover,
-.tutor-sso-enroll-btn--login:hover {
+.tutor-sso-enroll-btn--login:hover,
+.tutor-sso-enroll-btn--buy:hover {
 	background-color: #474293;
 	color: #ffffff;
 }
@@ -49,6 +51,76 @@
 .tutor-sso-enroll-btn--unenroll:hover {
 	background-color: #f5f5f5;
 	color: #242424;
+}
+
+/* Buy button: the price sits above it on its own row. */
+.tutor-sso-enroll-wrap--buy {
+	flex-direction: column;
+	align-items: stretch;
+	gap: 10px;
+}
+
+/* Price panel (see course_product_price_html()). The course detail card
+   restyles this on the brand tint — see course-detail.css. */
+.tutor-sso-course-price {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.tutor-sso-course-price__head {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.tutor-sso-course-price__label {
+	color: #616161;
+	font-size: 13px;
+	font-weight: 500;
+}
+
+.tutor-sso-course-price__badge {
+	padding: 2px 10px;
+	border-radius: 999px;
+	background: #565199;
+	color: #fff;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 20px;
+	white-space: nowrap;
+}
+
+.tutor-sso-course-price__amounts {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 4px 10px;
+}
+
+.tutor-sso-course-price__now {
+	color: #565199;
+	font-size: 22px;
+	font-weight: 700;
+	line-height: 1.35;
+}
+
+.tutor-sso-course-price__was {
+	color: #616161;
+	font-size: 15px;
+	font-weight: 400;
+	text-decoration: line-through;
+}
+
+.tutor-sso-course-price__now .woocommerce-Price-currencySymbol {
+	margin-inline-start: 3px;
+	font-size: 0.65em;
+	font-weight: 600;
+}
+
+.tutor-sso-course-price__was .woocommerce-Price-currencySymbol {
+	font-size: 0.85em;
+	font-weight: 400;
 }
 
 .tutor-sso-enroll-btn[disabled] {

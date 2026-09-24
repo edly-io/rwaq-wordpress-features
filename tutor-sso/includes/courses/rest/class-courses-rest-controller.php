@@ -521,6 +521,18 @@ class Courses_REST_Controller extends \WP_REST_Controller {
 			$response_data['image_errors'] = $image_errors;
 		}
 
+		/**
+		 * Fires once a course has been fully written — fields, taxonomies and
+		 * images. Downstream mirrors (e.g. the WooCommerce product for a paid
+		 * course, see courses-product-sync.php) hook here rather than reading
+		 * the request themselves.
+		 *
+		 * @param int              $post_id   Course post ID.
+		 * @param \WP_REST_Request $request   The sync request.
+		 * @param bool             $is_update Whether an existing course was updated.
+		 */
+		do_action( 'tutor_sso_course_synced', $post_id, $request, (bool) $existing_id );
+
 		$response = rest_ensure_response( $response_data );
 		$response->set_status( $existing_id ? 200 : 201 );
 

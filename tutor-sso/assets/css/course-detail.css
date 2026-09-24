@@ -415,6 +415,101 @@ main.rwaq-course-single,
 	cursor: pointer;
 }
 
+/* ---- Price panel on a paid course ----
+   Sits between the cover image and the buy button: a label row (with the
+   discount badge on sale) above the amounts. Markup comes from
+   course_product_price_html() in courses-product-sync.php. */
+.rwaq-cd .rwaq-cd__enroll .tutor-sso-course-price {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin-top: 16px;
+	padding: 14px 16px;
+	border: 1px solid var(--rwaq-primary-soft);
+	border-radius: 10px;
+	background: var(--rwaq-primary-soft);
+	text-align: start;
+}
+
+.rwaq-cd .rwaq-cd__enroll .tutor-sso-course-price__head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+/* "السعر" — quiet, so the figure below it leads. */
+.rwaq-cd .rwaq-cd__enroll .tutor-sso-course-price__label {
+	color: var(--rwaq-muted);
+	font-size: 13px;
+	font-weight: 500;
+	line-height: 20px;
+}
+
+/* Discount badge: solid brand, the one place the card shouts. */
+.rwaq-cd .rwaq-cd__enroll .tutor-sso-course-price__badge {
+	flex: 0 0 auto;
+	padding: 2px 10px;
+	border-radius: 999px;
+	background: var(--rwaq-primary);
+	color: var(--rwaq-surface);
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 20px;
+	white-space: nowrap;
+}
+
+.rwaq-cd .rwaq-cd__enroll .tutor-sso-course-price__amounts {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 4px 10px;
+}
+
+/* The price actually charged. */
+.rwaq-cd .rwaq-cd__enroll .tutor-sso-course-price__now {
+	color: var(--rwaq-primary);
+	font-size: 26px;
+	font-weight: 700;
+	line-height: 34px;
+}
+
+/* The pre-sale price: quieter, struck through, never the focal point. */
+.rwaq-cd .rwaq-cd__enroll .tutor-sso-course-price__was {
+	color: var(--rwaq-muted);
+	font-size: 15px;
+	font-weight: 400;
+	line-height: 24px;
+	text-decoration: line-through;
+}
+
+/* The currency sits a step down from the figure so the number leads. */
+.rwaq-cd .rwaq-cd__enroll .tutor-sso-course-price__now .woocommerce-Price-currencySymbol {
+	margin-inline-start: 4px;
+	font-size: 0.6em;
+	font-weight: 600;
+}
+
+/* The "was" price is already small, so its currency keeps nearly full size —
+   shrinking it again renders as a smudge rather than a symbol. */
+.rwaq-cd .rwaq-cd__enroll .tutor-sso-course-price__was .woocommerce-Price-currencySymbol {
+	font-size: 0.85em;
+	font-weight: 400;
+}
+
+/* wc_price() wraps each amount in <bdi>; keep it inline so the flex baseline
+   still lines the two prices up. */
+.rwaq-cd .rwaq-cd__enroll .tutor-sso-course-price bdi {
+	unicode-bidi: isolate;
+}
+
+/* The buy button follows the price directly — the wrap's own 16px top margin
+   would double the gap. */
+.rwaq-cd .rwaq-cd__enroll .tutor-sso-enroll-wrap--buy {
+	margin-top: 0;
+	gap: 12px;
+}
+
 /* Unenroll is the secondary action: brand outline on white. */
 .rwaq-cd .rwaq-cd__enroll .tutor-sso-enroll-btn--unenroll,
 .rwaq-cd .rwaq-cd__enroll .tutor-sso-enroll-btn--unenroll:hover,

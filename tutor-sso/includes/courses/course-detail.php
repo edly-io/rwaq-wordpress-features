@@ -115,6 +115,7 @@ function course_detail_data( $post_id ) {
 	}
 
 	$data['course_key'] = $course_key;
+	$data['post_id']    = (int) $post_id;
 
 	/**
 	 * Filter the course detail view model, after the API response has been
@@ -313,8 +314,24 @@ function course_render_related( $data ) {
 }
 
 /**
- * Render the enroll card: the course image, then [tutor_enroll_button] keyed to
- * the course's edX id (login / enroll / unenroll are the shortcode's own).
+ * Render the enroll card: the course image, then the call to action.
+ *
+ * Free courses get [tutor_enroll_button] as before (login / enroll / unenroll
+ * are the shortcode's own). A paid course is not enrollable for free, so the
+ * enroll button is replaced by a buy button that adds the course's WooCommerce
+ * product to the cart — see courses-product-sync.php, which mirrors paid courses
+ * into products and carries the Open edX metadata through the order.
+ *
+ * Buying requires an account — the enrollment the order triggers belongs to a
+ * person — so a guest on a paid course gets a "log in to buy" button instead.
+ *
+ * Once the buyer is enrolled the enroll button comes back, minus its unenroll
+ * action: cancelling a purchased enrollment from a button is not something the
+ * page should offer.
+ *
+ * A paid course with no buyable product (WooCommerce inactive, or the product
+ * drafted because its price or course key is missing) renders no call to action
+ * at all — showing the free enroll button there would give the course away.
  *
  * @param array $data View model.
  * @return string HTML.
@@ -322,6 +339,7 @@ function course_render_related( $data ) {
 function course_render_enroll_card( $data ) {
 	$image      = isset( $data['image'] ) ? (string) $data['image'] : '';
 	$course_key = isset( $data['course_key'] ) ? (string) $data['course_key'] : '';
+	$post_id    = isset( $data['post_id'] ) ? (int) $data['post_id'] : 0;
 
 	if ( '' === $image && '' === $course_key ) {
 		return '';
@@ -338,20 +356,80 @@ function course_render_enroll_card( $data ) {
 
 		<?php
 		if ( '' !== $course_key ) {
-			echo render_enroll_button( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-				$course_key,
-				array(
-					'enroll_label'   => __( 'سجّل الآن', 'tutor-sso' ),
-					'login_label'    => __( 'سجّل الآن', 'tutor-sso' ),
-					'goto_label'     => __( 'اذهب إلى المساق', 'tutor-sso' ),
-					'unenroll_label' => __( 'إلغاء التسجيل', 'tutor-sso' ),
-				)
-			);
+			echo course_render_call_to_action( $post_id, $course_key ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		}
 		?>
 	</div>
 	<?php
 	return ob_get_clean();
+}
+
+/**
+ * Choose the enroll card's call to action: buy, or enroll.
+ *
+ * @param int    $post_id    Course post ID (0 when unknown — treated as free).
+ * @param string $course_key edX course key.
+ * @return string HTML.
+ */
+function course_render_call_to_action( $post_id, $course_key ) {
+	$labels = array(
+		'enroll_label'   => __( 'سجّل الآن', 'tutor-sso' ),
+		'login_label'    => __( 'سجّل الآن', 'tutor-sso' ),
+		'goto_label'     => __( 'اذهب إلى المساق', 'tutor-sso' ),
+		'unenroll_label' => __( 'إلغاء التسجيل', 'tutor-sso' ),
+	);
+
+	// Free course (or no post to read the flag from): unchanged behaviour.
+	if ( ! $post_id || ! course_is_paid( $post_id ) ) {
+		return render_enroll_button( $course_key, $labels );
+	}
+
+	// Paid: an existing enrollment outranks the buy button — the buyer already
+	// owns it, so send them into the course instead of selling it twice.
+	if ( course_detail_user_is_enrolled( $course_key ) ) {
+		$labels['show_unenroll'] = false;
+
+		return render_enroll_button( $course_key, $labels );
+	}
+
+	$product_id = course_product_buyable( $post_id );
+
+	// Guests are sent to log in first: no guest checkout, so there is always a
+	// WordPress user for the order's enrollment to belong to.
+	if ( $product_id && ! is_user_logged_in() ) {
+		return course_render_buy_login_button( $product_id );
+	}
+
+	if ( ! $product_id ) {
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				sprintf( '[tutor-sso] course %d is paid but has no buyable product; no call to action rendered', $post_id )
+			);
+		}
+
+		return '';
+	}
+
+	return course_render_buy_button( $product_id );
+}
+
+/**
+ * Whether the current user is already enrolled on a course.
+ *
+ * Logged-out visitors are never enrolled, which also keeps the enrollment API
+ * out of the page for them.
+ *
+ * @param string $course_key edX course key.
+ * @return bool
+ */
+function course_detail_user_is_enrolled( $course_key ) {
+	if ( ! is_user_logged_in() || ! function_exists( __NAMESPACE__ . '\\enroll_is_enrolled' ) ) {
+		return false;
+	}
+
+	// WP_Error (LMS unreachable) counts as not enrolled, matching
+	// render_enroll_button()'s own handling.
+	return true === enroll_is_enrolled( $course_key );
 }
 
 /**
