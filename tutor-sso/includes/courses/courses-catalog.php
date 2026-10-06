@@ -170,6 +170,8 @@ function courses_render_card( $course ) {
 	$org_name   = isset( $course['org_name'] ) ? (string) $course['org_name'] : '';
 	$instructor = isset( $course['instructor'] ) ? (string) $course['instructor'] : '';
 	$start_text = isset( $course['start_text'] ) ? (string) $course['start_text'] : '';
+	$paid       = ! empty( $course['paid'] );
+	$discount   = isset( $course['discount'] ) ? $course['discount'] : null;
 
 	ob_start();
 	?>
@@ -180,6 +182,8 @@ function courses_render_card( $course ) {
 			<?php else : ?>
 				<span class="rwaq-course-card__placeholder"><?php echo courses_icon( 'thumb' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
 			<?php endif; ?>
+
+			<?php echo sso_render_discount_badge( 'rwaq-course-card__discount', $discount ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 		</a>
 
 		<div class="rwaq-course-card__body">
@@ -207,10 +211,28 @@ function courses_render_card( $course ) {
 					<span class="rwaq-course-card__org"><?php echo esc_html( $org_name ); ?></span>
 				</div>
 			<?php endif; ?>
+
+			<?php echo courses_render_card_price( $course ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 		</div>
 	</article>
 	<?php
 	return ob_get_clean();
+}
+
+/**
+ * Render the card's price line (Figma 10400:11180's "PriceDisplay" slot).
+ * See sso_render_price_html() in sso-functions.php for the shared rule.
+ *
+ * @param array $course Course row (see courses_normalize_course()).
+ * @return string HTML, or '' when there's no usable price to show.
+ */
+function courses_render_card_price( $course ) {
+	return sso_render_price_html(
+		'rwaq-course-card__price',
+		! empty( $course['paid'] ),
+		isset( $course['regular'] ) ? $course['regular'] : 0,
+		isset( $course['sale'] ) ? $course['sale'] : 0
+	);
 }
 
 /**
@@ -262,6 +284,12 @@ function courses_filter_groups() {
 				'label'       => __( 'ابحث عن فئة', 'tutor-sso' ),
 				'empty'       => __( 'لا توجد فئات مطابقة', 'tutor-sso' ),
 			),
+		),
+		array(
+			'key'     => 'pricing',
+			'title'   => __( 'السعر', 'tutor-sso' ),
+			'options' => courses_pricing_options(),
+			// Only 3 possible values — no search box needed, unlike org/category.
 		),
 	);
 

@@ -1,0 +1,45 @@
+/**
+ * Course edit screen: locked (LMS-owned) ACF fields and price errors.
+ *
+ * Loaded only on the course add / edit screens (see courses-admin-fields.php).
+ * Class names are the contract shared with assets/js/course-admin-fields.js.
+ */
+
+/* Locked controls read as "not yours to edit" without looking broken: the
+   readonly inputs keep their box, just greyed, and the cursor says no. */
+.tutor-sso-locked .acf-input input[type="text"],
+.tutor-sso-locked .acf-input input[type="number"],
+.tutor-sso-locked .acf-input textarea,
+.tutor-sso-locked .acf-input select {
+	background: #f0f0f1;
+	color: #50575e;
+	cursor: not-allowed;
+	box-shadow: none;
+}
+
+/* The true/false toggle stays enabled so it keeps posting its value (see the JS
+   header), so the "no editing" signal has to be purely visual. */
+.tutor-sso-locked .acf-true-false,
+.tutor-sso-locked .acf-switch {
+	opacity: 0.65;
+}
+
+.tutor-sso-locked .acf-true-false input[type="checkbox"],
+.tutor-sso-locked .acf-switch,
+.tutor-sso-locked input[type="checkbox"],
+.tutor-sso-locked input[type="radio"] {
+	cursor: not-allowed;
+}
+
+/* "Synced from the LMS" note under a locked field. */
+.tutor-sso-locked__note {
+	margin: 6px 0 0;
+	color: #646970;
+	font-style: italic;
+}
+
+/* Blocked price. `.acf-error` already paints ACF's own red label / border, so
+   this only spaces the message we add. */
+.tutor-sso-field-error.acf-notice {
+	margin: 8px 0 0;
+}

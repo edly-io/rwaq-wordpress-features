@@ -35,6 +35,7 @@ require_once TUTOR_SSO_PATH . 'includes/enrollment-api.php';
 require_once TUTOR_SSO_PATH . 'includes/enrollment-ajax.php';
 require_once TUTOR_SSO_PATH . 'includes/enrollment-shortcode.php';
 require_once TUTOR_SSO_PATH . 'includes/email-confirm-shortcode.php';
+require_once TUTOR_SSO_PATH . 'includes/account-menu.php';
 require_once TUTOR_SSO_PATH . 'includes/elementor/elementor-widget-loader.php';
 require_once TUTOR_SSO_PATH . 'includes/partner-logo-shortcode.php';
 require_once TUTOR_SSO_PATH . 'includes/partner-name-shortcode.php';
@@ -47,12 +48,26 @@ require_once TUTOR_SSO_PATH . 'includes/courses/courses-ajax.php';
 require_once TUTOR_SSO_PATH . 'includes/courses/courses-archive.php';
 require_once TUTOR_SSO_PATH . 'includes/courses/course-detail-client.php';
 require_once TUTOR_SSO_PATH . 'includes/courses/course-detail.php';
+require_once TUTOR_SSO_PATH . 'includes/courses/courses-admin-fields.php';
+require_once TUTOR_SSO_PATH . 'includes/courses/courses-product-sync.php';
 require_once TUTOR_SSO_PATH . 'includes/programs/programs-catalog.php';
 require_once TUTOR_SSO_PATH . 'includes/programs/programs-ajax.php';
 require_once TUTOR_SSO_PATH . 'includes/programs/programs-archive.php';
 require_once TUTOR_SSO_PATH . 'includes/programs/program-enrollment-api.php';
 require_once TUTOR_SSO_PATH . 'includes/programs/program-enrollment-ajax.php';
 require_once TUTOR_SSO_PATH . 'includes/programs/programs-detail.php';
+require_once TUTOR_SSO_PATH . 'includes/programs/programs-product-sync.php';
+require_once TUTOR_SSO_PATH . 'includes/programs/programs-admin-fields.php';
+require_once TUTOR_SSO_PATH . 'includes/programs/programs-order-enrollment.php';
+require_once TUTOR_SSO_PATH . 'includes/orders/orders-api.php';
+require_once TUTOR_SSO_PATH . 'includes/orders/order-course-links.php';
+require_once TUTOR_SSO_PATH . 'includes/orders/cart-styles.php';
+require_once TUTOR_SSO_PATH . 'includes/orders/checkout-styles.php';
+require_once TUTOR_SSO_PATH . 'includes/orders/checkout-payment-heading.php';
+require_once TUTOR_SSO_PATH . 'includes/orders/order-received-styles.php';
+require_once TUTOR_SSO_PATH . 'includes/orders/my-account-styles.php';
+require_once TUTOR_SSO_PATH . 'includes/orders/my-account-menu.php';
+require_once TUTOR_SSO_PATH . 'includes/orders/my-account-form.php';
 require_once TUTOR_SSO_PATH . 'includes/programs/program-single.php';
 require_once TUTOR_SSO_PATH . 'includes/blogs/blogs-query.php';
 require_once TUTOR_SSO_PATH . 'includes/blogs/blogs-catalog.php';
@@ -98,6 +113,57 @@ function tutor_sso_load_textdomain() {
 add_action( 'init', 'tutor_sso_load_textdomain' );
 
 /**
+ * Version every plugin asset by its own file's modification time.
+ *
+ * TUTOR_SSO_VERSION alone is a constant that a release has to remember to
+ * bump, and when it isn't, a deploy ships changed CSS and JS under a URL that
+ * browsers and CDNs already hold — the file is new, the cache entry is not.
+ * Appending each file's mtime makes the URL change exactly when that file's
+ * contents do, whatever the deploy method and with nothing to remember.
+ *
+ * Applied as a filter on the final URL rather than as a version argument at
+ * each wp_register_*() call: that covers every asset the plugin has now and
+ * every one added later, instead of leaving the next one to be registered
+ * wrongly in the same way.
+ *
+ * Per file, not per plugin: an edit to one stylesheet leaves the other assets
+ * on their existing URLs, still cached.
+ *
+ * @param string $src    Asset URL, as WordPress assembled it.
+ * @param string $handle Registered handle.
+ * @return string URL, re-versioned when it is one of this plugin's own files.
+ */
+function tutor_sso_asset_version_src( $src, $handle ) {
+	if ( 0 !== strpos( (string) $handle, 'tutor-sso-' ) ) {
+		return $src;
+	}
+
+	// Compared without the scheme: a site serving over HTTPS while the plugin
+	// URL was built as HTTP (or behind a proxy that rewrites one to the other)
+	// would otherwise fail this test and silently keep the stale version.
+	$base  = preg_replace( '#^https?:#', '', TUTOR_SSO_URL );
+	$clean = preg_replace( '#^https?:#', '', explode( '?', (string) $src, 2 )[0] );
+
+	// Not a local file — the webfont handle points at Google Fonts.
+	if ( '' === $base || 0 !== strpos( $clean, $base ) ) {
+		return $src;
+	}
+
+	$path  = TUTOR_SSO_PATH . substr( $clean, strlen( $base ) );
+	$mtime = is_readable( $path ) ? filemtime( $path ) : false;
+
+	// Unreadable, or a stat that failed: leave the URL exactly as it was
+	// rather than replacing a working version with an empty one.
+	if ( ! $mtime ) {
+		return $src;
+	}
+
+	return add_query_arg( 'ver', TUTOR_SSO_VERSION . '.' . $mtime, remove_query_arg( 'ver', $src ) );
+}
+add_filter( 'style_loader_src', 'tutor_sso_asset_version_src', 10, 2 );
+add_filter( 'script_loader_src', 'tutor_sso_asset_version_src', 10, 2 );
+
+/**
  * Register and enqueue the IBM Plex Sans Arabic webfont globally.
  *
  * Loaded on every front-end page (not just where the programs catalog runs) so
@@ -115,6 +181,43 @@ function tutor_sso_register_font_assets() {
 	wp_enqueue_style( 'tutor-sso-programs-font' );
 }
 add_action( 'wp_enqueue_scripts', 'tutor_sso_register_font_assets' );
+
+/**
+ * Register the logged-in account dropdown's assets. Enqueued lazily by
+ * \TutorSSO\render_account_menu(), so neither file loads on a page that never
+ * prints the menu (every logged-out page, for one).
+ */
+function tutor_sso_register_account_menu_assets() {
+	wp_register_style(
+		'tutor-sso-account-menu',
+		TUTOR_SSO_URL . 'assets/css/account-menu.css',
+		// The menu states the design's own type rather than inheriting the
+		// theme's, so the webfont has to be in before it.
+		array( 'tutor-sso-programs-font' ),
+		TUTOR_SSO_VERSION
+	);
+
+	// No RTL swap: account-menu.css sets its own `direction: rtl` and uses
+	// logical properties throughout, so there is nothing a mirrored copy
+	// would need to override (see the enroll-assets note below for why a
+	// second file is avoided).
+	wp_register_script(
+		'tutor-sso-account-menu',
+		TUTOR_SSO_URL . 'assets/js/account-menu.js',
+		array(),
+		TUTOR_SSO_VERSION,
+		true
+	);
+}
+add_action( 'wp_enqueue_scripts', 'tutor_sso_register_account_menu_assets' );
+
+/**
+ * Enqueue the account dropdown's assets. Called by the renderer.
+ */
+function tutor_sso_account_menu_enqueue_assets() {
+	wp_enqueue_style( 'tutor-sso-account-menu' );
+	wp_enqueue_script( 'tutor-sso-account-menu' );
+}
 
 /**
  * Register front-end enrollment assets. They are only enqueued when a button is
@@ -136,9 +239,6 @@ function tutor_sso_register_enroll_assets() {
 		TUTOR_SSO_VERSION
 	);
 
-	// On RTL sites (e.g. Arabic) WordPress loads assets/css/enroll-rtl.css
-	// in place of enroll.css automatically.
-	wp_style_add_data( 'tutor-sso-enroll', 'rtl', 'replace' );
 }
 add_action( 'wp_enqueue_scripts', 'tutor_sso_register_enroll_assets' );
 

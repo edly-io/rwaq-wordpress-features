@@ -1,0 +1,79 @@
+/**
+ * Price panel for the course and program enroll cards.
+ *
+ * Its own sheet because both detail pages render it and neither stylesheet owns
+ * the other; colours are literal so it needs no page-scoped custom properties.
+ */
+.rwaq-cd__price {
+	display: flex;
+	flex-direction: column;
+	/* RTL: flex-start is the right edge, where the design aligns the panel. */
+	align-items: flex-start;
+	gap: 12px;
+	padding: 16px;
+	border-radius: 10px;
+	background: #f1f0f8;
+}
+
+.rwaq-cd__price-label {
+	color: #000;
+	font-size: 14px;
+	font-weight: 500;
+	line-height: 20px;
+}
+
+.rwaq-cd__price-row {
+	display: flex;
+	align-items: center;
+	/* Amounts at the start (right), badge pushed to the far end (left). */
+	justify-content: space-between;
+	width: 100%;
+	gap: 12px;
+}
+
+.rwaq-cd__price-amounts {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.rwaq-cd__price-now {
+	color: #000;
+	font-size: 20px;
+	font-weight: 500;
+	line-height: 24px;
+}
+
+.rwaq-cd__price-was {
+	color: #616161;
+	font-size: 14px;
+	font-weight: 500;
+	line-height: 20px;
+	text-decoration: line-through;
+}
+
+.rwaq-cd__price-free {
+	color: #2e7d32;
+	font-size: 20px;
+	font-weight: 500;
+	line-height: 24px;
+}
+
+.rwaq-cd__price-badge {
+	flex: 0 0 auto;
+	padding: 2px 5px;
+	border-radius: 4px;
+	background: #ca0003;
+	color: #fff;
+	font-size: 10px;
+	font-weight: 600;
+	line-height: 14px;
+	white-space: nowrap;
+}
+
+/* wc_price() wraps amounts in its own span; keep them inheriting. */
+.rwaq-cd__price .woocommerce-Price-amount,
+.rwaq-cd__price .woocommerce-Price-currencySymbol {
+	color: inherit;
+	font: inherit;
+}

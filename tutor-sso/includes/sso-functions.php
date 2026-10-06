@@ -25,6 +25,144 @@ function sso_option( $key, $default = '' ) {
 	return get_option( 'tutor_sso_' . $key, $default );
 }
 
+// ── Catalog pricing filter ─────────────────────────────────────────────────────
+
+/**
+ * Arabic label for a catalog "pricing" filter value.
+ *
+ * The filters API's own `label` is inconsistent across the two endpoints and
+ * languages (courses: "مجّانًا" / "Paid" / "Program-only course"; programs:
+ * "Free" / "Paid") — these are used instead so both catalogs read the same way,
+ * falling back to the API's own label for any value this doesn't recognize.
+ *
+ * @param string $value    Filter value ('free' | 'paid' | 'program_only').
+ * @param string $fallback Label to use when the value isn't recognized.
+ * @return string
+ */
+function sso_pricing_label( $value, $fallback = '' ) {
+	$labels = array(
+		'free'         => __( 'مجاني', 'tutor-sso' ),
+		'paid'         => __( 'مدفوع', 'tutor-sso' ),
+		'program_only' => __( 'جزء من برنامج', 'tutor-sso' ),
+	);
+
+	$value = (string) $value;
+
+	return isset( $labels[ $value ] ) ? $labels[ $value ] : (string) $fallback;
+}
+
+// ── Price parsing ─────────────────────────────────────────────────────────────
+
+/**
+ * Turn an LMS price string into a float for comparison and display.
+ *
+ * A bare `(float)` cast reads "1,299.00" as 1.0, because PHP stops at the
+ * comma — the page would then show 1 while checkout charged 1299.
+ * course_product_price() already resolves which separator is the decimal one,
+ * so the parsing used for the WooCommerce product is reused for the display.
+ *
+ * It ends in wc_format_decimal(), so it is only reachable with WooCommerce
+ * loaded; the raw cast stays the fallback, since the course detail panel
+ * renders without WooCommerce (its wc_price() call has its own fallback).
+ *
+ * For the plain two-decimal strings the LMS sends today ("100.00") the two
+ * paths agree exactly, so this changes nothing about current prices.
+ *
+ * @param mixed $value Price as the LMS sent it.
+ * @return float Parsed amount, or 0.0 when there is nothing usable.
+ */
+function sso_price_to_float( $value ) {
+	if ( function_exists( 'wc_format_decimal' ) && function_exists( __NAMESPACE__ . '\\course_product_price' ) ) {
+		$parsed = course_product_price( $value );
+
+		// '' means unparseable, zero or negative — all of which the callers
+		// already treat as "no price", same as the cast's 0.0.
+		return '' === $parsed ? 0.0 : (float) $parsed;
+	}
+
+	return (float) $value;
+}
+
+// ── Catalog card price badge ──────────────────────────────────────────────────
+
+/**
+ * Render a catalog card's price line: "مجاني" for free, otherwise the
+ * WooCommerce-formatted price — the sale price struck through alongside the
+ * regular price when there's a genuine discount (sale set and actually lower),
+ * otherwise just the one price.
+ *
+ * Shared by the courses and programs catalogs (courses_render_card_price(),
+ * programs_render_card_price()) — same rule, same markup shape, each call site
+ * passing its own BEM base class so the two catalogs keep separate, independent
+ * stylesheets.
+ *
+ * @param string $base_class e.g. 'rwaq-course-card__price'.
+ * @param bool   $paid       Whether the LMS sells this item.
+ * @param mixed  $regular    Regular price, numeric string or float.
+ * @param mixed  $sale       Sale price, numeric string or float ('' when none).
+ * @return string HTML, or '' when there's no usable price to show.
+ */
+function sso_render_price_html( $base_class, $paid, $regular, $sale ) {
+	$base_class = (string) $base_class;
+
+	if ( ! $paid ) {
+		return '<p class="' . esc_attr( $base_class ) . ' ' . esc_attr( $base_class ) . '--free">' . esc_html__( 'مجاني', 'tutor-sso' ) . '</p>';
+	}
+
+	if ( ! function_exists( 'wc_price' ) ) {
+		return '';
+	}
+
+	$regular = sso_price_to_float( $regular );
+	$sale    = sso_price_to_float( $sale );
+
+	// A discount only reads as one when the sale price is both set and
+	// actually lower — otherwise it's just "the price", not "was/now".
+	if ( $sale > 0 && $sale < $regular ) {
+		return '<p class="' . esc_attr( $base_class ) . '">'
+			. '<span class="' . esc_attr( $base_class ) . '-now">' . wc_price( $sale ) . '</span>'
+			. '<del class="' . esc_attr( $base_class ) . '-was">' . wc_price( $regular ) . '</del>'
+			. '</p>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	}
+
+	$amount = $sale > 0 ? $sale : $regular;
+
+	if ( $amount <= 0 ) {
+		return '';
+	}
+
+	return '<p class="' . esc_attr( $base_class ) . '"><span class="' . esc_attr( $base_class ) . '-now">' . wc_price( $amount ) . '</span></p>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+}
+
+/**
+ * Render a catalog card's discount-percentage badge (Figma 10400:11124's
+ * corner tag): "خصم N%", shown over the card's thumbnail image.
+ *
+ * The LMS sends this as a float (e.g. "50.00"), so it's rounded here — the
+ * design shows a whole number, not decimal points.
+ *
+ * @param string     $base_class e.g. 'rwaq-course-card__discount'.
+ * @param float|string|null $discount Discount percentage from the API.
+ * @return string HTML, or '' when there's no discount to show.
+ */
+function sso_render_discount_badge( $base_class, $discount ) {
+	$discount = is_numeric( $discount ) ? (int) round( (float) $discount ) : 0;
+
+	if ( $discount <= 0 ) {
+		return '';
+	}
+
+	return '<span class="' . esc_attr( (string) $base_class ) . '">'
+		. esc_html(
+			sprintf(
+				/* translators: %s: discount percentage, e.g. "50". */
+				__( 'خصم %s%%', 'tutor-sso' ),
+				number_format_i18n( $discount )
+			)
+		)
+		. '</span>';
+}
+
 // ── Catalog cache helpers ─────────────────────────────────────────────────────
 
 /**
@@ -101,6 +239,76 @@ function sso_is_hidden_org( $org ) {
 	}
 
 	return false;
+}
+
+/**
+ * A service JWT for the LMS, from the credentials Open edX Commerce stores.
+ *
+ * Reuses its `openedx-client-id` / `openedx-client-secret` / `openedx-domain`
+ * options and the same client_credentials grant it uses, so there is one set of
+ * credentials to configure. Cached in our own transient rather than its
+ * `openedx-jwt-token`, so nothing here can disturb its token lifecycle.
+ *
+ * Asks for a JWT, which both the orders API and the program bulk-enroll endpoint
+ * accept as `Authorization: JWT`. The scheme has to match the token: a JWT sent
+ * as Bearer is rejected, and so is the reverse.
+ *
+ * @return string|\WP_Error Token, or WP_Error when unavailable.
+ */
+function sso_lms_service_token() {
+	$key = 'tutor_sso_service_token';
+
+	$cached = get_transient( $key );
+
+	if ( is_string( $cached ) && '' !== $cached ) {
+		return $cached;
+	}
+
+	$client_id     = (string) get_option( 'openedx-client-id' );
+	$client_secret = (string) get_option( 'openedx-client-secret' );
+	$domain        = rtrim( (string) get_option( 'openedx-domain' ), '/' );
+
+	if ( '' === $client_id || '' === $client_secret || '' === $domain ) {
+		return new \WP_Error(
+			'tutor_sso_no_credentials',
+			__( 'Open edX API credentials are not configured.', 'tutor-sso' )
+		);
+	}
+
+	$response = wp_remote_post(
+		$domain . '/oauth2/access_token',
+		array(
+			'timeout'   => 15,
+			'sslverify' => apply_filters( 'tutor_sso_ssl_verify', true ),
+			'body'      => array(
+				'client_id'     => $client_id,
+				'client_secret' => $client_secret,
+				'grant_type'    => 'client_credentials',
+				'token_type'    => 'jwt',
+			),
+		)
+	);
+
+	if ( is_wp_error( $response ) ) {
+		return $response;
+	}
+
+	$body = json_decode( wp_remote_retrieve_body( $response ), true );
+
+	if ( empty( $body['access_token'] ) ) {
+		return new \WP_Error(
+			'tutor_sso_token_failed',
+			/* translators: %d: HTTP status code. */
+			sprintf( __( 'Could not obtain an LMS access token (HTTP %d).', 'tutor-sso' ), (int) wp_remote_retrieve_response_code( $response ) )
+		);
+	}
+
+	// Expire a minute early so a token is never used on its last breath.
+	$ttl = isset( $body['expires_in'] ) ? max( 60, (int) $body['expires_in'] - 60 ) : 300;
+
+	set_transient( $key, (string) $body['access_token'], $ttl );
+
+	return (string) $body['access_token'];
 }
 
 /**
@@ -293,7 +501,7 @@ function validate_sso_login() {
 	$username = $user_data['preferred_username'];
 	$email    = sanitize_email( $user_data['email'] );
 
-	$user_id = create_or_update_user( $username, $email, 'subscriber', $blog_id );
+	$user_id = create_or_update_user( $username, $email, 'subscriber', $blog_id, sso_profile_from_claims( $user_data ) );
 
 	if ( is_wp_error( $user_id ) ) {
 		wp_die(
@@ -615,16 +823,29 @@ add_action( 'init', __NAMESPACE__ . '\\revoke_session_on_lms_logout', 25 );
  * @param string $email    User e-mail address (already sanitized).
  * @param string $role     WordPress role to assign on first creation.
  * @param int    $blog_id  Target blog/site ID.
+ * @param array  $profile  Optional name fields from the id_token, as returned
+ *                         by sso_profile_from_claims(). Empty leaves whatever
+ *                         name the account already has.
  * @return int|\WP_Error   User ID on success, WP_Error on failure.
  */
-function create_or_update_user( $username, $email, $role, $blog_id ) {
+function create_or_update_user( $username, $email, $role, $blog_id, $profile = array() ) {
 
 	$user = get_user_by( 'login', $username );
 
 	if ( ! $user ) {
-		$user_id = wpmu_create_user( $username, wp_generate_password(), $email );
+		// wpmu_create_user() lives in wp-includes/ms-functions.php, which
+		// wp-settings.php loads only for multisite — calling it on a single
+		// site is a fatal, so the first SSO login by a new user would take the
+		// whole sign-in down. wp_create_user() is the single-site equivalent;
+		// the branch matches the is_multisite() guard just below.
+		$user_id = is_multisite()
+			? wpmu_create_user( $username, wp_generate_password(), $email )
+			: wp_create_user( $username, wp_generate_password(), $email );
 
-		if ( ! $user_id ) {
+		// The two report failure differently: wpmu_create_user() returns false,
+		// wp_create_user() a WP_Error — which is truthy, so a bare `! $user_id`
+		// would let a failed creation through as if it were an ID.
+		if ( ! $user_id || is_wp_error( $user_id ) ) {
 			return new \WP_Error(
 				'tutor_sso_user_creation_failed',
 				__( 'Failed to create the WordPress user account.', 'tutor-sso' )
@@ -634,6 +855,7 @@ function create_or_update_user( $username, $email, $role, $blog_id ) {
 		if ( is_multisite() ) {
 			add_user_to_blog( $blog_id, $user_id, $role );
 		}
+
 	} else {
 		$user_id = $user->ID;
 
@@ -648,7 +870,117 @@ function create_or_update_user( $username, $email, $role, $blog_id ) {
 		}
 	}
 
+	// The LMS owns the name: the account page renders these fields read-only
+	// and the save handler restores them (see my-account-form.php), so
+	// re-applying on every login is the only way a rename in the LMS reaches
+	// the site — and there is no WordPress-side edit for it to overwrite.
+	sso_sync_user_profile( $user_id, $profile );
+
 	return $user_id;
+}
+
+/**
+ * Read the OpenID Connect name claims out of an id_token payload.
+ *
+ * `name` is the one Open edX actually fills (its account has a single "Full
+ * name" field); given_name / family_name are honoured first when a provider
+ * does send them, since a split the provider made is better than one guessed
+ * here.
+ *
+ * @param array $claims Decoded id_token payload.
+ * @return array{first:string,last:string,full:string}|array Empty when the
+ *               token carries no usable name — the account's own name is then
+ *               left alone rather than overwritten with a guess.
+ */
+function sso_profile_from_claims( $claims ) {
+	if ( ! is_array( $claims ) ) {
+		return array();
+	}
+
+	// is_scalar before the cast: a token whose `name` is a JSON object or
+	// array decodes to one here, and casting that is a fatal (object) or
+	// yields the literal string "Array" (array) — either during login, which
+	// is the worst place to find out. A non-string claim is treated as absent.
+	$full  = ( isset( $claims['name'] ) && is_scalar( $claims['name'] ) ) ? trim( (string) $claims['name'] ) : '';
+	$first = ( isset( $claims['given_name'] ) && is_scalar( $claims['given_name'] ) ) ? trim( (string) $claims['given_name'] ) : '';
+	$last  = ( isset( $claims['family_name'] ) && is_scalar( $claims['family_name'] ) ) ? trim( (string) $claims['family_name'] ) : '';
+
+	if ( '' === $full ) {
+		$full = trim( $first . ' ' . $last );
+	}
+
+	if ( '' === $full ) {
+		return array();
+	}
+
+	if ( '' === $first && '' === $last ) {
+		// Split the single `name` claim on its last space. Byte functions are
+		// safe here even for an Arabic name: a space is ASCII 0x20, which
+		// cannot occur inside a UTF-8 multi-byte sequence, so the cut always
+		// lands on a character boundary.
+		$pos = strrpos( $full, ' ' );
+
+		if ( false !== $pos ) {
+			$first = substr( $full, 0, $pos );
+			$last  = substr( $full, $pos + 1 );
+		} else {
+			$first = $full;
+		}
+	}
+
+	return array(
+		'first' => $first,
+		'last'  => $last,
+		'full'  => $full,
+	);
+}
+
+/**
+ * Apply the id_token's name to the WordPress account.
+ *
+ * Runs on every login, not only at creation: first name, last name and display
+ * name are not editable on this site, so the LMS is their only source and a
+ * rename there has to be able to land. Nothing a person could have set here is
+ * at risk of being overwritten, which is what made a per-login write wrong
+ * while those fields were still editable.
+ *
+ * @param int   $user_id User ID.
+ * @param array $profile As returned by sso_profile_from_claims(); an empty one
+ *                       (no name in the token) leaves the account alone.
+ * @return void
+ */
+function sso_sync_user_profile( $user_id, $profile ) {
+	if ( empty( $profile['full'] ) ) {
+		return;
+	}
+
+	$user = get_userdata( $user_id );
+
+	if ( ! $user ) {
+		return;
+	}
+
+	$first = isset( $profile['first'] ) ? $profile['first'] : '';
+	$last  = isset( $profile['last'] ) ? $profile['last'] : '';
+
+	$fields = array( 'ID' => $user_id );
+
+	if ( $first !== $user->first_name ) {
+		$fields['first_name'] = $first;
+	}
+
+	if ( $last !== $user->last_name ) {
+		$fields['last_name'] = $last;
+	}
+
+	if ( $profile['full'] !== $user->display_name ) {
+		$fields['display_name'] = $profile['full'];
+	}
+
+	// Nothing but the ID means the account already matches — no write.
+	if ( count( $fields ) > 1 ) {
+		wp_update_user( $fields );
+	}
 }
 
 // ── 8. Blog membership helper ─────────────────────────────────────────────────
@@ -675,33 +1007,42 @@ add_filter( 'wp_auth_check_load', '__return_false' );
 // ── 10. Login / logout button shortcode ──────────────────────────────────────
 
 /**
- * Render a login button for logged-out visitors and a logout button for
+ * Render a login button for logged-out visitors and the account dropdown for
  * logged-in users from a single shortcode.
  *
  * Attributes:
- *   label        - Text for the login button   (default "Log in with LMS").
- *   logout_label - Text for the logout button  (default "Log out").
+ *   label         - Text for the login button    (default "Log in with LMS").
+ *   logout_label  - Text for the logout item.
+ *   account_label - Text for the settings item.
+ *   account_url   - Override for the settings destination (defaults to the
+ *                   LMS's own account settings page).
  *
  * Backward compatible: [tutor_sso_login label="…"] still works exactly as
- * before for logged-out visitors; logged-in users now see a logout button
- * instead of nothing.
+ * before for logged-out visitors. Logged-in users used to get a bare logout
+ * link; they now get the account dropdown (name, email, account settings,
+ * log out) from the design — `logout_label` still names the logout item, so
+ * an existing override keeps working.
  */
 add_shortcode( 'tutor_sso_login', function ( $atts ) {
 
     $atts = shortcode_atts(
         [
-            'label'        => __( 'Log in with LMS', 'tutor-sso' ),
-            'logout_label' => __( 'Log out', 'tutor-sso' ),
+            'label'         => __( 'Log in with LMS', 'tutor-sso' ),
+            'logout_label'  => __( 'تسجيل الخروج', 'tutor-sso' ),
+            'account_label' => __( 'إعدادات الحساب', 'tutor-sso' ),
+            'account_url'   => '',
         ],
         $atts,
         'tutor_sso_login'
     );
 
     if ( is_user_logged_in() ) {
-        return sprintf(
-            '<a href="%s" class="tutor-sso-logout-btn">%s</a>',
-            esc_url( wp_logout_url() ),
-            esc_html( $atts['logout_label'] )
+        return \TutorSSO\render_account_menu(
+            [
+                'logout_label'  => $atts['logout_label'],
+                'account_label' => $atts['account_label'],
+                'account_url'   => $atts['account_url'],
+            ]
         );
     }
 

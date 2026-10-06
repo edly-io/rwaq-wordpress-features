@@ -130,29 +130,6 @@ function programs_default_per_page() {
 }
 
 /**
- * Static program-type filter options: API slug => Arabic label.
- *
- * @return array<string,string>
- */
-function programs_type_options() {
-	return array(
-		'MASTERS'        => __( 'ماجستير', 'tutor-sso' ),
-		'MICROBACHELORS' => __( 'ميكروبكالوريوس', 'tutor-sso' ),
-	);
-}
-
-/**
- * Arabic label for a program-type slug (falls back to the raw slug).
- *
- * @param string $slug Program type slug.
- * @return string
- */
-function programs_type_label( $slug ) {
-	$map = programs_type_options();
-	return isset( $map[ $slug ] ) ? $map[ $slug ] : (string) $slug;
-}
-
-/**
  * Static featured filter options: filter value => { label, api_label }.
  *
  * The API `featured` filter takes true/false; the filters endpoint reports
@@ -171,6 +148,41 @@ function programs_featured_options() {
 			'api_label' => 'Not Featured',
 		),
 	);
+}
+
+/**
+ * Pricing filter options ('free' | 'paid'), from the catalog filters API.
+ * Labels come from sso_pricing_label() (in sso-functions.php) — the same
+ * wording the courses catalog's pricing filter uses — not the API's own
+ * `label`, which here is plain English ("Free" / "Paid").
+ *
+ * @param array $pricing_counts The filters payload's `pricing` rows.
+ * @return array<int,array{value:string,label:string,count:int|null}>
+ */
+function programs_pricing_options( $pricing_counts ) {
+	$options = array();
+
+	foreach ( (array) $pricing_counts as $row ) {
+		if ( ! is_array( $row ) ) {
+			continue;
+		}
+
+		$value = isset( $row['value'] ) ? trim( (string) $row['value'] ) : '';
+
+		if ( '' === $value ) {
+			continue;
+		}
+
+		$fallback = isset( $row['label'] ) ? trim( (string) $row['label'] ) : $value;
+
+		$options[] = array(
+			'value' => $value,
+			'label' => sso_pricing_label( $value, $fallback ),
+			'count' => isset( $row['total_programs'] ) ? (int) $row['total_programs'] : null,
+		);
+	}
+
+	return $options;
 }
 
 /**
@@ -341,7 +353,6 @@ function programs_start_date_text( $program ) {
 function programs_render_card( $program, $detail_base ) {
 	$name     = isset( $program['name'] ) ? (string) $program['name'] : '';
 	$image    = isset( $program['card_image'] ) ? (string) $program['card_image'] : '';
-	$type     = isset( $program['program_type'] ) ? (string) $program['program_type'] : '';
 	$featured = ! empty( $program['is_featured'] );
 	$url        = program_detail_url( $program, $detail_base );
 	$start_date = programs_start_date_text( $program );
@@ -371,6 +382,8 @@ function programs_render_card( $program, $detail_base ) {
 			<?php else : ?>
 				<span class="rwaq-program-card__placeholder"><?php echo programs_icon( 'thumb' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
 			<?php endif; ?>
+
+			<?php echo sso_render_discount_badge( 'rwaq-program-card__discount', isset( $program['discount_percentage'] ) ? $program['discount_percentage'] : null ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 		</a>
 
 		<div class="rwaq-program-card__body">
@@ -406,18 +419,39 @@ function programs_render_card( $program, $detail_base ) {
 				<?php endif; ?>
 			</ul>
 
-			<div class="rwaq-program-card__badges">
-				<?php if ( $featured ) : ?>
+			<?php // The program-type badge is not shown on cards any more (as on the detail page); "مميز" is the only badge left, so the row is skipped entirely when a program isn't featured rather than leaving an empty 18px-margin div above the price. ?>
+			<?php if ( $featured ) : ?>
+				<div class="rwaq-program-card__badges">
 					<span class="rwaq-program-card__featured"><?php echo esc_html__( 'مميز', 'tutor-sso' ); ?></span>
-				<?php endif; ?>
-				<?php if ( $type ) : ?>
-					<span class="rwaq-program-card__type"><?php echo esc_html( programs_type_label( $type ) ); ?></span>
-				<?php endif; ?>
-			</div>
+				</div>
+			<?php endif; ?>
+
+			<?php echo programs_render_card_price( $program ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 		</div>
 	</article>
 	<?php
 	return ob_get_clean();
+}
+
+/**
+ * Render the card's price line — same rule as the courses catalog (see
+ * sso_render_price_html() in sso-functions.php): "مجاني" for free, otherwise
+ * the WooCommerce-formatted price, sale struck-through-regular when there's a
+ * genuine discount.
+ *
+ * @param array $program Raw program object (list endpoint; same pricing_category
+ *                        / regular_price / sale_price shape as courses).
+ * @return string HTML, or '' when there's no usable price to show.
+ */
+function programs_render_card_price( $program ) {
+	$category = isset( $program['pricing_category'] ) ? $program['pricing_category'] : '';
+
+	return sso_render_price_html(
+		'rwaq-program-card__price',
+		course_pricing_is_paid( $category ),
+		isset( $program['regular_price'] ) ? $program['regular_price'] : 0,
+		isset( $program['sale_price'] ) ? $program['sale_price'] : 0
+	);
 }
 
 /**
@@ -460,8 +494,8 @@ function programs_render_sidebar( $filters, $uid ) {
 	// Internal organizations never appear as a filter option (see
 	// sso_is_hidden_org()); their programs are excluded from the results too.
 	$organizations = array_values( array_filter( $organizations, __NAMESPACE__ . '\\sso_is_not_hidden_org' ) );
-	$type_counts   = ( is_array( $filters ) && ! empty( $filters['program_types'] ) ) ? $filters['program_types'] : array();
 	$feat_counts   = ( is_array( $filters ) && ! empty( $filters['featured'] ) ) ? $filters['featured'] : array();
+	$pricing_opts  = programs_pricing_options( ( is_array( $filters ) && ! empty( $filters['pricing'] ) ) ? $filters['pricing'] : array() );
 	$org_limit     = 4; // Show this many orgs before the "show more" toggle.
 
 	ob_start();
@@ -473,23 +507,6 @@ function programs_render_sidebar( $filters, $uid ) {
 				<?php echo esc_html__( 'التصفية', 'tutor-sso' ); ?>
 			</span>
 			<button type="button" class="rwaq-programs__clear"><?php echo esc_html__( 'مسح الكل', 'tutor-sso' ); ?></button>
-		</div>
-
-		<div class="rwaq-programs__filter-group" data-filter="program_type">
-			<h3 class="rwaq-programs__filter-title" role="button" tabindex="0" aria-expanded="true">
-				<span><?php echo esc_html__( 'نوع البرنامج', 'tutor-sso' ); ?></span>
-				<span class="rwaq-programs__filter-chevron" aria-hidden="true"><?php echo programs_icon( 'chevron' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
-			</h3>
-			<div class="rwaq-programs__filter-options">
-				<?php foreach ( programs_type_options() as $value => $label ) : ?>
-					<label class="rwaq-programs__filter-option">
-						<input type="checkbox" class="rwaq-programs__filter-input" value="<?php echo esc_attr( $value ); ?>" />
-						<span class="rwaq-programs__filter-box" aria-hidden="true"><?php echo programs_icon( 'check' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
-						<span class="rwaq-programs__filter-label"><?php echo esc_html( $label ); ?></span>
-						<?php echo programs_count_badge( programs_lookup_count( $type_counts, 'slug', $value ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-					</label>
-				<?php endforeach; ?>
-			</div>
 		</div>
 
 		<?php if ( ! empty( $organizations ) ) : ?>
@@ -549,6 +566,25 @@ function programs_render_sidebar( $filters, $uid ) {
 				<?php endforeach; ?>
 			</div>
 		</div>
+
+		<?php if ( ! empty( $pricing_opts ) ) : ?>
+			<div class="rwaq-programs__filter-group" data-filter="pricing">
+				<h3 class="rwaq-programs__filter-title" role="button" tabindex="0" aria-expanded="true">
+					<span><?php echo esc_html__( 'السعر', 'tutor-sso' ); ?></span>
+					<span class="rwaq-programs__filter-chevron" aria-hidden="true"><?php echo programs_icon( 'chevron' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
+				</h3>
+				<div class="rwaq-programs__filter-options">
+					<?php foreach ( $pricing_opts as $opt ) : ?>
+						<label class="rwaq-programs__filter-option">
+							<input type="checkbox" class="rwaq-programs__filter-input" value="<?php echo esc_attr( $opt['value'] ); ?>" />
+							<span class="rwaq-programs__filter-box" aria-hidden="true"><?php echo programs_icon( 'check' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
+							<span class="rwaq-programs__filter-label"><?php echo esc_html( $opt['label'] ); ?></span>
+							<?php echo programs_count_badge( $opt['count'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+						</label>
+					<?php endforeach; ?>
+				</div>
+			</div>
+		<?php endif; ?>
 	</aside>
 	<?php
 	return ob_get_clean();

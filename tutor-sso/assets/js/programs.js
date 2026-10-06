@@ -45,7 +45,7 @@
 			detailBase: $root.data( 'detail-base' ) || 'program',
 			search: '',
 			ordering: $sort.length ? $sort.val() : ( $root.data( 'default-sort' ) || '' ),
-			filters: { program_type: [], org: [], featured: '' },
+			filters: { org: [], featured: '', pricing: [] },
 			hasMore: toBool( $root.data( 'has-more' ) ),
 			loading: false
 		};
@@ -58,7 +58,7 @@
 		}
 
 		function readFilters() {
-			var f = { program_type: [], org: [], featured: '' };
+			var f = { org: [], featured: '', pricing: [] };
 			$root.find( '.rwaq-programs__filter-group' ).each( function () {
 				var group = $( this ).data( 'filter' );
 				$( this ).find( '.rwaq-programs__filter-input:checked' ).each( function () {
@@ -90,15 +90,15 @@
 			$chips.empty();
 
 			var items = [];
-			state.filters.program_type.forEach( function ( v ) {
-				items.push( { group: 'program_type', value: v } );
-			} );
 			state.filters.org.forEach( function ( v ) {
 				items.push( { group: 'org', value: v } );
 			} );
 			if ( state.filters.featured ) {
 				items.push( { group: 'featured', value: state.filters.featured } );
 			}
+			state.filters.pricing.forEach( function ( v ) {
+				items.push( { group: 'pricing', value: v } );
+			} );
 
 			items.forEach( function ( it ) {
 				var label = labelFor( it.group, it.value );
@@ -163,8 +163,8 @@
 					ordering: state.ordering,
 					detail_base: state.detailBase,
 					org: state.filters.org,
-					program_type: state.filters.program_type,
-					featured: state.filters.featured
+					featured: state.filters.featured,
+					pricing: state.filters.pricing
 				}
 			} )
 				.done( function ( response ) {
