@@ -1,0 +1,413 @@
+/**
+ * Cart page, styled to the design (Figma 10409:3544).
+ *
+ * CSS only — WooCommerce's own cart.php and cart-totals.php markup is untouched,
+ * so a WooCommerce update cannot break it. Everything is scoped under
+ * .woocommerce-cart.
+ *
+ * The quantity column is hidden rather than removed: course and program products
+ * are sold individually, so it only ever shows "1".
+ */
+
+.woocommerce-cart {
+	--rwaq-cart-border: #d1d1d1;
+	--rwaq-cart-text: #242424;
+	--rwaq-cart-muted: #616161;
+	--rwaq-cart-brand: #565199;
+	--rwaq-cart-surface: #fff;
+	--rwaq-cart-page: #fbfbfb;
+}
+
+/* ---- Page frame ---- */
+.woocommerce-cart .woocommerce {
+	max-width: 1232px;
+	margin-inline: auto;
+	padding-block: 48px;
+	font-family: 'IBM Plex Sans Arabic', sans-serif;
+	color: var(--rwaq-cart-text);
+}
+
+.woocommerce-cart .entry-title,
+.woocommerce-cart .page-title {
+	margin: 0 0 24px;
+	font-size: 32px;
+	font-weight: 600;
+	line-height: 40px;
+	text-align: right;
+}
+
+/* ---- Items card ----
+   The table is taken out of table layout entirely: row = flex row, cell = flex
+   item with an explicit flex-basis. WooCommerce's and the theme's own table
+   width rules cannot be made to win reliably against each other, so this avoids
+   that fight altogether rather than trying to out-specify it.
+
+   Column order, right to left (this is also plain DOM order — remove,
+   thumbnail, name, price, quantity, subtotal — under the page's RTL direction
+   the first child renders at the right edge):
+     remove (60px) | thumbnail (69px) | name (grows) | price (140px) | subtotal (140px)
+   The quantity column is hidden: course/program products are sold individually,
+   so it would only ever show "1". */
+
+.woocommerce-cart .woocommerce-cart-form {
+	margin-bottom: 24px;
+	border: 1px solid var(--rwaq-cart-border);
+	border-radius: 10px;
+	background: var(--rwaq-cart-surface);
+	overflow: hidden;
+}
+
+.woocommerce-cart table.shop_table.cart,
+.woocommerce-cart table.shop_table.cart * {
+	box-sizing: border-box;
+}
+
+.woocommerce-cart table.shop_table.cart {
+	display: block;
+	width: 100%;
+	margin: 0;
+	border: 0;
+	border-radius: 0;
+}
+
+.woocommerce-cart table.shop_table.cart thead,
+.woocommerce-cart table.shop_table.cart tbody {
+	display: block;
+	width: 100%;
+}
+
+.woocommerce-cart table.shop_table.cart thead tr,
+.woocommerce-cart table.shop_table.cart tbody tr.woocommerce-cart-form__cart-item {
+	display: flex;
+	align-items: center;
+	width: 100%;
+	background: transparent;
+	border-bottom: 1px solid var(--rwaq-cart-border);
+}
+
+.woocommerce-cart table.shop_table.cart thead th,
+.woocommerce-cart table.shop_table.cart tbody td {
+	display: flex;
+	align-items: center;
+	min-width: 0;
+	padding: 12px 0;
+	border: 0;
+	background: transparent;
+	font-size: 13px;
+	line-height: 19.5px;
+	color: var(--rwaq-cart-text);
+}
+
+.woocommerce-cart table.shop_table.cart thead th {
+	padding: 10px 0;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 18px;
+	white-space: nowrap;
+}
+
+/* -- Remove -- */
+.woocommerce-cart table.shop_table.cart th.product-remove,
+.woocommerce-cart table.shop_table.cart td.product-remove {
+	flex: 0 0 60px;
+	justify-content: center;
+	padding-inline-start: 35px;
+}
+
+.woocommerce-cart table.shop_table.cart td.product-remove a.remove,
+.woocommerce-cart table.shop_table.cart td.product-remove a.remove:hover {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 22px;
+	height: 22px;
+	border: 1px solid var(--rwaq-cart-border);
+	border-radius: 50%;
+	background: transparent !important;
+	color: #ca0003 !important;
+	font-size: 14px;
+	line-height: 1;
+	flex: 0 0 auto;
+}
+
+/* -- Thumbnail: a fixed, clipped 48x48 box the image cannot escape -- */
+.woocommerce-cart table.shop_table.cart th.product-thumbnail,
+.woocommerce-cart table.shop_table.cart td.product-thumbnail {
+	flex: 0 0 69px;
+	justify-content: flex-end;
+	padding-inline-start: 21px;
+}
+
+.woocommerce-cart table.shop_table.cart td.product-thumbnail a {
+	display: block;
+	flex: 0 0 auto;
+	width: 48px;
+	height: 48px;
+	border-radius: 6px;
+	overflow: hidden;
+	line-height: 0;
+}
+
+.woocommerce-cart table.shop_table.cart td.product-thumbnail img {
+	display: block;
+	width: 100% !important;
+	height: 100% !important;
+	max-width: none !important;
+	object-fit: cover;
+}
+
+/* -- Name: the one column that grows -- */
+.woocommerce-cart table.shop_table.cart th.product-name,
+.woocommerce-cart table.shop_table.cart td.product-name {
+	flex: 1 1 auto;
+	min-width: 0;
+	justify-content: flex-start;
+	padding-inline: 21px 16px;
+	text-align: right;
+}
+
+.woocommerce-cart table.shop_table.cart thead th.product-name {
+	padding-inline: 45px 0;
+}
+
+.woocommerce-cart table.shop_table.cart td.product-name {
+	display: block;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.woocommerce-cart table.shop_table.cart td.product-name a {
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 18px;
+	color: var(--rwaq-cart-text);
+	text-decoration: none;
+}
+
+/* -- Price / subtotal -- */
+.woocommerce-cart table.shop_table.cart th.product-price,
+.woocommerce-cart table.shop_table.cart td.product-price,
+.woocommerce-cart table.shop_table.cart th.product-subtotal,
+.woocommerce-cart table.shop_table.cart td.product-subtotal {
+	flex: 0 0 140px;
+	justify-content: center;
+	font-weight: 600;
+	text-align: center;
+	white-space: nowrap;
+}
+
+.woocommerce-cart table.shop_table.cart th.product-subtotal,
+.woocommerce-cart table.shop_table.cart td.product-subtotal {
+	padding-inline-end: 45px;
+}
+
+/* -- Quantity: hidden, sold-individually products only ever show "1" -- */
+.woocommerce-cart table.shop_table.cart th.product-quantity,
+.woocommerce-cart table.shop_table.cart td.product-quantity {
+	display: none;
+}
+
+/* ---- Actions row: coupon + update ----
+   This row's own `tr` is deliberately left out of the `display:flex` rule above
+   (it is not a `.woocommerce-cart-form__cart-item`): under a `display:block`
+   tbody a bare `table-row` has no well-defined layout, so it is taken out of
+   table layout explicitly here instead of relying on that default. */
+.woocommerce-cart table.shop_table.cart tr:has(> td.actions) {
+	display: block;
+	border-bottom: 0;
+}
+
+.woocommerce-cart table.shop_table.cart td.actions {
+	display: flex;
+	flex: 1 1 100%;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	flex-wrap: wrap;
+	width: 100%;
+	padding: 12px 16px;
+}
+
+.woocommerce-cart td.actions .coupon {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	float: none;
+	width: auto;
+	padding: 0;
+	margin: 0;
+}
+
+.woocommerce-cart td.actions .coupon::before,
+.woocommerce-cart td.actions .coupon::after {
+	display: none;
+}
+
+.woocommerce-cart td.actions .coupon input#coupon_code {
+	width: 230px !important;
+	margin: 0;
+	float: none;
+	padding: 9px 12px;
+	border: 1px solid var(--rwaq-cart-border);
+	border-radius: 8px;
+	background: var(--rwaq-cart-surface);
+	font-size: 13px;
+	text-align: right;
+}
+
+.woocommerce-cart td.actions .coupon input#coupon_code::placeholder {
+	color: #bdbdbd;
+}
+
+.woocommerce-cart td.actions .button[name="update_cart"] {
+	float: none;
+	margin: 0;
+}
+
+/* Secondary buttons: outlined, never the theme's fill. */
+.woocommerce-cart td.actions .button,
+.woocommerce-cart td.actions .button:hover,
+.woocommerce-cart td.actions .button:focus,
+.woocommerce-cart td.actions .button:disabled {
+	padding: 10px 16px;
+	border: 1px solid var(--rwaq-cart-border) !important;
+	border-radius: 8px !important;
+	background: transparent !important;
+	color: var(--rwaq-cart-text) !important;
+	opacity: 1 !important;
+	font-size: 16px;
+	font-weight: 600;
+	line-height: 26px;
+	text-decoration: none !important;
+}
+
+/* ---- Totals card ---- */
+.woocommerce-cart .cart-collaterals {
+	display: flex;
+	width: 100%;
+	/* RTL: flex-end is the left edge, where the design places the totals box. */
+	justify-content: flex-end;
+}
+
+.woocommerce-cart .cart-collaterals .cart_totals {
+	width: 320px;
+	max-width: 100%;
+	float: none;
+	padding: 20px;
+	border: 1px solid var(--rwaq-cart-border);
+	border-radius: 10px;
+	background: var(--rwaq-cart-surface);
+}
+
+.woocommerce-cart .cart_totals h2 {
+	margin: 0 0 14px;
+	font-size: 15px;
+	font-weight: 600;
+	line-height: 24px;
+	text-align: right;
+}
+
+/* The subtotal / total pair sits in its own bordered box. */
+.woocommerce-cart .cart_totals table.shop_table {
+	width: 100%;
+	margin: 0;
+	border: 1px solid var(--rwaq-cart-border);
+	border-radius: 8px;
+	border-collapse: separate;
+	border-spacing: 0;
+	overflow: hidden;
+}
+
+.woocommerce-cart .cart_totals table.shop_table th,
+.woocommerce-cart .cart_totals table.shop_table td {
+	padding: 10px 14px;
+	border: 0;
+	border-bottom: 1px solid var(--rwaq-cart-border);
+	background: transparent;
+	font-size: 13px;
+	line-height: 19.5px;
+	vertical-align: middle;
+}
+
+.woocommerce-cart .cart_totals table.shop_table th {
+	width: 50%;
+	font-weight: 400;
+	color: var(--rwaq-cart-muted);
+	text-align: start;
+}
+
+.woocommerce-cart .cart_totals table.shop_table td {
+	font-weight: 600;
+	color: var(--rwaq-cart-text);
+	text-align: end;
+}
+
+.woocommerce-cart .cart_totals table.shop_table tr:last-child th,
+.woocommerce-cart .cart_totals table.shop_table tr:last-child td {
+	border-bottom: 0;
+}
+
+.woocommerce-cart .cart_totals tr.order-total th {
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 21px;
+	color: var(--rwaq-cart-text);
+}
+
+.woocommerce-cart .cart_totals tr.order-total td {
+	font-size: 15px;
+	line-height: 22.5px;
+}
+
+/* Checkout: the one brand-filled button on the page. */
+.woocommerce-cart .wc-proceed-to-checkout {
+	padding: 14px 0 0;
+}
+
+.woocommerce-cart .wc-proceed-to-checkout a.checkout-button,
+.woocommerce-cart .wc-proceed-to-checkout a.checkout-button:hover,
+.woocommerce-cart .wc-proceed-to-checkout a.checkout-button:focus {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	margin: 0;
+	padding: 10px 16px;
+	border: 1px solid var(--rwaq-cart-brand) !important;
+	border-radius: 8px !important;
+	background: var(--rwaq-cart-brand) !important;
+	color: #fff !important;
+	font-size: 16px;
+	font-weight: 600;
+	line-height: 26px;
+	text-decoration: none !important;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 768px) {
+	.woocommerce-cart .woocommerce {
+		padding-block: 24px;
+		padding-inline: 16px;
+	}
+
+	.woocommerce-cart .entry-title,
+	.woocommerce-cart .page-title {
+		font-size: 24px;
+		line-height: 32px;
+	}
+
+	.woocommerce-cart table.shop_table.cart td.actions {
+		align-items: stretch;
+		flex-direction: column;
+	}
+
+	.woocommerce-cart td.actions .coupon {
+		flex-wrap: wrap;
+	}
+
+	.woocommerce-cart td.actions .coupon input#coupon_code {
+		flex: 1 1 auto;
+		width: auto;
+	}
+}

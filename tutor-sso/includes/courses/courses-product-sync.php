@@ -142,6 +142,60 @@ function course_product_field( $field, $post_id ) {
 }
 
 /**
+ * Resolve which of `.` and `,` is the decimal separator, and return the number
+ * with a plain `.` decimal and no grouping.
+ *
+ * Inferred rather than read from the WooCommerce setting, so the value is parsed
+ * the same way whatever the store is configured to display:
+ *
+ *   both present  the last one is the decimal ("1,299.50" and "1.299,50")
+ *   one present   decimal when it has 1-2 trailing digits ("399,50"), otherwise
+ *                 grouping ("1,299" / "1.299.500")
+ *
+ * @param string $value Digits and separators only.
+ * @return string
+ */
+function course_product_normalize_separators( $value ) {
+	$dot   = strrpos( $value, '.' );
+	$comma = strrpos( $value, ',' );
+
+	if ( false !== $dot && false !== $comma ) {
+		// Both: whichever comes last separates the decimals.
+		$decimal  = $dot > $comma ? '.' : ',';
+		$grouping = $dot > $comma ? ',' : '.';
+	} elseif ( false !== $dot || false !== $comma ) {
+		$only = ( false !== $dot ) ? '.' : ',';
+
+		// One occurrence with 1-2 digits after it is a decimal; anything else
+		// (more digits, or several of them) is grouping.
+		$decimal  = ( 1 === substr_count( $value, $only ) && preg_match( '/[.,]\d{1,2}$/', $value ) ) ? $only : '';
+		$grouping = '' !== $decimal ? '' : $only;
+	} else {
+		return $value;
+	}
+
+	if ( '' !== $grouping ) {
+		// Grouping separates runs of exactly three digits. Anything else is not a
+		// number we can read, and guessing would risk a wrong price.
+		$head = ( '' !== $decimal ) ? substr( $value, 0, strrpos( $value, $decimal ) ) : $value;
+
+		foreach ( array_slice( explode( $grouping, $head ), 1 ) as $group ) {
+			if ( 3 !== strlen( $group ) ) {
+				return '';
+			}
+		}
+
+		$value = str_replace( $grouping, '', $value );
+	}
+
+	if ( '' !== $decimal ) {
+		$value = str_replace( $decimal, '.', $value );
+	}
+
+	return $value;
+}
+
+/**
  * Normalize a price the LMS sent as text into something WooCommerce can store.
  *
  * The sync stores prices verbatim (they are ACF text fields), so this is where
@@ -169,11 +223,24 @@ function course_product_price( $value ) {
 		return '';
 	}
 
-	// Keep digits and a decimal point; drop separators, symbols and spaces.
-	$value = str_replace( ',', '', $value );
-	$value = preg_replace( '/[^0-9.]/', '', $value );
+	// A price that genuinely starts with a separator (".50") is rejected rather
+	// than guessed at — reading it as 50 would overcharge by 100x.
+	if ( preg_match( '/^[.,]/', $value ) ) {
+		return '';
+	}
 
-	if ( '' === $value || ! is_numeric( $value ) ) {
+	// Drop everything that is not a digit or a separator (currency, spaces), then
+	// the separators left stranded at either end — "ر.س" contributes a period.
+	$value = preg_replace( '/[^0-9.,]/', '', $value );
+	$value = trim( $value, '.,' );
+
+	if ( '' === $value ) {
+		return '';
+	}
+
+	$value = course_product_normalize_separators( $value );
+
+	if ( ! is_numeric( $value ) ) {
 		return '';
 	}
 
@@ -333,6 +400,10 @@ function course_product_sync( $course_id ) {
 	$product->set_virtual( true );
 	$product->set_downloadable( false );
 
+	// An enrollment is per person: two of the same course means nothing, so
+	// WooCommerce caps the line at one and hides the quantity input.
+	$product->set_sold_individually( true );
+
 	$product->set_regular_price( $state['regular'] );
 	$product->set_sale_price( $state['sale'] );
 
@@ -410,6 +481,23 @@ function course_product_apply_openedx_meta( $product_id, $course_key ) {
 		update_post_meta( $product_id, COURSE_PRODUCT_MODE_META, $desired );
 	}
 }
+
+/**
+ * Sell course products one at a time, including any an admin flagged by hand
+ * rather than the sync creating it.
+ *
+ * @param bool        $sold    Whether the product is sold individually.
+ * @param \WC_Product $product Product.
+ * @return bool
+ */
+function course_product_sold_individually( $sold, $product ) {
+	if ( $sold || ! $product ) {
+		return $sold;
+	}
+
+	return 'yes' === get_post_meta( $product->get_id(), OEC_COURSE_FLAG_META, true );
+}
+add_filter( 'woocommerce_is_sold_individually', __NAMESPACE__ . '\\course_product_sold_individually', 10, 2 );
 
 /**
  * Unpublish a product whose course is no longer sellable, keeping the post (and
@@ -719,7 +807,7 @@ function course_render_buy_button( $product_id, $args = array() ) {
 		'<div class="tutor-sso-enroll-wrap tutor-sso-enroll-wrap--buy">%3$s<a class="tutor-sso-enroll-btn tutor-sso-enroll-btn--buy" href="%1$s" data-product-id="%4$d">%2$s</a></div>',
 		esc_url( $url ),
 		esc_html( $label ),
-		course_product_price_html( $product_id ),
+		isset( $args['price_html'] ) ? (string) $args['price_html'] : course_product_price_html( $product_id ),
 		(int) $product_id
 	);
 }
@@ -762,7 +850,7 @@ function course_render_buy_login_button( $product_id, $args = array() ) {
 		'<div class="tutor-sso-enroll-wrap tutor-sso-enroll-wrap--buy">%3$s<a class="tutor-sso-enroll-btn tutor-sso-enroll-btn--buy tutor-sso-enroll-btn--buy-login" href="%1$s">%2$s</a></div>',
 		esc_url( course_product_login_url() ),
 		esc_html( $label ),
-		course_product_price_html( $product_id )
+		isset( $args['price_html'] ) ? (string) $args['price_html'] : course_product_price_html( $product_id )
 	);
 }
 

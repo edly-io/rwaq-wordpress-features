@@ -52,9 +52,9 @@ function ajax_load_programs() {
 	$detail_base = isset( $_GET['detail_base'] ) ? sanitize_text_field( wp_unslash( $_GET['detail_base'] ) ) : 'program';
 	$featured    = isset( $_GET['featured'] ) ? sanitize_text_field( wp_unslash( $_GET['featured'] ) ) : '';
 
-	// Multi-value filters arrive as org[]=… / program_type[]=… arrays.
+	// Multi-value filters arrive as org[]=… / pricing[]=… arrays.
 	$org          = programs_ajax_sanitize_list( isset( $_GET['org'] ) ? wp_unslash( $_GET['org'] ) : array() );
-	$program_type = programs_ajax_sanitize_list( isset( $_GET['program_type'] ) ? wp_unslash( $_GET['program_type'] ) : array() );
+	$pricing      = programs_ajax_sanitize_list( isset( $_GET['pricing'] ) ? wp_unslash( $_GET['pricing'] ) : array() );
 
 	// Clamp per_page to a sane ceiling so a crafted request can't ask the LMS
 	// for an unbounded page size.
@@ -67,8 +67,8 @@ function ajax_load_programs() {
 			'search'       => $search,
 			'ordering'     => $ordering,
 			'org'          => $org,
-			'program_type' => $program_type,
 			'featured'     => $featured,
+			'pricing'      => $pricing,
 		)
 	);
 

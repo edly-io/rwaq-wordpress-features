@@ -2,7 +2,7 @@
 /**
  * Public course detail API client.
  *
- * GET /api/v1/courses/{course_key}/ on the LMS. course_detail_fetch() maps the
+ * GET /api/v1/courses/{course_key}/ on the LMS. course_detail_data_remote() maps
  * raw object onto the flat view model course-detail.php renders — only the
  * fields the page shows.
  *
@@ -153,6 +153,21 @@ function course_absolutize_overview( $html ) {
 }
 
 /**
+ * Whether a `pricing_category` means the course or program is sold.
+ *
+ * `is_paid` is the value today. Anything that is not explicitly free counts as
+ * paid, so a new category the LMS introduces cannot give a paid course away.
+ *
+ * @param string $category Value of `pricing_category`.
+ * @return bool
+ */
+function course_pricing_is_paid( $category ) {
+	$category = strtolower( trim( (string) $category ) );
+
+	return '' !== $category && ! in_array( $category, array( 'is_free', 'free' ), true );
+}
+
+/**
  * Map the raw API object onto the course detail view model.
  *
  * @param string $course_key edX course key.
@@ -176,6 +191,13 @@ function course_detail_data_remote( $course_key ) {
 		'org_name'    => '',
 		'org_logo'    => '',
 		'org_url'     => '',
+		'paid'        => false,
+		'regular'     => '',
+		'sale'        => '',
+		'discount'    => '',
+		'part_of_program' => false,
+		'program_url'     => '',
+		'enrollment_closed' => false,
 		'video'       => '',
 		'enrolled'    => 0,
 		'certificate' => false,
@@ -257,6 +279,21 @@ function course_detail_data_remote( $course_key ) {
 		// The organization's own detail page, built from `org_slug` by the
 		// partners client so the URL matches the partner cards exactly.
 		'org_url'     => partner_detail_url( array( 'slug' => isset( $row['org_slug'] ) ? $row['org_slug'] : '' ) ),
+		// Pricing is the LMS's, not WordPress's — amounts and the discount alike.
+		'paid'        => course_pricing_is_paid( isset( $row['pricing_category'] ) ? $row['pricing_category'] : '' ),
+		'regular'     => isset( $row['regular_price'] ) ? trim( (string) $row['regular_price'] ) : '',
+		'sale'        => isset( $row['sale_price'] ) ? trim( (string) $row['sale_price'] ) : '',
+		'discount'    => isset( $row['discount_percentage'] ) ? trim( (string) $row['discount_percentage'] ) : '',
+		// A course that belongs to a program cannot be bought on its own — only
+		// the program is purchasable. `part_of_program_slug` is the program's
+		// local slug; program_detail_url() mirrors how org_url is built above.
+		'part_of_program' => '' !== trim( (string) ( isset( $row['part_of_program_slug'] ) ? $row['part_of_program_slug'] : '' ) ),
+		'program_url'     => '' !== trim( (string) ( isset( $row['part_of_program_slug'] ) ? $row['part_of_program_slug'] : '' ) )
+			? program_detail_url( array( 'slug' => trim( (string) $row['part_of_program_slug'] ) ) )
+			: '',
+		// Either flag means no new enrollment or purchase is possible — the
+		// view model doesn't need to tell them apart, both block the same way.
+		'enrollment_closed' => ! empty( $row['is_enrollment_full'] ) || ! empty( $row['is_enrollment_closed'] ),
 		'video'       => course_youtube_embed_url( isset( $row['youtube_intro_video_link'] ) ? $row['youtube_intro_video_link'] : '' ),
 		'enrolled'    => isset( $row['enrollment_count'] ) ? (int) $row['enrollment_count'] : 0,
 		'certificate' => ! empty( $row['certificate_enabled'] ),

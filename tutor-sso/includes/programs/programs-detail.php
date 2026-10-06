@@ -329,6 +329,114 @@ function program_detail_program_url($program)
 }
 
 /**
+ * The current user's enrollment state for a program, asked once per render.
+ *
+ * @param string $program_key Program key.
+ * @return array{enrolled:bool,has_order:bool}
+ */
+function program_detail_status($program_key)
+{
+	static $cache = array();
+
+	$none = array(
+		'enrolled'  => false,
+		'has_order' => false,
+	);
+
+	if (! is_user_logged_in()) {
+		return $none;
+	}
+
+	if (! isset($cache[$program_key])) {
+		$status = program_enroll_status($program_key);
+
+		// WP_Error (LMS unreachable) counts as neither.
+		$cache[$program_key] = is_wp_error($status) ? $none : $status;
+	}
+
+	return $cache[$program_key];
+}
+
+/**
+ * Render the sidebar call to action.
+ *
+ * Order matters, each step outranking the ones below it:
+ *
+ *   enrolled    already in the program — send them to it
+ *   has_order   paid for it, so enrolling is free even after unenrolling
+ *   paid        sell it
+ *   otherwise   free program — enroll
+ *
+ * @param int    $post_id     Program post ID (0 when unknown).
+ * @param string $program_key Program key.
+ * @param string $program_url Learner program URL, shown once enrolled.
+ * @param bool   $paid        Whether the LMS sells this program.
+ * @return string HTML.
+ */
+function program_detail_call_to_action($post_id, $program_key, $program_url = '', $paid = false)
+{
+	$post_id = (int) $post_id;
+
+	// Free program: unchanged behaviour.
+	if (! $paid) {
+		return program_detail_enroll_button($program_key, $program_url);
+	}
+
+	$status = program_detail_status($program_key);
+
+	// Enrolled, or already bought it: enroll rather than sell it twice.
+	if ($status['enrolled'] || $status['has_order']) {
+		return program_detail_enroll_button($program_key, $program_url);
+	}
+
+	// The price has its own panel above the button now.
+	$buy = array('price_html' => '');
+
+	$product_id = $post_id ? program_product_buyable($post_id) : 0;
+
+	// Guests log in first: the order's enrollment needs a WordPress user.
+	if ($product_id && ! is_user_logged_in()) {
+		return course_render_buy_login_button($product_id, $buy);
+	}
+
+	if (! $product_id) {
+		if (defined('WP_DEBUG') && WP_DEBUG) {
+			error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				sprintf('[tutor-sso] program %d is paid but has no buyable product; no call to action rendered', $post_id)
+			);
+		}
+
+		return '';
+	}
+
+	return program_detail_render_buy_button($product_id, $buy);
+}
+
+/**
+ * Render the buy button for a paid program. Reuses the course buy button's
+ * classes and price block so both cards look the same.
+ *
+ * @param int $product_id Product to add to the cart.
+ * @return string HTML, or '' when there is nowhere to send the buyer.
+ */
+function program_detail_render_buy_button($product_id, $args = array())
+{
+	$url = program_product_add_to_cart_url($product_id);
+
+	if ('' === $url) {
+		return '';
+	}
+
+	return sprintf(
+		'<div class="tutor-sso-enroll-wrap tutor-sso-enroll-wrap--buy">%3$s<a class="tutor-sso-enroll-btn tutor-sso-enroll-btn--buy" href="%1$s" data-product-id="%4$d">%2$s</a></div>',
+		esc_url($url),
+		esc_html__('اشترِ الآن', 'tutor-sso'),
+		isset($args['price_html']) ? (string) $args['price_html'] : course_product_price_html($product_id),
+		(int) $product_id
+	);
+}
+
+/**
  * Render the sidebar enrollment button for a program.
  *
  * Follows the course enroll button (render_enroll_button()): a logged-out
@@ -418,7 +526,6 @@ function program_detail_render($program, $program_key = '')
 
 	$name     = program_detail_value($program, array('name'));
 	$image    = program_detail_value($program, array('card_image'));
-	$type     = program_detail_value($program, array('program_type'));
 	$featured = ! empty($program['is_featured']);
 
 	$org_name = program_detail_value($program, array('organization_arabic_name', 'organization'));
@@ -480,14 +587,12 @@ function program_detail_render($program, $program_key = '')
 					</div>
 				<?php endif; ?>
 
-				<div class="rwaq-pd__badges">
-					<?php if ($featured) : ?>
+				<?php // The program-type badge is not shown here any more; "مميز" is the only badge left, so the row is skipped entirely when a program isn't featured rather than leaving an empty 20px-margin div in the hero. ?>
+				<?php if ($featured) : ?>
+					<div class="rwaq-pd__badges">
 						<span class="rwaq-pd__badge-featured"><?php echo esc_html__('مميز', 'tutor-sso'); ?></span>
-					<?php endif; ?>
-					<?php if ($type) : ?>
-						<span class="rwaq-pd__badge-level"><?php echo esc_html(programs_type_label($type)); ?></span>
-					<?php endif; ?>
-				</div>
+					</div>
+				<?php endif; ?>
 
 				<?php if ($name) : ?>
 					<h1 class="rwaq-pd__title"><?php echo esc_html($name); ?></h1>
@@ -590,10 +695,23 @@ function program_detail_render($program, $program_key = '')
 					</div>
 					<div class="rwaq-pd__side-body">
 						<?php
-						// Cookie/session based program enroll button (see
-						// program_detail_enroll_button()). Renders nothing when no
-						// program key is resolvable.
-						echo program_detail_enroll_button($program_key, program_detail_program_url($program)); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+						// Enroll for a free program, buy for a paid one. Renders
+						// nothing when no program key is resolvable.
+						$program_paid = course_pricing_is_paid(isset($program['pricing_category']) ? $program['pricing_category'] : '');
+
+						echo course_render_price_panel( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+							$program_paid,
+							isset($program['regular_price']) ? (string) $program['regular_price'] : '',
+							isset($program['sale_price']) ? (string) $program['sale_price'] : '',
+							isset($program['discount_percentage']) ? (string) $program['discount_percentage'] : ''
+						);
+
+						echo program_detail_call_to_action( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+							get_the_ID(),
+							$program_key,
+							program_detail_program_url($program),
+							$program_paid
+						);
 						?>
 
 						<ul class="rwaq-pd__info-list">
@@ -670,6 +788,18 @@ function program_detail_shortcode($atts)
 
 	// Reuse the catalog stylesheet (registered on wp_enqueue_scripts).
 	wp_enqueue_style('tutor-sso-programs');
+
+	// Shared with the course enroll card (see assets/css/price-panel.css).
+	wp_enqueue_style('tutor-sso-price-panel');
+
+	// The paid-program buy button (program_detail_render_buy_button()) reuses
+	// the course buy button's .tutor-sso-enroll-btn* classes, but that styling
+	// lives in assets/css/enroll.css, not in tutor-sso-programs — without this,
+	// the button rendered as a bare unstyled link. tutor_sso_program_enroll_
+	// enqueue_assets()'s own comment assumed tutor-sso-programs already
+	// covered it; it doesn't, only program_detail_enroll_button()'s separate
+	// .rwaq-pd__enroll* classes are in there.
+	wp_enqueue_style('tutor-sso-enroll');
 
 	// Sticky-tab scroll-spy for this view (no dependencies).
 	wp_enqueue_script('tutor-sso-program-detail');

@@ -1,0 +1,199 @@
+/**
+ * Logged-in account dropdown.
+ *
+ *
+ * Every rule below the root is written as `.tutor-sso-account .tutor-sso-…`
+ * (two classes, 0-2-0) rather than as a bare single class. This menu is
+ * dropped into the theme's own header, where element-qualified rules like
+ * `.site-header a { color: #fff }` or `.site-header button { font-family: … }`
+ * (0-1-1) would otherwise outrank a single class and drag the menu back to the
+ * header's type and colours — exactly what this file is meant to state for
+ * itself. Specificity rather than !important, so a site that means to restyle
+ * the menu still can.
+ */
+
+.tutor-sso-account {
+	position: relative;
+	display: inline-block;
+	direction: rtl;
+	text-align: start;
+	/* The design's base family, stated here rather than inherited so the menu
+	   renders in the design's type wherever a theme drops it. Registered
+	   globally as the `tutor-sso-programs-font` handle, which this stylesheet
+	   declares as a dependency. */
+	font-family: 'IBM Plex Sans Arabic', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+	color: #242424;
+}
+
+/* ---- Trigger ----
+
+   Typography/colour are the design's own (Subtitle 2: 16px/26px semibold on
+   #242424), not the header's — nothing here inherits from the theme. */
+.tutor-sso-account .tutor-sso-account__trigger {
+	box-sizing: border-box;
+	display: inline-flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	min-height: 44px;
+	max-width: 100%;
+	margin: 0;
+	padding-block: 6px;
+	padding-inline-start: 10px;
+	padding-inline-end: 10px;
+	border: 1px solid #d1d1d1;
+	border-radius: 8px;
+	background: #fff;
+	color: #242424;
+	font-family: inherit;
+	font-size: 16px;
+	font-weight: 600;
+	line-height: 26px;
+	cursor: pointer;
+}
+
+.tutor-sso-account .tutor-sso-account__trigger:hover,
+.tutor-sso-account .tutor-sso-account__trigger:focus-visible {
+	background: #f5f5f5;
+	border-color: #b9b9b9;
+	color: #242424;
+}
+
+/* The name is already clipped to a fixed number of characters by
+   account_menu_short_name(), so there is no max-width to ellipsis against
+   here — this only stops it wrapping if a filter raises that length. */
+.tutor-sso-account .tutor-sso-account__trigger-name {
+	white-space: nowrap;
+}
+
+.tutor-sso-account .tutor-sso-account__chevron {
+	flex: 0 0 auto;
+	/* 12px from the trigger's gap + 8px here = the design's 20px. */
+	margin-inline-start: 8px;
+	transition: transform 0.15s ease;
+}
+
+/* Avatar badge: the design's 32px circle holding the name's first letter
+   (Figma 10529:105090 — #f1f0f8 on #565199, Body 1 Strong). A letter rather
+   than a photo, so it never depends on an avatar being set or on an external
+   request to Gravatar. */
+.tutor-sso-account .tutor-sso-account__avatar {
+	box-sizing: border-box;
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	background: #f1f0f8;
+	color: #565199;
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 22px;
+	text-transform: uppercase;
+}
+
+/* Nothing to show for a nameless account — the badge collapses rather than
+   leaving an empty circle. */
+.tutor-sso-account .tutor-sso-account__avatar:empty {
+	display: none;
+}
+
+.tutor-sso-account .tutor-sso-account__trigger[aria-expanded="true"] .tutor-sso-account__chevron {
+	transform: rotate(180deg);
+}
+
+/* ---- Panel ----
+   Anchored to the trigger's inline-start edge so it opens "under the name"
+   and extends away from it; the viewport guard keeps it on screen when the
+   trigger sits close to an edge. */
+.tutor-sso-account .tutor-sso-account__panel {
+	position: absolute;
+	inset-block-start: calc(100% + 8px);
+	inset-inline-start: 0;
+	z-index: 1000;
+	box-sizing: border-box;
+	width: 241px;
+	max-width: calc(100vw - 32px);
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	padding: 16px;
+	border: 1px solid #d1d1d1;
+	border-radius: 10px;
+	background: #fff;
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+/* `display:flex` above would otherwise beat the `hidden` attribute's own
+   `display:none` — the panel would never close. */
+.tutor-sso-account .tutor-sso-account__panel[hidden] {
+	display: none !important;
+}
+
+/* ---- Identity ---- */
+.tutor-sso-account .tutor-sso-account__identity {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	align-items: flex-start;
+	min-width: 0;
+}
+
+.tutor-sso-account .tutor-sso-account__name {
+	font-size: 16px;
+	font-weight: 600;
+	line-height: 26px;
+	color: #242424;
+}
+
+/* An email address has no spaces to wrap at, so without this it would push
+   the panel wider than its 241px rather than wrapping inside it. */
+.tutor-sso-account .tutor-sso-account__email {
+	max-width: 100%;
+	font-size: 14px;
+	font-weight: 400;
+	line-height: 22px;
+	color: #424242;
+	overflow-wrap: anywhere;
+	word-break: break-word;
+}
+
+.tutor-sso-account .tutor-sso-account__divider {
+	height: 1px;
+	margin: 0;
+	border: 0;
+	background: #d1d1d1;
+}
+
+/* ---- Items ---- */
+.tutor-sso-account .tutor-sso-account__item {
+	display: flex;
+	align-items: center;
+	gap: 20px;
+	padding: 8px 16px;
+	border-radius: 10px;
+	color: #000;
+	font-size: 14px;
+	font-weight: 400;
+	line-height: 22px;
+	text-decoration: none;
+	transition: background-color 0.15s ease;
+}
+
+.tutor-sso-account .tutor-sso-account__item:hover,
+.tutor-sso-account .tutor-sso-account__item:focus-visible {
+	background: #f5f5f5;
+	color: #000;
+	text-decoration: none;
+}
+
+.tutor-sso-account .tutor-sso-account__icon {
+	flex: 0 0 auto;
+	color: #242424;
+}
+
+.tutor-sso-account .tutor-sso-account__label {
+	min-width: 0;
+}

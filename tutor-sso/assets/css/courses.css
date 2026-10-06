@@ -607,6 +607,21 @@
 	display: inline-flex;
 }
 
+/* Discount badge, pinned to the thumbnail's corner. */
+.rwaq-course-card__discount {
+	position: absolute;
+	top: 8px;
+	inset-inline-end: 8px;
+	padding: 2px 5px;
+	border-radius: 4px;
+	background: #ca0003;
+	color: #fff;
+	font-size: 10px;
+	font-weight: 600;
+	line-height: 14px;
+	white-space: nowrap;
+}
+
 .rwaq-course-card__body {
 	display: flex;
 	flex-direction: column;
@@ -688,6 +703,44 @@
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
+}
+
+/* Price line (Figma 10400:11180's "PriceDisplay"): free in green, paid in the
+   card's own text colour — sits below the org badge, not inside its row. */
+.rwaq-course-card__price {
+	display: flex;
+	align-items: baseline;
+	gap: 8px;
+	margin: 12px 0 0;
+	text-align: right;
+	font-size: 14px;
+	font-weight: 500;
+	line-height: 20px;
+	color: var(--rwaq-heading);
+}
+
+/* The org badge is the one normally pinned to the card's bottom via
+   margin-top:auto. A course with no org renders no badge, so when price ends
+   up directly after the meta list or the title instead, it takes over that
+   job — keeping the price pinned to the bottom either way. */
+.rwaq-course-card__meta + .rwaq-course-card__price,
+.rwaq-course-card__title + .rwaq-course-card__price {
+	margin-top: auto;
+}
+
+.rwaq-course-card__price--free {
+	color: #2e7d32;
+}
+
+.rwaq-course-card__price-now {
+	font-weight: 600;
+	color: var(--rwaq-heading);
+}
+
+.rwaq-course-card__price-was {
+	font-weight: 400;
+	color: var(--rwaq-muted);
+	text-decoration: line-through;
 }
 
 /* ---- AJAX loader ---- */

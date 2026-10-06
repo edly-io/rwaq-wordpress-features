@@ -351,6 +351,7 @@ function programs_request( $url, $cache_key, $label = 'request' ) {
  *     @type string[] $org          Organization names to filter by.
  *     @type string[] $program_type Program type slugs (MASTERS | MICROBACHELORS).
  *     @type string   $featured     'true' | 'false' | '' (no filter).
+ *     @type string[] $pricing      'free' | 'paid', OR'd.
  * }
  * @return array|\WP_Error {
  *     @type array[] $results    Raw program objects from the API.
@@ -396,6 +397,10 @@ function programs_fetch_public( $page = 1, $per_page = 6, $args = array() ) {
 		$query['program_type'] = (array) $args['program_type'];
 	}
 
+	if ( ! empty( $args['pricing'] ) ) {
+		$query['pricing'] = (array) $args['pricing'];
+	}
+
 	$featured = isset( $args['featured'] ) ? trim( (string) $args['featured'] ) : '';
 	if ( 'true' === $featured || 'false' === $featured ) {
 		$query['featured'] = $featured;
@@ -426,6 +431,7 @@ function programs_fetch_public( $page = 1, $per_page = 6, $args = array() ) {
  *     @type array[] $organizations [ { id, name, short_name, arabic_name?, total_programs? }, ... ].
  *     @type array[] $program_types [ { id, name, slug, total_programs? }, ... ].
  *     @type array[] $featured      [ { label, total_programs }, ... ].
+ *     @type array[] $pricing       [ { value, label, total_programs }, ... ].
  * } or WP_Error on failure.
  */
 function programs_fetch_filters() {
@@ -449,5 +455,6 @@ function programs_fetch_filters() {
 		'organizations' => ( isset( $body['organizations'] ) && is_array( $body['organizations'] ) ) ? $body['organizations'] : array(),
 		'program_types' => ( isset( $body['program_types'] ) && is_array( $body['program_types'] ) ) ? $body['program_types'] : array(),
 		'featured'      => ( isset( $body['featured'] ) && is_array( $body['featured'] ) ) ? $body['featured'] : array(),
+		'pricing'       => ( isset( $body['pricing'] ) && is_array( $body['pricing'] ) ) ? $body['pricing'] : array(),
 	);
 }

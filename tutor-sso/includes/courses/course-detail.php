@@ -48,6 +48,13 @@ add_filter( 'single_template', __NAMESPACE__ . '\\course_single_template' );
  */
 function course_detail_register_assets() {
 	wp_register_style(
+		'tutor-sso-price-panel',
+		TUTOR_SSO_URL . 'assets/css/price-panel.css',
+		array(),
+		TUTOR_SSO_VERSION
+	);
+
+	wp_register_style(
 		'tutor-sso-course-detail',
 		TUTOR_SSO_URL . 'assets/css/course-detail.css',
 		array( 'tutor-sso-programs-font' ),
@@ -61,6 +68,7 @@ add_action( 'wp_enqueue_scripts', __NAMESPACE__ . '\\course_detail_register_asse
  */
 function course_detail_enqueue_assets() {
 	wp_enqueue_style( 'tutor-sso-course-detail' );
+	wp_enqueue_style( 'tutor-sso-price-panel' );
 
 	// Related courses use the catalog's own card component.
 	wp_enqueue_style( 'tutor-sso-courses' );
@@ -314,6 +322,76 @@ function course_render_related( $data ) {
 }
 
 /**
+ * Render the price panel between the cover and the call to action.
+ *
+ * Paid shows the amount charged, the struck-through regular price and a discount
+ * badge; free shows مجاني. Amounts are the LMS's, formatting is WooCommerce's.
+ *
+ * @param bool   $paid     Whether the LMS sells this course.
+ * @param string $regular  Regular price.
+ * @param string $sale     Sale price, or '' when not on sale.
+ * @param string $discount Discount percentage from the LMS, e.g. "25.13".
+ * @return string HTML.
+ */
+function course_render_price_panel( $paid, $regular, $sale, $discount = '' ) {
+	$regular = sso_price_to_float( $regular );
+	$sale    = sso_price_to_float( $sale );
+
+	// Paid but priced at nothing: no panel rather than a misleading "free".
+	if ( $paid && $regular <= 0 ) {
+		return '';
+	}
+
+	$on_sale = ( $sale > 0 && $sale < $regular );
+	$now     = $on_sale ? $sale : $regular;
+
+	// The LMS sends fractions ("25.13"); the badge shows whole percent. Falls
+	// back to working it out when the API sends nothing.
+	if ( '' !== trim( (string) $discount ) ) {
+		$discount = (int) round( (float) $discount );
+	} else {
+		$discount = $on_sale ? (int) round( ( ( $regular - $sale ) / $regular ) * 100 ) : 0;
+	}
+
+	$discount = $on_sale ? max( 0, $discount ) : 0;
+
+	$money = static function ( $amount ) {
+		return function_exists( 'wc_price' ) ? wc_price( $amount ) : esc_html( number_format_i18n( $amount, 2 ) );
+	};
+
+	ob_start();
+	?>
+	<div class="rwaq-cd__price">
+		<span class="rwaq-cd__price-label"><?php echo esc_html__( 'السعر', 'tutor-sso' ); ?></span>
+
+		<div class="rwaq-cd__price-row">
+			<?php if ( ! $paid ) : ?>
+				<span class="rwaq-cd__price-free"><?php echo esc_html__( 'مجاني', 'tutor-sso' ); ?></span>
+			<?php else : ?>
+				<?php // RTL: the amounts lead, so the badge sits at the far left. ?>
+				<span class="rwaq-cd__price-amounts">
+					<span class="rwaq-cd__price-now"><?php echo wp_kses_post( $money( $now ) ); ?></span>
+					<?php if ( $on_sale ) : ?>
+						<span class="rwaq-cd__price-was"><?php echo wp_kses_post( $money( $regular ) ); ?></span>
+					<?php endif; ?>
+				</span>
+
+				<?php if ( $discount > 0 ) : ?>
+					<span class="rwaq-cd__price-badge">
+						<?php
+						/* translators: %s: discount percentage. */
+						echo esc_html( sprintf( __( '%s%% خصم', 'tutor-sso' ), number_format_i18n( $discount ) ) );
+						?>
+					</span>
+				<?php endif; ?>
+			<?php endif; ?>
+		</div>
+	</div>
+	<?php
+	return ob_get_clean();
+}
+
+/**
  * Render the enroll card: the course image, then the call to action.
  *
  * Free courses get [tutor_enroll_button] as before (login / enroll / unenroll
@@ -355,8 +433,32 @@ function course_render_enroll_card( $data ) {
 		<?php endif; ?>
 
 		<?php
+		$part_of_program = ! empty( $data['part_of_program'] );
+
+		// A course that belongs to a program is never sold on its own, so its
+		// price has nothing to attach to — the panel would just be misleading.
+		if ( ! $part_of_program ) {
+			echo course_render_price_panel( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				! empty( $data['paid'] ),
+				isset( $data['regular'] ) ? $data['regular'] : '',
+				isset( $data['sale'] ) ? $data['sale'] : '',
+				isset( $data['discount'] ) ? $data['discount'] : ''
+			);
+		}
+
 		if ( '' !== $course_key ) {
-			echo course_render_call_to_action( $post_id, $course_key ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			echo course_render_call_to_action( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				$post_id,
+				$course_key,
+				! empty( $data['paid'] ),
+				array(
+					'regular' => isset( $data['regular'] ) ? $data['regular'] : '',
+					'sale'    => isset( $data['sale'] ) ? $data['sale'] : '',
+				),
+				$part_of_program,
+				isset( $data['program_url'] ) ? (string) $data['program_url'] : '',
+				! empty( $data['enrollment_closed'] )
+			);
 		}
 		?>
 	</div>
@@ -365,13 +467,41 @@ function course_render_enroll_card( $data ) {
 }
 
 /**
- * Choose the enroll card's call to action: buy, or enroll.
+ * Render the call to action: a free enroll button, a paid buy button, or —
+ * when the course belongs to a program — a notice pointing at the program
+ * instead, since a program-only course is never sold on its own.
  *
- * @param int    $post_id    Course post ID (0 when unknown — treated as free).
- * @param string $course_key edX course key.
+ * Order of checks, each outranking the ones below it:
+ *
+ *   part_of_program + enrolled      go to course, no unenroll (see below)
+ *   part_of_program + not enrolled  notice + go to program; no enroll/buy UI
+ *   enrolled                        go to course, no checkout
+ *   has_order                       enroll, never charge twice
+ *   enrollment_closed               notice, no enroll/buy UI
+ *   paid                            buy
+ *   otherwise                       free course — enroll
+ *
+ * A program-course buyer never sees an unenroll button: the enrollment belongs
+ * to the program purchase, not to a standalone action this page can undo.
+ *
+ * enrollment_closed (the LMS's `is_enrollment_full` / `is_enrollment_closed`,
+ * folded into one flag in course_detail_data_remote()) only blocks a *new*
+ * enrollment or purchase — it never revokes access someone already has. For a
+ * paid course that is already checked via course_detail_status() either way;
+ * for a free one, a status check is normally skipped entirely (to save the API
+ * call on the common, non-closed case), so the free branch below makes that
+ * one call only when enrollment_closed is actually true.
+ *
+ * @param int    $post_id           Course post ID (0 when unknown).
+ * @param string $course_key        edX course key.
+ * @param bool   $paid              Whether the LMS sells this course on its own.
+ * @param array  $price             { regular, sale } from the LMS.
+ * @param bool   $part_of_program   Whether the course belongs to a program.
+ * @param string $program_url       The program's detail page, when it does.
+ * @param bool   $enrollment_closed Whether the LMS has closed new enrollment.
  * @return string HTML.
  */
-function course_render_call_to_action( $post_id, $course_key ) {
+function course_render_call_to_action( $post_id, $course_key, $paid = false, $price = array(), $part_of_program = false, $program_url = '', $enrollment_closed = false ) {
 	$labels = array(
 		'enroll_label'   => __( 'سجّل الآن', 'tutor-sso' ),
 		'login_label'    => __( 'سجّل الآن', 'tutor-sso' ),
@@ -379,25 +509,72 @@ function course_render_call_to_action( $post_id, $course_key ) {
 		'unenroll_label' => __( 'إلغاء التسجيل', 'tutor-sso' ),
 	);
 
-	// Free course (or no post to read the flag from): unchanged behaviour.
-	if ( ! $post_id || ! course_is_paid( $post_id ) ) {
+	if ( $part_of_program ) {
+		$status = course_detail_status( $course_key );
+
+		// Enrolled via the program: into the course, with no unenroll action —
+		// the enrollment is not this page's to cancel.
+		if ( $status['enrolled'] ) {
+			$labels['show_unenroll'] = false;
+
+			return render_enroll_button( $course_key, $labels );
+		}
+
+		// Not enrolled: there is nothing to buy or enroll into here.
+		return course_render_program_notice( $program_url );
+	}
+
+	// Free course: unchanged behaviour, except when enrollment is closed — in
+	// which case a status check (normally skipped here, to save the API call
+	// on the common case) is needed to tell "not enrolled, so blocked" apart
+	// from "already enrolled, so still shown the enroll button's own go-to/
+	// unenroll state" — enrollment_closed blocks new enrollment, not access
+	// someone already has.
+	if ( ! $paid ) {
+		if ( $enrollment_closed ) {
+			$status = course_detail_status( $course_key );
+
+			if ( $status['enrolled'] ) {
+				return render_enroll_button( $course_key, $labels );
+			}
+
+			return course_render_enrollment_closed_notice();
+		}
+
 		return render_enroll_button( $course_key, $labels );
 	}
 
-	// Paid: an existing enrollment outranks the buy button — the buyer already
-	// owns it, so send them into the course instead of selling it twice.
-	if ( course_detail_user_is_enrolled( $course_key ) ) {
-		$labels['show_unenroll'] = false;
+	$status = course_detail_status( $course_key );
 
+	// Already enrolled: into the course, not the checkout. Unenroll stays
+	// available here — only a program-course enrollment is not this page's to
+	// cancel (see the part_of_program branch above).
+	if ( $status['enrolled'] ) {
 		return render_enroll_button( $course_key, $labels );
 	}
 
-	$product_id = course_product_buyable( $post_id );
+	// Bought it (or owns it through a program): enroll, never charge twice.
+	// A paid-for seat is honoured even once the LMS closes enrollment — the
+	// closed check below is only for viewers with nothing already owed to them.
+	if ( $status['has_order'] ) {
+		return render_enroll_button( $course_key, $labels );
+	}
+
+	// Nothing enrolled and nothing bought: the LMS has closed new enrollment,
+	// so there is nothing to offer.
+	if ( $enrollment_closed ) {
+		return course_render_enrollment_closed_notice();
+	}
+
+	// The price has its own panel above the button now.
+	$buy = array( 'price_html' => '' );
+
+	$product_id = $post_id ? course_product_buyable( $post_id ) : 0;
 
 	// Guests are sent to log in first: no guest checkout, so there is always a
 	// WordPress user for the order's enrollment to belong to.
 	if ( $product_id && ! is_user_logged_in() ) {
-		return course_render_buy_login_button( $product_id );
+		return course_render_buy_login_button( $product_id, $buy );
 	}
 
 	if ( ! $product_id ) {
@@ -410,26 +587,90 @@ function course_render_call_to_action( $post_id, $course_key ) {
 		return '';
 	}
 
-	return course_render_buy_button( $product_id );
+	return course_render_buy_button( $product_id, $buy );
 }
 
 /**
- * Whether the current user is already enrolled on a course.
+ * Render the "this course is part of a program" notice, with a button to the
+ * program's own detail page — where enrollment or purchase actually happens.
  *
- * Logged-out visitors are never enrolled, which also keeps the enrollment API
- * out of the page for them.
- *
- * @param string $course_key edX course key.
- * @return bool
+ * @param string $program_url The program's detail page.
+ * @return string HTML, or '' when the program could not be resolved.
  */
-function course_detail_user_is_enrolled( $course_key ) {
-	if ( ! is_user_logged_in() || ! function_exists( __NAMESPACE__ . '\\enroll_is_enrolled' ) ) {
-		return false;
+function course_render_program_notice( $program_url ) {
+	$program_url = trim( (string) $program_url );
+
+	if ( '' === $program_url ) {
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				'[tutor-sso] course is part_of_program but its program_url could not be resolved; no call to action rendered'
+			);
+		}
+
+		return '';
 	}
 
-	// WP_Error (LMS unreachable) counts as not enrolled, matching
-	// render_enroll_button()'s own handling.
-	return true === enroll_is_enrolled( $course_key );
+	ob_start();
+	?>
+	<div class="tutor-sso-enroll-wrap tutor-sso-enroll-wrap--program">
+		<p class="tutor-sso-enroll-notice">
+			<?php echo esc_html__( 'هذا المساق جزء من برنامج، ويمكن التسجيل فيه من خلال صفحة البرنامج.', 'tutor-sso' ); ?>
+		</p>
+		<a class="tutor-sso-enroll-btn tutor-sso-enroll-btn--goto" href="<?php echo esc_url( $program_url ); ?>">
+			<?php echo esc_html__( 'الذهاب إلى البرنامج', 'tutor-sso' ); ?>
+		</a>
+	</div>
+	<?php
+	return ob_get_clean();
+}
+
+/**
+ * Render the "enrollment is closed" notice — the LMS's `is_enrollment_full`
+ * or `is_enrollment_closed` reported true and the viewer isn't already in, so
+ * there is nothing to offer: no enroll button (free) and no buy button (paid).
+ *
+ * @return string HTML.
+ */
+function course_render_enrollment_closed_notice() {
+	ob_start();
+	?>
+	<div class="tutor-sso-enroll-wrap tutor-sso-enroll-wrap--program">
+		<p class="tutor-sso-enroll-notice">
+			<?php echo esc_html__( 'التسجيل في هذا المساق مغلق حاليًا.', 'tutor-sso' ); ?>
+		</p>
+	</div>
+	<?php
+	return ob_get_clean();
+}
+
+/**
+ * The current user's enrollment state for a course, asked once per render.
+ *
+ * @param string $course_key edX course key.
+ * @return array{enrolled:bool,has_order:bool}
+ */
+function course_detail_status( $course_key ) {
+	static $cache = array();
+
+	$none = array(
+		'enrolled'  => false,
+		'has_order' => false,
+	);
+
+	if ( ! is_user_logged_in() || ! function_exists( __NAMESPACE__ . '\\enroll_status' ) ) {
+
+		return $none;
+	}
+
+	if ( ! isset( $cache[ $course_key ] ) ) {
+		$status = enroll_status( $course_key );
+
+		// WP_Error (LMS unreachable) counts as neither, matching
+		// render_enroll_button()'s own handling.
+		$cache[ $course_key ] = is_wp_error( $status ) ? $none : $status;
+	}
+
+	return $cache[ $course_key ];
 }
 
 /**

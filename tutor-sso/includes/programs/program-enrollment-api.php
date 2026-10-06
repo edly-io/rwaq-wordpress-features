@@ -130,16 +130,20 @@ function program_change_enrollment( $program_key, $action ) {
 }
 
 /**
- * Check whether the current user is actively enrolled in a program.
+ * The current user's state for a program, as the LMS reports it.
  *
- * GETs the program enrollment resource, which reports the requesting user's own
- * enrollment via the `is_active` flag. A 404 means "no enrollment record for
- * this user/program" and is treated as not-enrolled (not an error).
+ * `has_order` is true when the learner has paid for this program, and stays true
+ * after they unenroll — so a buyer can re-enroll without paying again.
  *
  * @param string $program_key Program key.
- * @return bool|\WP_Error True/false, or WP_Error when the call genuinely fails.
+ * @return array{enrolled:bool,has_order:bool}|\WP_Error
  */
-function program_is_enrolled( $program_key ) {
+function program_enroll_status( $program_key ) {
+	$none = array(
+		'enrolled'  => false,
+		'has_order' => false,
+	);
+
 	$base = enroll_lms_base_url();
 
 	if ( empty( $base ) ) {
@@ -147,7 +151,7 @@ function program_is_enrolled( $program_key ) {
 	}
 
 	if ( ! enroll_has_edx_session() ) {
-		return false;
+		return $none;
 	}
 
 	$response = wp_remote_get(
@@ -170,9 +174,9 @@ function program_is_enrolled( $program_key ) {
 
 	$status = (int) wp_remote_retrieve_response_code( $response );
 
-	// No enrollment record for this user/program → not enrolled.
+	// No enrollment record for this user/program.
 	if ( 404 === $status ) {
-		return false;
+		return $none;
 	}
 
 	$body = json_decode( wp_remote_retrieve_body( $response ), true );
@@ -184,6 +188,21 @@ function program_is_enrolled( $program_key ) {
 		);
 	}
 
-	// { "program_key": "…", "is_active": bool, "enrollment_date": …, "completion_date": … }
-	return ! empty( $body['is_active'] );
+	// { program_key, is_active, enrollment_date, completion_date, has_order }
+	return array(
+		'enrolled'  => ! empty( $body['is_active'] ),
+		'has_order' => ! empty( $body['has_order'] ),
+	);
+}
+
+/**
+ * Whether the current user is actively enrolled in a program.
+ *
+ * @param string $program_key Program key.
+ * @return bool|\WP_Error
+ */
+function program_is_enrolled( $program_key ) {
+	$status = program_enroll_status( $program_key );
+
+	return is_wp_error( $status ) ? $status : $status['enrolled'];
 }

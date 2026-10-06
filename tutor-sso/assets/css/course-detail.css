@@ -384,11 +384,16 @@ main.rwaq-course-single,
 	object-fit: cover;
 }
 
+/* The panel follows the cover inside the card. */
+.rwaq-cd__enroll .rwaq-cd__price {
+	margin-top: 12px;
+}
+
 .rwaq-cd__enroll .tutor-sso-enroll-wrap {
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
-	margin-top: 16px;
+	margin-top: 12px;
 }
 
 /* Pin the shared enroll button to the design's brand block. Prefixed so it

@@ -1,0 +1,489 @@
+/**
+ * WooCommerce My Account pages, styled to the design (Figma 10533:110222).
+ *
+ * CSS only — WooCommerce's own myaccount templates are untouched, so a
+ * WooCommerce update cannot break this. Scoped under .woocommerce-account
+ * (the body class WooCommerce adds on every My Account endpoint).
+ *
+ * The design is two cards side by side under a page title: a 315px navigation
+ * card and a flexible content card, inside a 1025px column with a 20px gutter.
+ * WooCommerce ships that as two floated blocks (25% / 75%), so the wrapper is
+ * converted to flex and the floats are explicitly cleared — along with the
+ * clearfix pseudo-elements the float layout relies on, which would otherwise
+ * become real flex items and eat a slot in the row.
+ *
+ * Navigation icons are drawn with `mask` rather than `background-image`, so a
+ * single icon definition per endpoint follows the link's own colour through
+ * rest / hover / active instead of needing a recoloured copy for each state.
+ */
+
+.woocommerce-account {
+	--rwaq-acc-border: #d1d1d1;
+	--rwaq-acc-text: #242424;
+	--rwaq-acc-muted: #616161;
+	--rwaq-acc-brand: #565199;
+	--rwaq-acc-brand-hover: #474293;
+	--rwaq-acc-brand-tint: #f1f0f8;
+	--rwaq-acc-radius: 10px;
+}
+
+/* ---- Page title ----
+   The design pairs a 32px title with a muted one-line subtitle. Only the
+   title exists in the markup — the subtitle is page copy, not styling, so it
+   is left to whoever writes the page rather than invented here. */
+.woocommerce-account .entry-title,
+.woocommerce-account .page-title {
+	box-sizing: border-box;
+	max-width: 1025px;
+	margin-inline: auto;
+	margin-block: 32px 24px;
+	font-size: 32px;
+	font-weight: 600;
+	line-height: 40px;
+	color: var(--rwaq-acc-text);
+	text-align: start;
+}
+
+/* ---- Two-card layout ----
+   Only for signed-in viewers: logged out, this same wrapper holds the
+   login/register form, which must stay a single column. */
+.woocommerce-account.logged-in .woocommerce {
+	box-sizing: border-box;
+	display: flex;
+	align-items: flex-start;
+	gap: 20px;
+	max-width: 1025px;
+	margin-inline: auto;
+	padding-bottom: 48px;
+}
+
+/* WooCommerce clears its floats with `content:" "; display:table` pseudo-
+   elements. Once the parent is flex those stop being clearfixes and become
+   real flex items, taking a slot in the row. */
+.woocommerce-account.logged-in .woocommerce::before,
+.woocommerce-account.logged-in .woocommerce::after {
+	display: none !important;
+}
+
+/* ---- Navigation card ---- */
+.woocommerce-account .woocommerce-MyAccount-navigation {
+	box-sizing: border-box;
+	flex: 0 0 315px;
+	width: 315px;
+	float: none !important;
+	padding: 20px;
+	border: 1px solid var(--rwaq-acc-border);
+	border-radius: var(--rwaq-acc-radius);
+	background: #fff;
+}
+
+.woocommerce-account .woocommerce-MyAccount-navigation ul {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.woocommerce-account .woocommerce-MyAccount-navigation li {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	list-style: none;
+}
+
+.woocommerce-account .woocommerce-MyAccount-navigation li a {
+	/* Fallback for any endpoint added later (or by another plugin): a plain
+	   dot rather than an empty 24px gap. Each endpoint below overrides it from
+	   a `li.<endpoint>` selector, which outranks this one. */
+	--rwaq-acc-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6'%3E%3Ccircle cx='12' cy='12' r='3.5'/%3E%3C/svg%3E");
+	display: flex;
+	align-items: center;
+	gap: 20px;
+	padding: 8px 16px;
+	border-radius: var(--rwaq-acc-radius);
+	color: #000;
+	font-size: 16px;
+	font-weight: 400;
+	line-height: 28px;
+	text-decoration: none;
+	transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.woocommerce-account .woocommerce-MyAccount-navigation li a:hover {
+	background: #f5f5f5;
+	color: #000;
+	text-decoration: none;
+}
+
+.woocommerce-account .woocommerce-MyAccount-navigation li.is-active a {
+	background: var(--rwaq-acc-brand-tint);
+	color: var(--rwaq-acc-brand);
+	font-weight: 600;
+}
+
+/* The icon is a mask filled with the link's own colour, so the active and
+   hover states recolour it for free. */
+.woocommerce-account .woocommerce-MyAccount-navigation li a::before {
+	content: '';
+	flex: 0 0 auto;
+	width: 24px;
+	height: 24px;
+	background-color: currentColor;
+	-webkit-mask: var(--rwaq-acc-icon) center / 24px 24px no-repeat;
+	mask: var(--rwaq-acc-icon) center / 24px 24px no-repeat;
+}
+
+.woocommerce-account .woocommerce-MyAccount-navigation li.woocommerce-MyAccount-navigation-link--dashboard a {
+	--rwaq-acc-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 10.5 12 3l9 7.5'/%3E%3Cpath d='M5 9.8V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.8'/%3E%3Cpath d='M9.5 21v-6h5v6'/%3E%3C/svg%3E");
+}
+
+.woocommerce-account .woocommerce-MyAccount-navigation li.woocommerce-MyAccount-navigation-link--orders a {
+	--rwaq-acc-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2.5' y='5' width='19' height='14' rx='2'/%3E%3Cpath d='M2.5 9.5h19'/%3E%3Cpath d='M6 14.5h4'/%3E%3C/svg%3E");
+}
+
+.woocommerce-account .woocommerce-MyAccount-navigation li.woocommerce-MyAccount-navigation-link--edit-account a {
+	--rwaq-acc-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='8' r='3.6'/%3E%3Cpath d='M4.5 20a7.5 7.5 0 0 1 15 0'/%3E%3C/svg%3E");
+}
+
+.woocommerce-account .woocommerce-MyAccount-navigation li.woocommerce-MyAccount-navigation-link--customer-logout a {
+	--rwaq-acc-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 21H6.5A1.9 1.9 0 0 1 4.5 19V5a1.9 1.9 0 0 1 2-2H9'/%3E%3Cpath d='m16 17 5-5-5-5'/%3E%3Cpath d='M21 12H9'/%3E%3C/svg%3E");
+}
+
+/* ---- Content card ---- */
+.woocommerce-account .woocommerce-MyAccount-content {
+	box-sizing: border-box;
+	flex: 1 1 auto;
+	min-width: 0;
+	width: auto !important;
+	float: none !important;
+	padding: 32px;
+	border: 1px solid var(--rwaq-acc-border);
+	border-radius: var(--rwaq-acc-radius);
+	background: #fff;
+}
+
+.woocommerce-account .woocommerce-MyAccount-content > p {
+	margin: 0 0 16px;
+	font-size: 14px;
+	line-height: 22px;
+	color: var(--rwaq-acc-muted);
+}
+
+.woocommerce-account .woocommerce-MyAccount-content > p:last-child {
+	margin-bottom: 0;
+}
+
+.woocommerce-account .woocommerce-MyAccount-content a {
+	color: var(--rwaq-acc-brand);
+}
+
+/* ---- Empty state ----
+   WooCommerce prints "nothing here yet" as a single .woocommerce-info notice
+   with the call-to-action inline. The design centres it under a tinted icon
+   badge, which is built here rather than in markup. */
+.woocommerce-account .woocommerce-MyAccount-content .woocommerce-info,
+.woocommerce-account .woocommerce-MyAccount-content .woocommerce-message {
+	margin: 0;
+	padding: 24px 0 8px;
+	border: 0 !important;
+	background: transparent !important;
+	color: var(--rwaq-acc-muted);
+	font-size: 14px;
+	line-height: 22px;
+	text-align: center;
+}
+
+/* WooCommerce's own notice icon sits in the inline-start corner on a tinted
+   bar — neither of which survives here. */
+.woocommerce-account .woocommerce-MyAccount-content .woocommerce-info::after,
+.woocommerce-account .woocommerce-MyAccount-content .woocommerce-message::after {
+	display: none !important;
+}
+
+.woocommerce-account .woocommerce-MyAccount-content .woocommerce-info::before,
+.woocommerce-account .woocommerce-MyAccount-content .woocommerce-message::before {
+	content: '';
+	display: block;
+	position: static;
+	width: 50px;
+	height: 50px;
+	margin: 0 auto 24px;
+	padding: 0;
+	border-radius: 50%;
+	background-color: var(--rwaq-acc-brand-tint);
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23565199' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 3h12a1 1 0 0 1 1 1v17l-3-2-3 2-3-2-3 2V4a1 1 0 0 1 1-1z'/%3E%3Cpath d='M9 8h6M9 12h6'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: center;
+	background-size: 24px 24px;
+	color: transparent;
+	font-size: 0;
+}
+
+/* The inline CTA is pushed onto its own centred line. */
+.woocommerce-account .woocommerce-MyAccount-content .woocommerce-info .button,
+.woocommerce-account .woocommerce-MyAccount-content .woocommerce-message .button {
+	display: flex;
+	width: fit-content;
+	margin: 24px auto 0;
+}
+
+/* ---- Buttons ---- */
+.woocommerce-account .woocommerce-MyAccount-content .button,
+.woocommerce-account .woocommerce-MyAccount-content .woocommerce-Button,
+.woocommerce-account .woocommerce-MyAccount-content button[type="submit"] {
+	box-sizing: border-box;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 44px;
+	padding: 10px 20px;
+	border: 1px solid var(--rwaq-acc-brand);
+	border-radius: 8px;
+	background: var(--rwaq-acc-brand);
+	color: #fff;
+	font-size: 16px;
+	font-weight: 600;
+	line-height: 26px;
+	text-decoration: none;
+	cursor: pointer;
+	transition: background-color 0.15s ease;
+}
+
+.woocommerce-account .woocommerce-MyAccount-content .button:hover,
+.woocommerce-account .woocommerce-MyAccount-content .woocommerce-Button:hover,
+.woocommerce-account .woocommerce-MyAccount-content button[type="submit"]:hover {
+	background: var(--rwaq-acc-brand-hover);
+	border-color: var(--rwaq-acc-brand-hover);
+	color: #fff;
+}
+
+/* Row actions are the design's secondary button: white with a grey hairline. */
+.woocommerce-account .woocommerce-orders-table .button,
+.woocommerce-account .woocommerce-pagination .button {
+	border-color: var(--rwaq-acc-border);
+	background: #fff;
+	color: var(--rwaq-acc-text);
+	min-height: 36px;
+	padding: 6px 16px;
+	font-size: 14px;
+	line-height: 22px;
+}
+
+.woocommerce-account .woocommerce-orders-table .button:hover,
+.woocommerce-account .woocommerce-pagination .button:hover {
+	border-color: var(--rwaq-acc-border);
+	background: #f5f5f5;
+	color: var(--rwaq-acc-text);
+}
+
+/* ---- Forms (account details) ----
+   WooCommerce floats form-row-first / form-row-last at 47% and separates them
+   with .clear divs. Grid states the two columns directly, so the floats and
+   their spacers are retired. */
+.woocommerce-account .woocommerce-MyAccount-content form {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 20px;
+	margin: 0;
+}
+
+.woocommerce-account .woocommerce-MyAccount-content form .clear {
+	display: none;
+}
+
+.woocommerce-account .woocommerce-MyAccount-content form .form-row {
+	float: none !important;
+	width: auto !important;
+	margin: 0;
+	padding: 0;
+}
+
+.woocommerce-account .woocommerce-MyAccount-content form .form-row-wide,
+.woocommerce-account .woocommerce-MyAccount-content form fieldset,
+.woocommerce-account .woocommerce-MyAccount-content form > p:last-of-type {
+	grid-column: 1 / -1;
+}
+
+.woocommerce-account .woocommerce-MyAccount-content form label {
+	display: block;
+	margin-bottom: 6px;
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 22px;
+	color: var(--rwaq-acc-text);
+}
+
+.woocommerce-account .woocommerce-MyAccount-content form .required {
+	color: #c0392b;
+	text-decoration: none;
+}
+
+.woocommerce-account .woocommerce-MyAccount-content form .input-text {
+	box-sizing: border-box;
+	width: 100%;
+	min-height: 44px;
+	padding: 10px 16px;
+	border: 1px solid var(--rwaq-acc-border);
+	border-radius: 8px;
+	background: #fff;
+	color: var(--rwaq-acc-text);
+	font-family: inherit;
+	font-size: 14px;
+	line-height: 22px;
+}
+
+.woocommerce-account .woocommerce-MyAccount-content form .input-text:focus {
+	border-color: var(--rwaq-acc-brand);
+	outline: none;
+	box-shadow: 0 0 0 3px rgba(86, 81, 153, 0.12);
+}
+
+/* The email is the SSO identity, locked server-side — shown as plainly
+   not-editable rather than looking like a field that simply refused. */
+.woocommerce-account .woocommerce-MyAccount-content form .input-text[readonly] {
+	background: #f5f5f5;
+	color: var(--rwaq-acc-muted);
+	cursor: not-allowed;
+}
+
+.woocommerce-account .woocommerce-MyAccount-content form .input-text[readonly]:focus {
+	border-color: var(--rwaq-acc-border);
+	box-shadow: none;
+}
+
+/* The one notice above the locked fields. It is the form grid's first item,
+   so it spans both columns rather than sitting in the first-name slot. */
+.woocommerce-account .tutor-sso-account-locked-notice {
+	grid-column: 1 / -1;
+	margin: 0;
+	padding: 12px 16px;
+	border: 1px solid var(--rwaq-acc-border);
+	border-radius: 8px;
+	background: var(--rwaq-acc-brand-tint);
+	color: var(--rwaq-acc-text);
+	font-size: 13px;
+	line-height: 20px;
+}
+
+.woocommerce-account .woocommerce-MyAccount-content form span em {
+	display: block;
+	margin-top: 6px;
+	font-size: 13px;
+	font-style: normal;
+	line-height: 20px;
+	color: var(--rwaq-acc-muted);
+}
+
+/* `display: contents` rather than a nested grid, for two reasons that both
+   come from <legend> being a special box: a UA paints it inside the fieldset's
+   border edge, so a border-top on the fieldset is drawn straight through the
+   heading; and it is not laid out as a grid item, so inside a grid fieldset it
+   ignores grid-column and lets the separator take the row beside it. Dropping
+   the fieldset box entirely puts the legend and its rows directly into the
+   form's own grid, where both behave like every other row. */
+.woocommerce-account .woocommerce-MyAccount-content form fieldset {
+	display: contents;
+}
+
+.woocommerce-account .woocommerce-MyAccount-content form fieldset::before {
+	content: '';
+	grid-column: 1 / -1;
+	height: 1px;
+	margin-top: 12px;
+	background: var(--rwaq-acc-border);
+}
+
+.woocommerce-account .woocommerce-MyAccount-content form fieldset legend {
+	display: block;
+	grid-column: 1 / -1;
+	float: none;
+	width: 100%;
+	margin: 0;
+	padding: 0;
+	font-size: 20px;
+	font-weight: 600;
+	line-height: 28px;
+	color: var(--rwaq-acc-text);
+}
+
+.woocommerce-account .woocommerce-MyAccount-content form fieldset .form-row {
+	grid-column: 1 / -1;
+}
+
+/* ---- Orders table ---- */
+.woocommerce-account .woocommerce-orders-table {
+	width: 100%;
+	margin: 0;
+	border: 1px solid var(--rwaq-acc-border);
+	border-radius: var(--rwaq-acc-radius);
+	border-collapse: separate;
+	border-spacing: 0;
+	overflow: hidden;
+}
+
+.woocommerce-account .woocommerce-orders-table th,
+.woocommerce-account .woocommerce-orders-table td {
+	padding: 14px 20px;
+	border: 0 !important;
+	border-bottom: 1px solid var(--rwaq-acc-border) !important;
+	background: transparent;
+	font-size: 14px;
+	line-height: 22px;
+	text-align: start;
+	vertical-align: middle;
+}
+
+.woocommerce-account .woocommerce-orders-table thead th {
+	font-weight: 600;
+	color: var(--rwaq-acc-text);
+}
+
+.woocommerce-account .woocommerce-orders-table tbody td {
+	color: var(--rwaq-acc-muted);
+}
+
+.woocommerce-account .woocommerce-orders-table tr:last-child td {
+	border-bottom: 0 !important;
+}
+
+.woocommerce-account .woocommerce-pagination {
+	display: flex;
+	justify-content: center;
+	gap: 12px;
+	margin-top: 24px;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 900px) {
+	.woocommerce-account.logged-in .woocommerce {
+		flex-direction: column;
+	}
+
+	.woocommerce-account .woocommerce-MyAccount-navigation {
+		flex: 1 1 auto;
+		width: 100%;
+	}
+
+	.woocommerce-account .woocommerce-MyAccount-content {
+		width: 100% !important;
+	}
+}
+
+@media (max-width: 600px) {
+	.woocommerce-account .entry-title,
+	.woocommerce-account .page-title {
+		font-size: 24px;
+		line-height: 32px;
+	}
+
+	.woocommerce-account .woocommerce-MyAccount-content {
+		padding: 20px;
+	}
+
+	.woocommerce-account .woocommerce-MyAccount-content form,
+	.woocommerce-account .woocommerce-MyAccount-content form fieldset {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
