@@ -459,7 +459,9 @@ function validate_sso_login() {
 		? sanitize_text_field( wp_unslash( $_GET['state'] ) ) // phpcs:ignore WordPress.Security.NonceVerification
 		: '';
 
-	if ( empty( $state ) || ! get_transient( 'tutor_sso_state_' . $state ) ) {
+	$state_value = '' !== $state ? get_transient( 'tutor_sso_state_' . $state ) : false;
+
+	if ( empty( $state ) || ! $state_value ) {
 		error_log( '[tutor-sso] State validation failed — state param missing or transient not found.' );
 		wp_safe_redirect( get_site_url() );
 		exit;
@@ -467,6 +469,10 @@ function validate_sso_login() {
 
 	// One-time use: delete immediately after the check.
 	delete_transient( 'tutor_sso_state_' . $state );
+
+	// A string value is the page the visitor started from; `true` means there
+	// was none, and the configured destination is used instead.
+	$return_url = is_string( $state_value ) ? $state_value : '';
 
 	// ── Exchange the code for tokens ──────────────────────────────────────────
 	$code    = sanitize_text_field( wp_unslash( $_GET['code'] ) ); // phpcs:ignore WordPress.Security.NonceVerification
@@ -517,7 +523,9 @@ function validate_sso_login() {
 	do_action( 'wp_login', $user->user_login, $user );
 
 	// ── Redirect after login ──────────────────────────────────────────────────
-	$redirect_url = sso_option( 'signin_redirect_url' ) ?: get_site_url( $blog_id );
+	$redirect_url = '' !== $return_url
+		? $return_url
+		: ( sso_option( 'signin_redirect_url' ) ?: get_site_url( $blog_id ) );
 
 	// wp_safe_redirect() only permits same-host URLs by default.
 	// Allow whatever host the admin has configured.
@@ -554,11 +562,21 @@ const LOGIN_TRIGGER = 'tutor_sso_login';
  *
  * @return string Full authorization URL.
  */
-function get_lms_authorize_url() {
+function get_lms_authorize_url( $return_url = '' ) {
 
 	// Generate a random, URL-safe state token for CSRF protection.
 	$state = wp_generate_password( 32, false );
-	set_transient( 'tutor_sso_state_' . $state, true, 10 * MINUTE_IN_SECONDS );
+
+	// The transient's value doubles as the post-login destination. `true` keeps
+	// its original meaning of "no particular page", so the CSRF check in the
+	// callback — which only tests that the transient exists — is unchanged.
+	// Keeping the URL server-side, bound to this single-use token, means it
+	// never travels through the LMS and cannot be tampered with in transit.
+	set_transient(
+		'tutor_sso_state_' . $state,
+		'' !== $return_url ? $return_url : true,
+		10 * MINUTE_IN_SECONDS
+	);
 
 	return add_query_arg(
 		array(
@@ -577,7 +595,43 @@ function get_lms_authorize_url() {
  * @return string
  */
 function get_lms_login_url() {
-	return add_query_arg( LOGIN_TRIGGER, '1', home_url( '/' ) );
+	$args = array( LOGIN_TRIGGER => '1' );
+
+	// Carry the page the button was clicked from, so login can return to it.
+	// Built from the host and request URI rather than home_url( REQUEST_URI ),
+	// which would repeat the path on a subdirectory install. A spoofed Host
+	// header is harmless: the value is only ever used after
+	// wp_validate_redirect() has forced it back on-site.
+	$host = isset( $_SERVER['HTTP_HOST'] ) ? wp_unslash( $_SERVER['HTTP_HOST'] ) : '';
+	$uri  = isset( $_SERVER['REQUEST_URI'] ) ? wp_unslash( $_SERVER['REQUEST_URI'] ) : '';
+
+	if ( '' !== $host && '' !== $uri && false === strpos( $uri, LOGIN_TRIGGER ) ) {
+		$args['redirect_to'] = ( is_ssl() ? 'https://' : 'http://' ) . $host . $uri;
+	}
+
+	return add_query_arg( $args, home_url( '/' ) );
+}
+
+/**
+ * Where login should return the visitor: the page they started from.
+ *
+ * Read from the login link, falling back to the referer so a hand-written
+ * `?tutor_sso_login=1` links still returns them to the right place.
+ *
+ * wp_validate_redirect() returns the fallback for anything off-site, so a
+ * crafted `redirect_to` cannot turn the login link into an open redirect.
+ *
+ * @return string On-site URL, or '' when there is nothing usable.
+ */
+function sso_login_return_url() {
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$candidate = isset( $_GET['redirect_to'] ) ? esc_url_raw( wp_unslash( $_GET['redirect_to'] ) ) : '';
+
+	if ( '' === $candidate ) {
+		$candidate = (string) wp_get_referer();
+	}
+
+	return (string) wp_validate_redirect( $candidate, '' );
 }
 
 /**
@@ -681,14 +735,17 @@ function sso_login_gateway() {
 		return;
 	}
 
+	$return_url = sso_login_return_url();
+
 	if ( is_user_logged_in() ) {
-		wp_safe_redirect( home_url( '/' ) );
+		// Already signed in (a stale login link): still honour where they came from.
+		wp_safe_redirect( '' !== $return_url ? $return_url : home_url( '/' ) );
 		exit;
 	}
 
 	sso_clear_edx_cookies();
 
-	$url = get_lms_authorize_url();
+	$url = get_lms_authorize_url( $return_url );
 
 	// Off the WordPress host, so wp_redirect() rather than wp_safe_redirect().
 	wp_redirect( $url ); // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect
