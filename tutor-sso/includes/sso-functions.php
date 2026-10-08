@@ -866,6 +866,54 @@ add_action( 'init', __NAMESPACE__ . '\\revoke_session_on_lms_logout', 25 );
 // ── 7. User creation / update ─────────────────────────────────────────────────
 
 /**
+ * Find the WordPress account for an LMS identity.
+ *
+ * Three lookups, because the login WordPress stores is not always the one the
+ * LMS sent. wp_insert_user() saves the *sanitized* login, and
+ * sanitize_user( $name, true ) strips everything outside [a-z0-9 _.\-@] — so an
+ * Arabic or otherwise non-ASCII username is stored in a reduced form, and
+ * looking it up verbatim on the next login finds nothing. That made the account
+ * look new, creation then failed on the duplicate email, and the learner was
+ * locked out after their first ever sign-in.
+ *
+ * Email is the last resort and the authoritative one: it is the key this site
+ * and the LMS already share (synced from the token on every login, and locked
+ * on the account page), so an address match is the same identity.
+ *
+ * @param string $username LMS preferred_username.
+ * @param string $email    LMS email, already sanitized.
+ * @return \WP_User|false
+ */
+function sso_find_existing_user( $username, $email ) {
+	$user = get_user_by( 'login', $username );
+
+	if ( $user ) {
+		return $user;
+	}
+
+	// How the login would have been stored when the account was created.
+	$sanitized = preg_replace( '/\s+/', '', sanitize_user( (string) $username, true ) );
+
+	if ( '' !== $sanitized && $sanitized !== $username ) {
+		$user = get_user_by( 'login', $sanitized );
+
+		if ( $user ) {
+			return $user;
+		}
+	}
+
+	if ( '' !== (string) $email ) {
+		$user = get_user_by( 'email', $email );
+
+		if ( $user ) {
+			return $user;
+		}
+	}
+
+	return false;
+}
+
+/**
  * Create a new WordPress user or synchronise an existing one, then make sure
  * they belong to the current blog (multisite only).
  *
@@ -887,7 +935,7 @@ add_action( 'init', __NAMESPACE__ . '\\revoke_session_on_lms_logout', 25 );
  */
 function create_or_update_user( $username, $email, $role, $blog_id, $profile = array() ) {
 
-	$user = get_user_by( 'login', $username );
+	$user = sso_find_existing_user( $username, $email );
 
 	if ( ! $user ) {
 		// wpmu_create_user() lives in wp-includes/ms-functions.php, which
