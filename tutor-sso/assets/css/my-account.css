@@ -291,6 +291,30 @@
 	margin: 0;
 }
 
+/* The address form nests its fields two levels down —
+   form > div.woocommerce-address-fields > div.__field-wrapper > p.form-row —
+   so the form's own grid only ever sees the heading and one big block, and
+   lays those out side by side with the gap between them. The fields are never
+   grid items at all, which is why they end up with no spacing.
+
+   The inner wrapper is made the grid instead, and the blocks between it and
+   the form are told to span the full width. */
+.woocommerce-account .woocommerce-MyAccount-content form > h3,
+.woocommerce-account .woocommerce-MyAccount-content form .woocommerce-address-fields {
+	grid-column: 1 / -1;
+}
+
+.woocommerce-account .woocommerce-MyAccount-content form .woocommerce-address-fields__field-wrapper {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 28px 20px;
+}
+
+/* The save button sits outside that wrapper, so it needs its own separation. */
+.woocommerce-account .woocommerce-MyAccount-content form .woocommerce-address-fields > p:last-child {
+	margin: 28px 0 0;
+}
+
 .woocommerce-account .woocommerce-MyAccount-content form .clear {
 	display: none;
 }
