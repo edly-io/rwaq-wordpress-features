@@ -181,11 +181,39 @@ function my_account_form_remove_password_fields( $html ) {
 }
 
 /**
- * Flush the buffer, applying both rewrites on the way out.
+ * Drop the "Save changes" button.
  *
- * Hooked to both the field-area hook and the end-of-form hook: the first is
- * where it normally closes, the second is a backstop so a custom template that
- * drops the first can never leave a buffer open.
+ * Every field on this form is now read-only and the save handler restores them
+ * all, so the button cannot change anything — it would only ever reload the
+ * page and report success at saving nothing. Its nonce and the hidden `action`
+ * field go with it, since neither means anything without a submit.
+ *
+ * The whole paragraph is matched rather than the button alone, so no empty
+ * wrapper is left behind for the stylesheet to space out.
+ *
+ * @param string $html Buffered form markup.
+ * @return string
+ */
+function my_account_form_remove_submit( $html ) {
+	return (string) preg_replace_callback(
+		'#<p\b[^>]*>(?:(?!</p>).)*?</p>#is',
+		function ( $matches ) {
+			return false !== stripos( $matches[0], 'name="save_account_details"' ) ? '' : $matches[0];
+		},
+		$html
+	);
+}
+
+/**
+ * Flush the buffer, applying every rewrite on the way out.
+ *
+ * Closes at the end of the form rather than at the field-area hook, because the
+ * submit button is rendered between the two and has to be inside the buffer to
+ * be removed.
+ *
+ * Two backstops follow it: a template that drops `..._form_end` would otherwise
+ * leave the buffer open and swallow the rest of the page. Each is idempotent,
+ * so whichever fires first wins and the others do nothing.
  *
  * @return void
  */
@@ -201,10 +229,12 @@ function my_account_form_buffer_end() {
 	if ( is_string( $html ) && '' !== $html ) {
 		$html = my_account_form_lock_inputs( $html );
 		$html = my_account_form_remove_password_fields( $html );
+		$html = my_account_form_remove_submit( $html );
 		$html = my_account_form_add_notice( $html );
 	}
 
 	echo $html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 }
-add_action( 'woocommerce_edit_account_form', __NAMESPACE__ . '\\my_account_form_buffer_end' );
 add_action( 'woocommerce_edit_account_form_end', __NAMESPACE__ . '\\my_account_form_buffer_end' );
+add_action( 'woocommerce_after_edit_account_form', __NAMESPACE__ . '\\my_account_form_buffer_end' );
+add_action( 'shutdown', __NAMESPACE__ . '\\my_account_form_buffer_end', 0 );
