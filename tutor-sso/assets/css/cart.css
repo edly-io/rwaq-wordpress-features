@@ -208,7 +208,7 @@
 	display: none;
 }
 
-/* ---- Actions row: coupon + update ----
+/* ---- Actions row: coupon only ----
    This row's own `tr` is deliberately left out of the `display:flex` rule above
    (it is not a `.woocommerce-cart-form__cart-item`): under a `display:block`
    tbody a bare `table-row` has no well-defined layout, so it is taken out of
@@ -260,9 +260,19 @@
 	color: #bdbdbd;
 }
 
+/* -- "Update cart": hidden -- 
+   It only ever submits quantity changes, and the quantity column above is
+   hidden because course and program products are sold one at a time — so the
+   button has nothing left to update. WooCommerce keeps it disabled until a
+   quantity actually changes, which here is never, so it would only ever render
+   as a permanently greyed-out control.
+
+   Hidden rather than removed: the cart template is WooCommerce's own and is
+   not overridden. Leaving it in the DOM is also what keeps the coupon's own
+   "apply" button first in tree order, so Enter inside the coupon field still
+   applies the coupon rather than submitting nothing. */
 .woocommerce-cart td.actions .button[name="update_cart"] {
-	float: none;
-	margin: 0;
+	display: none;
 }
 
 /* Secondary buttons: outlined, never the theme's fill. */
