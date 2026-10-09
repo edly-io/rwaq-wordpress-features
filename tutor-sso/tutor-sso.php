@@ -70,6 +70,7 @@ require_once TUTOR_SSO_PATH . 'includes/orders/my-account-menu.php';
 require_once TUTOR_SSO_PATH . 'includes/orders/my-account-form.php';
 require_once TUTOR_SSO_PATH . 'includes/orders/shop-redirect.php';
 require_once TUTOR_SSO_PATH . 'includes/orders/duplicate-purchase.php';
+require_once TUTOR_SSO_PATH . 'includes/orders/address-fields.php';
 require_once TUTOR_SSO_PATH . 'includes/programs/program-single.php';
 require_once TUTOR_SSO_PATH . 'includes/blogs/blogs-query.php';
 require_once TUTOR_SSO_PATH . 'includes/blogs/blogs-catalog.php';
