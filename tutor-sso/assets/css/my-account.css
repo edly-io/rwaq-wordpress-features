@@ -285,7 +285,9 @@
 .woocommerce-account .woocommerce-MyAccount-content form {
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: 20px;
+	/* Row gap larger than the column gap: rows stack label-over-input, so they
+	   need clear air between one field and the next label. */
+	gap: 28px 20px;
 	margin: 0;
 }
 
@@ -296,8 +298,23 @@
 .woocommerce-account .woocommerce-MyAccount-content form .form-row {
 	float: none !important;
 	width: auto !important;
+	/* The overflow fix. A grid item's min-width is `auto`, meaning "never
+	   smaller than my content" — so a long phone number, a postcode with no
+	   spaces to break at, or a select2 box carrying a JS-computed pixel width
+	   makes the whole column wider than its share and pushes the form out of
+	   its card. Zero lets the track hold its 1fr and the field scroll or
+	   ellipsis inside it instead. */
+	min-width: 0;
 	margin: 0;
 	padding: 0;
+}
+
+/* WooCommerce wraps each control in this inline <span>; as an inline box it
+   gives the control no block of its own to be 100% of. */
+.woocommerce-account .woocommerce-MyAccount-content form .woocommerce-input-wrapper {
+	display: block;
+	width: 100%;
+	min-width: 0;
 }
 
 .woocommerce-account .woocommerce-MyAccount-content form .form-row-wide,
@@ -308,7 +325,7 @@
 
 .woocommerce-account .woocommerce-MyAccount-content form label {
 	display: block;
-	margin-bottom: 6px;
+	margin-bottom: 10px;
 	font-size: 14px;
 	font-weight: 600;
 	line-height: 22px;
@@ -320,9 +337,13 @@
 	text-decoration: none;
 }
 
-.woocommerce-account .woocommerce-MyAccount-content form .input-text {
+.woocommerce-account .woocommerce-MyAccount-content form .input-text,
+.woocommerce-account .woocommerce-MyAccount-content form select,
+.woocommerce-account .woocommerce-MyAccount-content form textarea {
 	box-sizing: border-box;
 	width: 100%;
+	/* A `size` attribute, or select2's inline width, would otherwise win. */
+	max-width: 100%;
 	min-height: 44px;
 	padding: 10px 16px;
 	border: 1px solid var(--rwaq-acc-border);
@@ -334,7 +355,41 @@
 	line-height: 22px;
 }
 
-.woocommerce-account .woocommerce-MyAccount-content form .input-text:focus {
+/* The country and state pickers are replaced by select2, which measures the
+   field in JavaScript and writes the result as an inline pixel width — the one
+   place an !important is unavoidable, since an inline style cannot be beaten
+   any other way. */
+.woocommerce-account .woocommerce-MyAccount-content form .select2-container {
+	box-sizing: border-box;
+	width: 100% !important;
+	max-width: 100%;
+}
+
+.woocommerce-account .woocommerce-MyAccount-content form .select2-container .selection {
+	display: block;
+}
+
+.woocommerce-account .woocommerce-MyAccount-content form .select2-container .select2-selection--single {
+	/* select2's own stylesheet makes these block-level; stated here too so the
+	   control still fills its row if that stylesheet is late, replaced or
+	   dequeued. */
+	display: block;
+	box-sizing: border-box;
+	width: 100%;
+	height: 44px;
+	border: 1px solid var(--rwaq-acc-border);
+	border-radius: 8px;
+}
+
+.woocommerce-account .woocommerce-MyAccount-content form .select2-container .select2-selection__rendered {
+	line-height: 42px;
+	padding-inline: 16px;
+	color: var(--rwaq-acc-text);
+}
+
+.woocommerce-account .woocommerce-MyAccount-content form .input-text:focus,
+.woocommerce-account .woocommerce-MyAccount-content form select:focus,
+.woocommerce-account .woocommerce-MyAccount-content form textarea:focus {
 	border-color: var(--rwaq-acc-brand);
 	outline: none;
 	box-shadow: 0 0 0 3px rgba(86, 81, 153, 0.12);
