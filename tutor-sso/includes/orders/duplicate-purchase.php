@@ -9,9 +9,12 @@
  * passing that view — so the rule is enforced here as well, where it cannot be
  * walked around.
  *
- * Scoped to courses and programs: a product with no LMS identifier is not
- * something this plugin sells access to, and a subscription plan is explicitly
- * re-buyable — someone who cancels has to be able to subscribe again.
+ * Scoped to courses, programs and subscription plans: a product with no LMS
+ * identifier is not something this plugin sells access to. A plan is judged
+ * differently from the other two: no plan can be bought while the customer has
+ * an active subscription to *any* plan, since they all unlock the same courses.
+ * That is decided from the subscriptions table, not order history, because
+ * someone who cancels has to be able to subscribe again.
  *
  * @package tutor-sso
  */
@@ -37,7 +40,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 function purchase_already_owned( $product_id ) {
 	$product_id = (int) $product_id;
 
-	if ( ! $product_id || ! is_user_logged_in() || ! function_exists( 'wc_customer_bought_product' ) ) {
+	if ( ! $product_id || ! is_user_logged_in() ) {
+		return false;
+	}
+
+	// A subscription plan: refused while any plan is active for this customer.
+	if ( function_exists( __NAMESPACE__ . '\\subscription_product_is_subscription' )
+		&& subscription_product_is_subscription( $product_id ) ) {
+		$owned = subscription_user_active_product( get_current_user_id() ) > 0;
+
+		/** This filter is documented below. */
+		return (bool) apply_filters( 'tutor_sso_purchase_already_owned', $owned, $product_id );
+	}
+
+	if ( ! function_exists( 'wc_customer_bought_product' ) ) {
 		return false;
 	}
 
@@ -69,6 +85,24 @@ function purchase_already_owned( $product_id ) {
  */
 function purchase_duplicate_notice( $product_id ) {
 	$title = get_the_title( (int) $product_id );
+
+	if ( function_exists( __NAMESPACE__ . '\\subscription_product_is_subscription' )
+		&& subscription_product_is_subscription( $product_id ) ) {
+		// Name the plan they already have, which may not be the one they tried
+		// to buy.
+		$active = subscription_user_active_product( get_current_user_id() );
+		$title  = $active ? get_the_title( $active ) : '';
+
+		if ( '' === trim( (string) $title ) ) {
+			return __( 'لديك اشتراك فعّال بالفعل.', 'tutor-sso' );
+		}
+
+		return sprintf(
+			/* translators: %s: name of the plan the customer is subscribed to. */
+			__( 'لديك اشتراك فعّال بالفعل في "%s".', 'tutor-sso' ),
+			$title
+		);
+	}
 
 	if ( '' === trim( (string) $title ) ) {
 		return __( 'لقد اشتريت هذا من قبل، ويمكنك الوصول إليه من حسابك.', 'tutor-sso' );

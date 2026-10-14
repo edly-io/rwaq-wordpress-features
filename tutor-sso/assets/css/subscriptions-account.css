@@ -1,0 +1,604 @@
+/**
+ * "الاشتراك" — My Account subscription page.
+ * Figma 10529:104916 / 10529:104991 / 10529:105124 / 10529:105059.
+ *
+ * Loaded after my-account.css and only on this endpoint, and everything is
+ * scoped under the page's body class, so nothing here reaches other account
+ * pages. Colours come from my-account.css's tokens where the design shares
+ * them; the status colours are new.
+ *
+ * Specificity: my-account.css styles `button[type="submit"]` inside the content
+ * area as a filled brand button (0-3-1, and 0-4-1 on hover). Every button rule
+ * here therefore starts from a 0-4-0 prefix, and the hover rules add a class on
+ * top, so they win without !important.
+ */
+
+.woocommerce-account.rwaq-account-subscriptions {
+	--rwaq-sub-success-bg: #f1faf1;
+	--rwaq-sub-success-text: #0e700e;
+	--rwaq-sub-warning-bg: #fff1dc;
+	--rwaq-sub-warning-text: #9a5b00;
+	--rwaq-sub-danger-border: #c50f1f;
+	--rwaq-sub-danger-text: #b10e1c;
+	--rwaq-sub-badge-bg: #f7f7fb;
+	--rwaq-sub-badge-text: #1f1b3a;
+}
+
+/* The page is its own cards, so the shared content card steps aside. */
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content {
+	padding: 0;
+	border: 0;
+	background: transparent;
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+}
+
+/* ---- Cards ---- */
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-card {
+	box-sizing: border-box;
+	padding: 20px;
+	border: 1px solid var(--rwaq-acc-border);
+	border-radius: var(--rwaq-acc-radius);
+	background: #fff;
+	color: var(--rwaq-acc-text);
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-card__header {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 16px;
+	margin: 0 0 24px;
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-card__title {
+	margin: 0;
+	padding: 0;
+	font-size: 24px;
+	font-weight: 600;
+	line-height: 32px;
+	color: var(--rwaq-acc-text);
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-card__title--small {
+	font-size: 20px;
+	line-height: 28px;
+}
+
+/* ---- Status pill and period badge ---- */
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-pill {
+	box-sizing: border-box;
+	display: inline-flex;
+	align-items: center;
+	min-height: 32px;
+	padding: 4px 12px;
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 16px;
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-pill--active {
+	background: var(--rwaq-sub-success-bg);
+	color: var(--rwaq-sub-success-text);
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-pill--cancelled {
+	background: var(--rwaq-sub-warning-bg);
+	color: var(--rwaq-sub-warning-text);
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-badge {
+	box-sizing: border-box;
+	display: inline-flex;
+	align-items: center;
+	min-height: 24px;
+	padding: 2px 8px;
+	border-radius: 999px;
+	background: var(--rwaq-sub-badge-bg);
+	color: var(--rwaq-sub-badge-text);
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 16px;
+}
+
+/* ---- Failed-payment message (the design's message bar slot) ---- */
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-message {
+	margin: 0 0 24px;
+	padding: 12px 16px;
+	border-radius: 8px;
+	background: var(--rwaq-sub-warning-bg);
+	color: var(--rwaq-acc-text);
+	font-size: 14px;
+	line-height: 22px;
+}
+
+/* ---- Details grid ----
+   Two columns of label-over-value cells, with hairlines between them. The
+   lines are drawn by the gap over a grey background, so they always meet
+   cleanly whatever the cell heights. */
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 1px;
+	overflow: hidden;
+	border: 1px solid var(--rwaq-acc-border);
+	border-radius: var(--rwaq-acc-radius);
+	background: var(--rwaq-acc-border);
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-grid__cell {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 4px;
+	min-width: 0;
+	min-height: 86px;
+	box-sizing: border-box;
+	padding: 17px 16px;
+	background: #fff;
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-grid__label {
+	font-size: 14px;
+	font-weight: 400;
+	line-height: 22px;
+	color: var(--rwaq-acc-text);
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-grid__value {
+	font-size: 16px;
+	font-weight: 600;
+	line-height: 26px;
+	color: var(--rwaq-acc-text);
+	overflow-wrap: anywhere;
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-grid__value .woocommerce-Price-amount {
+	font-weight: inherit;
+}
+
+/* ---- Card actions ---- */
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-card__actions {
+	display: flex;
+	justify-content: flex-start;
+	margin-top: 24px;
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-card__actions:empty {
+	display: none;
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-resume {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 12px;
+	margin: 0;
+	padding: 0;
+	/* Stated, not assumed: a theme's form background would otherwise show. */
+	background: transparent;
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-resume__note {
+	margin: 0;
+	font-size: 14px;
+	line-height: 22px;
+	color: var(--rwaq-acc-muted);
+}
+
+/* ---- Buttons ---- */
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-btn {
+	box-sizing: border-box;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 44px;
+	margin: 0;
+	padding: 8px 12px;
+	border: 1px solid var(--rwaq-acc-border);
+	border-radius: 8px;
+	background: #fff;
+	color: var(--rwaq-acc-text);
+	font-family: inherit;
+	font-size: 16px;
+	font-weight: 600;
+	line-height: 26px;
+	text-decoration: none;
+	white-space: nowrap;
+	cursor: pointer;
+	box-shadow: none;
+	transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-btn:focus-visible {
+	outline: 2px solid var(--rwaq-acc-brand);
+	outline-offset: 2px;
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-btn--primary {
+	padding-inline: 20px;
+	border-color: var(--rwaq-acc-brand);
+	background: var(--rwaq-acc-brand);
+	color: #fff;
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-btn--primary:hover {
+	border-color: var(--rwaq-acc-brand-hover);
+	background: var(--rwaq-acc-brand-hover);
+	color: #fff;
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-btn--secondary {
+	padding-inline: 20px;
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-btn--secondary:hover,
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-btn--small:hover {
+	border-color: var(--rwaq-acc-border);
+	background: #f5f5f5;
+	color: var(--rwaq-acc-text);
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-btn--danger {
+	border-color: var(--rwaq-sub-danger-border);
+	background: #fff;
+	color: var(--rwaq-sub-danger-text);
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-btn--danger:hover {
+	border-color: var(--rwaq-sub-danger-border);
+	background: #fdf3f4;
+	color: var(--rwaq-sub-danger-text);
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-btn--small {
+	min-height: 32px;
+	padding: 3px 12px;
+	font-size: 14px;
+	line-height: 24px;
+}
+
+/* ---- Payment history ---- */
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-history__header {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	margin: 0 0 24px;
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-history__subtitle {
+	margin: 0;
+	font-size: 14px;
+	line-height: 22px;
+	color: var(--rwaq-acc-muted);
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-table-wrap {
+	overflow-x: auto;
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-table {
+	width: 100%;
+	margin: 0;
+	border: 0;
+	border-collapse: collapse;
+	background: transparent;
+	font-size: 14px;
+	line-height: 22px;
+	color: var(--rwaq-acc-text);
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-table th,
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-table td {
+	height: 63px;
+	box-sizing: border-box;
+	padding: 8px 16px;
+	border: 0;
+	border-bottom: 1px solid var(--rwaq-acc-border);
+	background: transparent;
+	text-align: start;
+	vertical-align: middle;
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-table th {
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-table__amount {
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-table__action {
+	width: 1%;
+	white-space: nowrap;
+}
+
+/* ---- Pagination ---- */
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-pagination {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-start;
+	gap: 8px;
+	margin-top: 24px;
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-page {
+	box-sizing: border-box;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 34px;
+	height: 34px;
+	padding: 0 12px;
+	border: 1px solid var(--rwaq-acc-border);
+	border-radius: 4px;
+	background: #fff;
+	color: var(--rwaq-acc-muted);
+	font-size: 14px;
+	line-height: 22px;
+	text-decoration: none;
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content a.rwaq-sub-page:hover {
+	background: #f5f5f5;
+	color: var(--rwaq-acc-text);
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-page.is-current {
+	border-color: var(--rwaq-acc-brand);
+	background: var(--rwaq-acc-brand);
+	color: #fff;
+}
+
+/* ---- Empty states ---- */
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding: 32px 20px;
+	text-align: center;
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-empty__icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 50px;
+	height: 50px;
+	margin-bottom: 24px;
+	border-radius: 50%;
+	background: var(--rwaq-acc-brand-tint);
+	color: var(--rwaq-acc-brand);
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-empty__title {
+	margin: 0 0 8px;
+	padding: 0;
+	font-size: 24px;
+	font-weight: 600;
+	line-height: 32px;
+	color: var(--rwaq-acc-text);
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-empty__text {
+	margin: 0;
+	font-size: 14px;
+	line-height: 22px;
+	color: var(--rwaq-acc-muted);
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-empty__actions {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 20px;
+	margin-top: 32px;
+}
+
+/* ---- Notices ----
+   my-account.css turns a notice in the content area into a centred empty
+   state with a receipt icon — right for WooCommerce's "no orders yet", wrong
+   for "your subscription was cancelled". Here they are plain message bars. */
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .woocommerce-notices-wrapper:empty {
+	display: none;
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .woocommerce-notices-wrapper .woocommerce-message,
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .woocommerce-notices-wrapper .woocommerce-info,
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .woocommerce-notices-wrapper .woocommerce-error {
+	margin: 0 0 20px;
+	padding: 12px 16px;
+	border: 0 !important;
+	border-radius: 8px;
+	background: var(--rwaq-sub-success-bg) !important;
+	color: var(--rwaq-acc-text);
+	font-size: 14px;
+	line-height: 22px;
+	text-align: start;
+	list-style: none;
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .woocommerce-notices-wrapper .woocommerce-error {
+	background: #fdf3f4 !important;
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .woocommerce-notices-wrapper .woocommerce-message::before,
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .woocommerce-notices-wrapper .woocommerce-info::before,
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .woocommerce-notices-wrapper .woocommerce-error::before {
+	display: none !important;
+}
+
+/* ---- Cancel dialog ----
+   A native <dialog> in the top layer, so it is positioned against the
+   viewport rather than the content column it is written inside. In the DOM it
+   is still inside that column, so it carries the same prefix as everything
+   else: my-account.css lays out every content-area form as a two-column grid
+   (0-2-1), which the dialog's form has to outrank. */
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-dialog {
+	box-sizing: border-box;
+	width: min(716px, calc(100vw - 32px));
+	max-width: none;
+	max-height: calc(100vh - 32px);
+	margin: 100px auto auto;
+	padding: 0;
+	border: 0;
+	border-radius: 8px;
+	background: #fff;
+	color: var(--rwaq-acc-text);
+	box-shadow: 0 32px 64px rgba(0, 0, 0, 0.24), 0 0 8px rgba(0, 0, 0, 0.2);
+	overflow: auto;
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-dialog::backdrop {
+	background: rgba(0, 0, 0, 0.53);
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-dialog__body {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	gap: 0;
+	margin: 0;
+	padding: 24px;
+	background: transparent;
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-dialog__icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	align-self: flex-start;
+	width: 50px;
+	height: 50px;
+	margin-bottom: 24px;
+	border-radius: 50%;
+	background: var(--rwaq-acc-brand-tint);
+	color: var(--rwaq-acc-brand);
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-dialog__title {
+	margin: 0 0 8px;
+	padding: 0;
+	font-size: 24px;
+	font-weight: 600;
+	line-height: 32px;
+	color: var(--rwaq-acc-text);
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-dialog__subtitle {
+	margin: 0;
+	font-size: 14px;
+	line-height: 22px;
+	color: var(--rwaq-acc-muted);
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-dialog__list {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	margin: 24px 0;
+	padding: 0;
+	list-style: none;
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-dialog__list li {
+	display: flex;
+	align-items: flex-start;
+	gap: 16px;
+	margin: 0;
+	padding: 0;
+	font-size: 14px;
+	line-height: 24px;
+	color: var(--rwaq-acc-text);
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-dialog__list svg {
+	flex: 0 0 24px;
+	color: var(--rwaq-acc-brand);
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-dialog__date {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 16px;
+	border-radius: 8px;
+	background: var(--rwaq-acc-brand-tint);
+	color: var(--rwaq-acc-brand);
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-dialog__date span {
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 20px;
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-dialog__date strong {
+	font-size: 16px;
+	font-weight: 600;
+	line-height: 24px;
+}
+
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-dialog__actions {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-start;
+	gap: 24px;
+	margin-top: 24px;
+}
+
+/* ---- Small screens ---- */
+@media (max-width: 600px) {
+	.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-grid__cell {
+		min-height: 0;
+	}
+
+	/* Rows become stacked label/value pairs: five columns do not fit a phone. */
+	.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-table thead {
+		display: none;
+	}
+
+	.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-table tr {
+		display: block;
+		padding: 12px 0;
+		border-bottom: 1px solid var(--rwaq-acc-border);
+	}
+
+	.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-table td {
+		display: flex;
+		justify-content: space-between;
+		gap: 16px;
+		width: auto;
+		height: auto;
+		padding: 4px 0;
+		border: 0;
+	}
+
+	.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-table td[data-title]::before {
+		content: attr(data-title);
+		font-weight: 600;
+	}
+
+	.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-table__action {
+		padding-top: 8px;
+	}
+
+	.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-dialog {
+		margin-top: 16px;
+	}
+
+	.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-dialog__actions .rwaq-sub-btn {
+		flex: 1 1 100%;
+	}
+}
