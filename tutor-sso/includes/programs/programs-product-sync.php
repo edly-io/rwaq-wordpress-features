@@ -101,15 +101,20 @@ function program_product_field( $field, $post_id ) {
  * A program price, preferring the program_* field and falling back to the
  * course_* one a program synced before the rename still carries.
  *
+ * Falls back only when program_* has never been saved for the program — not
+ * merely when it is empty. An empty program_* that exists is the LMS saying
+ * "no price": ending a sale sends program_sale_price "", and falling back
+ * then would resurrect the old sale price from course_sale_price.
+ *
  * @param string $role    'regular' or 'sale'.
  * @param int    $post_id Program post ID.
  * @return mixed
  */
 function program_product_price_field( $role, $post_id ) {
-	$value = program_product_field( 'program_' . $role . '_price', $post_id );
+	$field = 'program_' . $role . '_price';
 
-	if ( '' !== trim( (string) $value ) ) {
-		return $value;
+	if ( metadata_exists( 'post', (int) $post_id, $field ) ) {
+		return program_product_field( $field, $post_id );
 	}
 
 	return program_product_field( 'course_' . $role . '_price', $post_id );
