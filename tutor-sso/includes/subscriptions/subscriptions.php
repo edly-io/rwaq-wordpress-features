@@ -1,0 +1,137 @@
+<?php
+/**
+ * Subscriptions: shared constants and the feature switch.
+ *
+ * A subscription is a WordPress-side product — unlike courses and programs it
+ * is created by hand in WooCommerce rather than synced from the LMS, so none of
+ * the sync code is involved.
+ *
+ * @package tutor-sso
+ */
+
+namespace TutorSSO;
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * WooCommerce product type for a subscription plan.
+ *
+ * The literal matters beyond being an identifier: the Moyasar gateway decides
+ * whether to tokenize a card by testing the product type for the substring
+ * "subscription" (lowercase), so a type named without it would take payment
+ * and save no card, leaving nothing to charge at renewal.
+ *
+ * That is a fallback here rather than the mechanism — checkout asks for the
+ * card to be saved through WooCommerce's own
+ * `wc-{gateway}-new-payment-method` field, which every gateway supporting
+ * tokenization reads — but the naming costs nothing and covers the case where
+ * that field does not reach the gateway.
+ */
+const SUBSCRIPTION_PRODUCT_TYPE = 'rwaq_subscription';
+
+/**
+ * Product meta holding the billing period: 'monthly' or 'yearly'.
+ */
+const SUBSCRIPTION_PERIOD_META = '_rwaq_sub_period';
+
+/**
+ * Whether the subscriptions feature is switched on.
+ *
+ * This gates what can be *sold*: the product type in the admin, the account
+ * area and the renewal schedule. It deliberately does not gate the product
+ * class itself (see subscriptions-product-type.php) and must never gate
+ * renewals of subscriptions that are already running — a settings checkbox
+ * should not silently stop billing paying customers.
+ *
+ * @return bool
+ */
+function subscriptions_enabled() {
+	return (bool) apply_filters( 'tutor_sso_subscriptions_enabled', '1' === (string) sso_option( 'enable_subscriptions' ) );
+}
+
+/**
+ * Whether billing is running in testing mode.
+ *
+ * Shortens every period to ten minutes so a renewal can be watched happening
+ * instead of waited a month for. Nothing else changes: the plan still goes to
+ * the LMS as `monthly` or `yearly`, because its API accepts nothing else — so
+ * in this mode it receives a `monthly` plan whose period is ten minutes long.
+ *
+ * Not for production. Each cycle charges the card again.
+ *
+ * @return bool
+ */
+function subscriptions_test_mode() {
+	return (bool) apply_filters( 'tutor_sso_subscriptions_test_mode', '1' === (string) sso_option( 'subscriptions_test_mode' ) );
+}
+
+/**
+ * The billing periods a plan can use, as value => label.
+ *
+ * @return array<string,string>
+ */
+function subscription_periods() {
+	return array(
+		'monthly' => __( 'شهري', 'tutor-sso' ),
+		'yearly'  => __( 'سنوي', 'tutor-sso' ),
+	);
+}
+
+/**
+ * A product's billing period, defaulting to monthly.
+ *
+ * @param int $product_id Product ID.
+ * @return string 'monthly' or 'yearly'.
+ */
+function subscription_period( $product_id ) {
+	$period = (string) get_post_meta( (int) $product_id, SUBSCRIPTION_PERIOD_META, true );
+
+	return array_key_exists( $period, subscription_periods() ) ? $period : 'monthly';
+}
+
+/**
+ * Advance a timestamp by one billing period.
+ *
+ * The day of the month is the anchor and is kept, clamping to the last day of
+ * the target month when it is shorter. `strtotime( '+1 month' )` cannot be used
+ * for this: from 31 January it produces "31 February", which overflows to 3
+ * March — the subscriber skips a month's billing, gains a free period, and the
+ * anchor day is lost for good. Yearly has the same problem on 29 February.
+ *
+ * @param string $period 'monthly' or 'yearly'.
+ * @param int    $from   Unix timestamp to count from. Defaults to now.
+ * @return int Unix timestamp of the next payment.
+ */
+function subscription_next_payment( $period, $from = 0 ) {
+	$from = $from > 0 ? (int) $from : time();
+
+	// Testing mode: ten minutes, whatever the plan says.
+	if ( subscriptions_test_mode() ) {
+		return $from + ( 10 * MINUTE_IN_SECONDS );
+	}
+
+	$day   = (int) date( 'j', $from );
+	$month = (int) date( 'n', $from );
+	$year  = (int) date( 'Y', $from );
+	$hour  = (int) date( 'G', $from );
+	$min   = (int) date( 'i', $from );
+	$sec   = (int) date( 's', $from );
+
+	if ( 'yearly' === $period ) {
+		++$year;
+	} else {
+		++$month;
+
+		if ( $month > 12 ) {
+			$month = 1;
+			++$year;
+		}
+	}
+
+	// 't' on the first of the target month gives that month's length.
+	$days_in_month = (int) date( 't', mktime( 0, 0, 0, $month, 1, $year ) );
+
+	return (int) mktime( $hour, $min, $sec, $month, min( $day, $days_in_month ), $year );
+}

@@ -197,6 +197,7 @@ function course_detail_data_remote( $course_key ) {
 		'discount'    => '',
 		'part_of_program' => false,
 		'program_url'     => '',
+		'part_of_subscription' => false,
 		'enrollment_closed' => false,
 		'video'       => '',
 		'enrolled'    => 0,
@@ -293,6 +294,9 @@ function course_detail_data_remote( $course_key ) {
 			: '',
 		// Either flag means no new enrollment or purchase is possible — the
 		// view model doesn't need to tell them apart, both block the same way.
+		// Subscription content is never sold on its own — the plan unlocks it,
+		// the same way a program unlocks the courses inside it.
+		'part_of_subscription' => ! empty( $row['is_part_of_subscription'] ),
 		'enrollment_closed' => ! empty( $row['is_enrollment_full'] ) || ! empty( $row['is_enrollment_closed'] ),
 		'video'       => course_youtube_embed_url( isset( $row['youtube_intro_video_link'] ) ? $row['youtube_intro_video_link'] : '' ),
 		'enrolled'    => isset( $row['enrollment_count'] ) ? (int) $row['enrollment_count'] : 0,

@@ -332,15 +332,16 @@ function program_detail_program_url($program)
  * The current user's enrollment state for a program, asked once per render.
  *
  * @param string $program_key Program key.
- * @return array{enrolled:bool,has_order:bool}
+ * @return array{enrolled:bool,has_paid_access:bool,subscription_ends_at:string}
  */
 function program_detail_status($program_key)
 {
 	static $cache = array();
 
 	$none = array(
-		'enrolled'  => false,
-		'has_order' => false,
+		'enrolled'             => false,
+		'has_paid_access'      => false,
+		'subscription_ends_at' => '',
 	);
 
 	if (! is_user_logged_in()) {
@@ -363,7 +364,8 @@ function program_detail_status($program_key)
  * Order matters, each step outranking the ones below it:
  *
  *   enrolled    already in the program — send them to it
- *   has_order   paid for it, so enrolling is free even after unenrolling
+ *   has_paid_access  bought it, or a live subscription covers it, so enrolling
+ *                    is free even after unenrolling
  *   paid        sell it
  *   otherwise   free program — enroll
  *
@@ -385,7 +387,7 @@ function program_detail_call_to_action($post_id, $program_key, $program_url = ''
 	$status = program_detail_status($program_key);
 
 	// Enrolled, or already bought it: enroll rather than sell it twice.
-	if ($status['enrolled'] || $status['has_order']) {
+	if ($status['enrolled'] || $status['has_paid_access']) {
 		return program_detail_enroll_button($program_key, $program_url);
 	}
 
