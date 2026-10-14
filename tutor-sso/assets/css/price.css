@@ -1,0 +1,35 @@
+/**
+ * [rwaq_price] — the same look as the catalog cards' price line
+ * (courses.css / programs.css: .rwaq-course-card__price, .rwaq-program-card__price),
+ * standalone so it works in a Loop item on any page.
+ *
+ * `p.` on each rule outranks a theme or page builder styling bare paragraphs.
+ */
+
+p.rwaq-price {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 8px;
+	margin: 0;
+	padding: 0;
+	font-size: 14px;
+	font-weight: 500;
+	line-height: 20px;
+	color: #242424;
+}
+
+p.rwaq-price--free {
+	color: #2e7d32;
+}
+
+p.rwaq-price .rwaq-price-now {
+	font-weight: 600;
+	color: #242424;
+}
+
+p.rwaq-price .rwaq-price-was {
+	font-weight: 400;
+	color: #616161;
+	text-decoration: line-through;
+}
