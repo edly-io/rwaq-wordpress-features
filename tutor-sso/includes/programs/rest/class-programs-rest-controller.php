@@ -24,6 +24,9 @@
  *   - uuid                 → ACF field
  *   - organization         → ACF field
  *   - start_date           → ACF field
+ *   - is_paid              → ACF field (true/false), stored as 1 / 0
+ *   - program_regular_price → ACF field (text)
+ *   - program_sale_price    → ACF field (text)
  *   - status               → post status (publish|draft)
  *   - featured_image_url   → sideloaded + set as the post's featured image
  *
@@ -86,10 +89,16 @@ class Programs_REST_Controller extends \WP_REST_Controller {
 		return apply_filters(
 			'tutor_sso_program_acf_fields',
 			array(
-				'program_key'  => 'program_key',
-				'uuid'         => 'uuid',
-				'organization' => 'organization',
-				'start_date'   => 'start_date',
+				'program_key'          => 'program_key',
+				'uuid'                 => 'uuid',
+				'organization'         => 'organization',
+				'start_date'           => 'start_date',
+				'is_paid'               => 'is_paid',
+				'program_regular_price' => 'program_regular_price',
+				'program_sale_price'    => 'program_sale_price',
+				// Legacy names, still accepted; they write the same fields.
+				'course_regular_price'  => 'program_regular_price',
+				'course_sale_price'     => 'program_sale_price',
 			)
 		);
 	}
@@ -120,52 +129,70 @@ class Programs_REST_Controller extends \WP_REST_Controller {
 	 */
 	public function get_endpoint_args() {
 		return array(
-			'name'              => array(
+			'name'                 => array(
 				'description'       => __( 'Program name — used as the post title.', 'tutor-sso' ),
 				'type'              => 'string',
 				'required'          => true,
 				'sanitize_callback' => 'sanitize_text_field',
 				'validate_callback' => array( $this, 'validate_non_empty' ),
 			),
-			'slug'              => array(
+			'slug'                 => array(
 				'description'       => __( 'Program slug (post_name). Required on create, ignored on update. Must be unique among programs.', 'tutor-sso' ),
 				'type'              => 'string',
 				'required'          => false,
 				'sanitize_callback' => 'sanitize_title',
 			),
-			'program_key'       => array(
+			'program_key'          => array(
 				'description'       => __( 'Unique program key. Determines create vs. update.', 'tutor-sso' ),
 				'type'              => 'string',
 				'required'          => true,
 				'sanitize_callback' => 'sanitize_text_field',
 				'validate_callback' => array( $this, 'validate_non_empty' ),
 			),
-			'uuid'              => array(
+			'uuid'                 => array(
 				'description'       => __( 'Program UUID.', 'tutor-sso' ),
 				'type'              => 'string',
 				'required'          => false,
 				'sanitize_callback' => 'sanitize_text_field',
 			),
-			'organization'      => array(
+			'organization'         => array(
 				'description'       => __( 'Owning organization.', 'tutor-sso' ),
 				'type'              => 'string',
 				'required'          => false,
 				'sanitize_callback' => 'sanitize_text_field',
 			),
-			'start_date'        => array(
+			'start_date'           => array(
 				'description'       => __( 'Program start date (e.g. YYYY-MM-DD or ISO 8601).', 'tutor-sso' ),
 				'type'              => 'string',
 				'required'          => false,
 				'sanitize_callback' => 'sanitize_text_field',
 			),
-			'status'            => array(
+			'is_paid'              => array(
+				'description'       => __( 'Whether the program is paid. Accepts true/false, 1/0 or "yes"/"no"; stored as 1 / 0.', 'tutor-sso' ),
+				'type'              => 'boolean',
+				'required'          => false,
+				'sanitize_callback' => array( $this, 'sanitize_bool_flag' ),
+			),
+			'program_regular_price' => array(
+				'description'       => __( 'Regular price, as sent by the LMS.', 'tutor-sso' ),
+				'type'              => 'string',
+				'required'          => false,
+				'sanitize_callback' => 'sanitize_text_field',
+			),
+			'program_sale_price'    => array(
+				'description'       => __( 'Sale price, as sent by the LMS.', 'tutor-sso' ),
+				'type'              => 'string',
+				'required'          => false,
+				'sanitize_callback' => 'sanitize_text_field',
+			),
+			'status'               => array(
 				'description'       => __( 'Post status: publish or draft. Applied on both create and update.', 'tutor-sso' ),
 				'type'              => 'string',
 				'required'          => false,
 				'enum'              => array( 'publish', 'draft' ),
 				'sanitize_callback' => 'sanitize_key',
 			),
-			'featured_image_url' => array(
+			'featured_image_url'   => array(
 				'description'       => __( 'URL of an image to download and set as the featured image.', 'tutor-sso' ),
 				'type'              => 'string',
 				'format'            => 'uri',
@@ -173,6 +200,21 @@ class Programs_REST_Controller extends \WP_REST_Controller {
 				'sanitize_callback' => 'esc_url_raw',
 			),
 		);
+	}
+
+	/**
+	 * Normalize a boolean-ish flag into the 1 / 0 an ACF true/false field stores.
+	 *
+	 * The LMS may send a JSON boolean, a number, or a string ("true", "yes",
+	 * "1"), depending on how the payload is encoded — rest_sanitize_boolean()
+	 * covers all of those, and the int cast keeps the stored value consistent
+	 * with what ACF writes from the admin UI.
+	 *
+	 * @param mixed $value Raw flag from the request.
+	 * @return int 1 or 0.
+	 */
+	public function sanitize_bool_flag( $value ) {
+		return rest_sanitize_boolean( $value ) ? 1 : 0;
 	}
 
 	/**
@@ -325,6 +367,17 @@ class Programs_REST_Controller extends \WP_REST_Controller {
 		if ( is_wp_error( $image_result ) ) {
 			$response_data['featured_image_error'] = $image_result->get_error_message();
 		}
+
+		/**
+		 * Fires once a program has been fully written — fields and image.
+		 * Mirrors `tutor_sso_course_synced` on the course endpoint, so
+		 * downstream integrations hook the same way for both post types.
+		 *
+		 * @param int              $post_id   Program post ID.
+		 * @param \WP_REST_Request $request   The sync request.
+		 * @param bool             $is_update Whether an existing program was updated.
+		 */
+		do_action( 'tutor_sso_program_synced', $post_id, $request, (bool) $existing_id );
 
 		$response = rest_ensure_response( $response_data );
 		$response->set_status( $existing_id ? 200 : 201 );

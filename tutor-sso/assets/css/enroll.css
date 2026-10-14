@@ -3,10 +3,25 @@
 	flex-wrap: wrap;
 	align-items: center;
 	gap: 12px;
+	/* Carried over from the removed enroll-rtl.css swap, which added only
+	   this on top of an otherwise-identical copy of this file. */
+	direction: rtl;
+	text-align: right;
 }
 
 .tutor-sso-enroll-btn {
-	display: inline-block;
+	/* flex + justify-content:center, not inline-block + text-align, so the
+	   label stays centered no matter what width a parent ends up giving this
+	   button — stretched full-width (.tutor-sso-enroll-wrap--buy's
+	   align-items:stretch) or left at its own content size (order-links'
+	   flex:0 0 auto). inline-block's default left-edge/inline-start text
+	   position only looked centered by coincidence wherever nothing stretched
+	   it; course-detail.css re-centers it again for its own card with a
+	   display:flex override — this makes that override unnecessary for any
+	   future consumer. */
+	display: flex;
+	align-items: center;
+	justify-content: center;
 	padding: 10px 22px;
 	border: none;
 	border-radius: 6px;
@@ -19,25 +34,30 @@
 }
 
 .tutor-sso-enroll-btn--enroll,
-.tutor-sso-enroll-btn--login {
+.tutor-sso-enroll-btn--login,
+.tutor-sso-enroll-btn--buy {
 	background-color: #565199;
-	color: #ffffff;
+	/* .rwaq-pd a{color:var(--rwaq-primary)} (one more tag selector) outranks
+	   this on program-detail pages otherwise, leaving purple text on the
+	   purple fill. */
+	color: #ffffff !important;
 }
 
 .tutor-sso-enroll-btn--enroll:hover,
-.tutor-sso-enroll-btn--login:hover {
+.tutor-sso-enroll-btn--login:hover,
+.tutor-sso-enroll-btn--buy:hover {
 	background-color: #474293;
-	color: #ffffff;
+	color: #ffffff !important;
 }
 
 .tutor-sso-enroll-btn--goto {
 	background-color: #565199;
-	color: #ffffff;
+	color: #ffffff !important;
 }
 
 .tutor-sso-enroll-btn--goto:hover {
 	background-color: #474293;
-	color: #ffffff;
+	color: #ffffff !important;
 }
 
 .tutor-sso-enroll-btn--unenroll {
@@ -49,6 +69,91 @@
 .tutor-sso-enroll-btn--unenroll:hover {
 	background-color: #f5f5f5;
 	color: #242424;
+}
+
+/* Buy button: the price sits above it on its own row. */
+.tutor-sso-enroll-wrap--buy {
+	flex-direction: column;
+	align-items: stretch;
+	gap: 10px;
+}
+
+/* Program notice: the message sits above the "go to program" button. */
+.tutor-sso-enroll-wrap--program {
+	flex-direction: column;
+	align-items: stretch;
+	gap: 10px;
+}
+
+.tutor-sso-enroll-notice {
+	margin: 0;
+	font-size: 13px;
+	line-height: 1.6;
+	color: #616161;
+	text-align: center;
+}
+
+/* Price panel (see course_product_price_html()). The course detail card
+   restyles this on the brand tint — see course-detail.css. */
+.tutor-sso-course-price {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.tutor-sso-course-price__head {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.tutor-sso-course-price__label {
+	color: #616161;
+	font-size: 13px;
+	font-weight: 500;
+}
+
+.tutor-sso-course-price__badge {
+	padding: 2px 10px;
+	border-radius: 999px;
+	background: #565199;
+	color: #fff;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 20px;
+	white-space: nowrap;
+}
+
+.tutor-sso-course-price__amounts {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 4px 10px;
+}
+
+.tutor-sso-course-price__now {
+	color: #565199;
+	font-size: 22px;
+	font-weight: 700;
+	line-height: 1.35;
+}
+
+.tutor-sso-course-price__was {
+	color: #616161;
+	font-size: 15px;
+	font-weight: 400;
+	text-decoration: line-through;
+}
+
+.tutor-sso-course-price__now .woocommerce-Price-currencySymbol {
+	margin-inline-start: 3px;
+	font-size: 0.65em;
+	font-weight: 600;
+}
+
+.tutor-sso-course-price__was .woocommerce-Price-currencySymbol {
+	font-size: 0.85em;
+	font-weight: 400;
 }
 
 .tutor-sso-enroll-btn[disabled] {
@@ -76,4 +181,123 @@
 	color: #fff;
 	font-weight: 600;
 	text-decoration: none;
+}
+
+/* ---- Order page: what was bought ----
+   Rendered on the order-received page and on a past order under My Account
+   (see includes/orders/order-course-links.php), to the design at Figma
+   10571:10800: a card holding a two-column table, one quiet "view details"
+   link per row rather than a button per item. */
+.tutor-sso-order-links {
+	box-sizing: border-box;
+	margin: 24px 0;
+	padding: 20px;
+	border: 1px solid #d1d1d1;
+	border-radius: 10px;
+	background: #fff;
+}
+
+.tutor-sso-order-links__title {
+	margin: 0 0 24px;
+	padding-inline: 20px;
+	font-size: 20px;
+	font-weight: 600;
+	line-height: 28px;
+	color: #242424;
+	text-align: start;
+}
+
+.tutor-sso-order-links__table {
+	width: 100%;
+	margin: 0;
+	border: 0;
+	border-collapse: collapse;
+	table-layout: auto;
+}
+
+.tutor-sso-order-links__table th,
+.tutor-sso-order-links__table td {
+	padding: 9px 16px;
+	border: 0;
+	/* Every row but the last is separated by a hairline; the card's own border
+	   closes the bottom, so a trailing rule would read as a double line. */
+	border-bottom: 1px solid #d1d1d1;
+	background: transparent;
+	font-size: 14px;
+	line-height: 22px;
+	vertical-align: middle;
+}
+
+.tutor-sso-order-links__table tbody tr:last-child th,
+.tutor-sso-order-links__table tbody tr:last-child td {
+	border-bottom: 0;
+}
+
+.tutor-sso-order-links__table th {
+	font-weight: 600;
+	color: #242424;
+}
+
+.tutor-sso-order-links__table td {
+	font-weight: 400;
+	color: #242424;
+}
+
+/* The name column takes the slack so the action column keeps its width
+   whatever the titles are. */
+.tutor-sso-order-links__col-name {
+	width: 100%;
+	text-align: start;
+}
+
+.tutor-sso-order-links__col-action {
+	width: 200px;
+	min-width: 200px;
+	text-align: start;
+	white-space: nowrap;
+}
+
+.tutor-sso-order-links__link,
+.tutor-sso-order-links__link:hover,
+.tutor-sso-order-links__link:focus {
+	color: #565199;
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 22px;
+	text-decoration: underline;
+}
+
+.tutor-sso-order-links__link:hover {
+	color: #474293;
+}
+
+/* The per-row name, for screen readers only — see the renderer's note. */
+.tutor-sso-order-links .screen-reader-text {
+	position: absolute !important;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+@media (max-width: 600px) {
+	.tutor-sso-order-links__title {
+		padding-inline: 0;
+	}
+
+	.tutor-sso-order-links__table th,
+	.tutor-sso-order-links__table td {
+		padding-inline: 0;
+	}
+
+	/* Two columns no longer fit side by side at this width without the title
+	   wrapping to several lines against a 200px action column. */
+	.tutor-sso-order-links__col-action {
+		width: auto;
+		min-width: 0;
+	}
 }

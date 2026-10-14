@@ -275,15 +275,16 @@ function enroll_change_enrollment( $course_id, $action ) {
 }
 
 /**
- * Check whether the current user is actively enrolled in a course.
+ * The current user's state for a course, as the LMS reports it.
  *
- * Uses the course_home metadata endpoint, which reports the requesting user's
- * own enrollment under `enrollment.is_active`.
+ * `has_order` is true when the learner has paid for this course — directly, or
+ * through a program that contains it. It stays true after they unenroll, so a
+ * buyer can re-enroll without paying again.
  *
  * @param string $course_id edX course id.
- * @return bool|\WP_Error True/false, or WP_Error when the call fails.
+ * @return array{enrolled:bool,has_order:bool}|\WP_Error
  */
-function enroll_is_enrolled( $course_id ) {
+function enroll_status( $course_id ) {
 	$base = enroll_lms_base_url();
 
 	if ( empty( $base ) ) {
@@ -291,22 +292,21 @@ function enroll_is_enrolled( $course_id ) {
 	}
 
 	if ( ! enroll_has_edx_session() ) {
-		return false;
+		return array(
+			'enrolled'  => false,
+			'has_order' => false,
+		);
 	}
 
-	$cookie_header = enroll_build_cookie_header();
-
-	$url = $base . '/api/course_home/course_metadata/' . rawurlencode( $course_id );
-
 	$response = wp_remote_get(
-		$url,
+		$base . '/api/course_home/course_metadata/' . rawurlencode( $course_id ),
 		array(
 			'timeout'   => 20,
 			'sslverify' => apply_filters( 'tutor_sso_ssl_verify', true ),
 			'headers'   => array(
 				'Accept'         => 'application/json, text/plain, */*',
 				'Referer'        => $base . '/',
-				'Cookie'         => $cookie_header,
+				'Cookie'         => enroll_build_cookie_header(),
 				'use-jwt-cookie' => 'true',
 			),
 		)
@@ -326,17 +326,30 @@ function enroll_is_enrolled( $course_id ) {
 		);
 	}
 
-	// course_metadata returns { "enrollment": { "is_active": bool, "mode": ... }, ... }.
+	// course_metadata returns a flat is_enrolled; some deployments nest it under
+	// an enrollment object instead.
 	if ( isset( $body['enrollment'] ) && is_array( $body['enrollment'] ) ) {
-		return ! empty( $body['enrollment']['is_active'] );
+		$enrolled = ! empty( $body['enrollment']['is_active'] );
+	} else {
+		$enrolled = ! empty( $body['is_enrolled'] );
 	}
 
-	// Some deployments expose a flat is_enrolled flag instead.
-	if ( isset( $body['is_enrolled'] ) ) {
-		return ! empty( $body['is_enrolled'] );
-	}
+	return array(
+		'enrolled'  => $enrolled,
+		'has_order' => ! empty( $body['has_order'] ),
+	);
+}
 
-	return false;
+/**
+ * Whether the current user is actively enrolled in a course.
+ *
+ * @param string $course_id edX course id.
+ * @return bool|\WP_Error
+ */
+function enroll_is_enrolled( $course_id ) {
+	$status = enroll_status( $course_id );
+
+	return is_wp_error( $status ) ? $status : $status['enrolled'];
 }
 
 /**

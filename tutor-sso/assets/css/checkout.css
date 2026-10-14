@@ -1,0 +1,635 @@
+/**
+ * Checkout page, styled to the design (Figma 10409:8451).
+ *
+ * CSS only — WooCommerce's own checkout template, and the Moyasar gateway's own
+ * markup, are untouched, so an update to either cannot break this. Everything is
+ * scoped under .woocommerce-checkout.
+ *
+ * Two structural pieces the design shows that have no element to style, because
+ * nothing in the current markup renders them:
+ *   - a "طريقة الدفع" heading above the payment methods list
+ *   - a "رجوع" (back) button next to "تأكيد الطلب"
+ * Both would need a small additive PHP hook, not CSS. Flagged, not faked here.
+ */
+
+.woocommerce-checkout {
+	--rwaq-co-border: #d1d1d1;
+	--rwaq-co-text: #242424;
+	--rwaq-co-muted: #616161;
+	--rwaq-co-brand: #565199;
+	--rwaq-co-surface: #fff;
+	--rwaq-co-danger: #ca0003;
+}
+
+/* ---- Page frame ---- */
+.woocommerce-checkout .woocommerce {
+	max-width: 1232px;
+	margin-inline: auto;
+	padding-block: 48px;
+	font-family: 'IBM Plex Sans Arabic', sans-serif;
+	color: var(--rwaq-co-text);
+}
+
+.woocommerce-checkout .entry-title,
+.woocommerce-checkout .page-title {
+	max-width: 1232px;
+	margin: 0 auto 24px;
+	padding-inline: 0;
+	font-size: 32px;
+	font-weight: 600;
+	line-height: 40px;
+	text-align: right;
+}
+
+/* ---- "Have a coupon?" banner: toned down, not hidden ---- */
+.woocommerce-checkout .woocommerce-form-coupon-toggle {
+	max-width: 1232px;
+	margin: 0 auto 16px;
+}
+
+.woocommerce-checkout .woocommerce-form-coupon-toggle .woocommerce-info {
+	margin: 0;
+	padding: 14px 16px;
+	border: 1px solid var(--rwaq-co-border);
+	border-radius: 10px;
+	background: var(--rwaq-co-surface);
+	list-style: none;
+	font-size: 13px;
+	color: var(--rwaq-co-text);
+	text-align: right;
+}
+
+.woocommerce-checkout .woocommerce-form-coupon-toggle .woocommerce-info a.showcoupon {
+	color: var(--rwaq-co-brand);
+	font-weight: 600;
+	text-decoration: none;
+}
+
+/* WooCommerce reserves space for and absolutely positions a font-icon here
+   (content:"\e028"); overriding the padding without removing the icon leaves
+   it floating over the text instead of beside it. */
+.woocommerce-checkout .woocommerce-form-coupon-toggle .woocommerce-info::before,
+.woocommerce-checkout .woocommerce-form-coupon-toggle .woocommerce-info::after {
+	display: none !important;
+}
+
+.woocommerce-checkout .checkout_coupon.woocommerce-form-coupon {
+	max-width: 1232px;
+	margin: 0 auto 16px;
+	padding: 16px;
+	border: 1px solid var(--rwaq-co-border);
+	border-radius: 10px;
+	background: var(--rwaq-co-surface);
+}
+
+/* ---- Shared field styling: billing, additional, and the card form alike ---- */
+.woocommerce-checkout .form-row {
+	margin: 0 0 16px;
+}
+
+.woocommerce-checkout .form-row label {
+	display: block;
+	margin-bottom: 6px;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--rwaq-co-text);
+	text-align: right;
+}
+
+.woocommerce-checkout .form-row label .required {
+	color: var(--rwaq-co-danger);
+	text-decoration: none;
+}
+
+.woocommerce-checkout .form-row label .optional {
+	font-weight: 400;
+	color: var(--rwaq-co-muted);
+}
+
+.woocommerce-checkout .form-row .input-text,
+.woocommerce-checkout .form-row textarea,
+.woocommerce-checkout .form-row select {
+	width: 100%;
+	padding: 10px 14px;
+	/* WooCommerce's own .form-row .input-text/select rule sets this same
+	   property (to --wc-form-border-color, a near-black) with one more type
+	   selector than this rule has, which wins the tiebreak on equal class
+	   count — !important is the only reliable way to take the Figma colour. */
+	border: 1px solid var(--rwaq-co-border) !important;
+	border-radius: 8px;
+	background: var(--rwaq-co-surface);
+	font-family: inherit;
+	font-size: 13px;
+	line-height: 1.5;
+	color: var(--rwaq-co-text);
+	box-sizing: border-box;
+}
+
+.woocommerce-checkout .form-row .input-text:focus,
+.woocommerce-checkout .form-row textarea:focus,
+.woocommerce-checkout .form-row select:focus {
+	outline: none;
+	border-color: var(--rwaq-co-brand) !important;
+}
+
+.woocommerce-checkout .form-row textarea {
+	min-height: 90px;
+	resize: vertical;
+}
+
+.woocommerce-checkout .form-row ::placeholder {
+	color: #bdbdbd;
+}
+
+/* select2 (country/region): match the plain input look. */
+.woocommerce-checkout .select2-container .select2-selection--single {
+	height: auto !important;
+	padding: 10px 14px !important;
+	border: 1px solid var(--rwaq-co-border) !important;
+	border-radius: 8px !important;
+	background: var(--rwaq-co-surface) !important;
+}
+
+.woocommerce-checkout .select2-selection__rendered {
+	padding: 0 !important;
+	line-height: 1.5 !important;
+	font-size: 13px !important;
+	color: var(--rwaq-co-text) !important;
+}
+
+.woocommerce-checkout .select2-selection__arrow {
+	top: 0 !important;
+	height: 100% !important;
+}
+
+/* Every row is full width by default; only two pairs in this form are not. */
+.woocommerce-checkout .form-row-wide {
+	width: 100% !important;
+	float: none !important;
+	clear: both;
+}
+
+/* Name pair: WooCommerce's own float classes already place these correctly
+   (first on the right, last on the left) — left as-is, not re-implemented. */
+
+/* Postcode / region pair: not floated by default, so the design's side-by-side
+   layout is added here. float:left and float:right each reach their own edge
+   regardless of which field comes first in the markup, so the visual order
+   (postcode right, region left, matching the design) doesn't depend on the
+   underlying field order WooCommerce/the locale happens to use. */
+.woocommerce-checkout #billing_postcode_field {
+	float: right !important;
+	width: 48% !important;
+	clear: none !important;
+}
+
+.woocommerce-checkout #billing_state_field {
+	float: left !important;
+	width: 48% !important;
+	clear: none !important;
+}
+
+.woocommerce-checkout #billing_phone_field {
+	clear: both;
+}
+
+/* Every top-level block below (the two-column row, the order table, the
+   payment card) is a direct child of the same .woocommerce-checkout form, with
+   no inherited padding between them — pinned to an identical box model here so
+   none of them can drift to a different effective width than the others. */
+.woocommerce-checkout form.checkout,
+.woocommerce-checkout #customer_details,
+.woocommerce-checkout #order_review_heading,
+.woocommerce-checkout #order_review,
+.woocommerce-checkout table.woocommerce-checkout-review-order-table,
+.woocommerce-checkout #payment {
+	box-sizing: border-box;
+	width: 100%;
+	max-width: 100%;
+	margin-inline: 0;
+	padding-inline: 0;
+}
+
+/* ---- Two-column layout: billing (wide) + order notes (narrow) ---- */
+.woocommerce-checkout #customer_details.col2-set {
+	display: flex;
+	align-items: flex-start;
+	gap: 24px;
+	width: 100%;
+}
+
+/* .col2-set used float+clearfix before this was flexed, via a `content:"
+   ";display:table` pseudo-element pair. A flex container turns generated
+   content into real flex items, so those two pseudo-elements were silently
+   claiming a share of the row's flex space — col-1 never actually got its
+   full flex:1 1 0, which is why the billing card came out narrower than the
+   order-review table below it (which isn't flexed, so was never affected). */
+.woocommerce-checkout #customer_details.col2-set::before,
+.woocommerce-checkout #customer_details.col2-set::after {
+	content: none !important;
+	display: none !important;
+}
+
+.woocommerce-checkout #customer_details .col-1,
+.woocommerce-checkout #customer_details .col-2 {
+	width: auto;
+	float: none;
+	margin: 0;
+}
+
+.woocommerce-checkout #customer_details .col-1 {
+	flex: 1 1 0;
+	min-width: 0;
+}
+
+.woocommerce-checkout #customer_details .col-2 {
+	flex: 0 0 320px;
+	max-width: 100%;
+}
+
+.woocommerce-checkout .woocommerce-billing-fields,
+.woocommerce-checkout .woocommerce-additional-fields {
+	padding: 24px;
+	border: 1px solid var(--rwaq-co-border);
+	border-radius: 10px;
+	background: var(--rwaq-co-surface);
+}
+
+.woocommerce-checkout .woocommerce-billing-fields h3,
+.woocommerce-checkout .woocommerce-additional-fields h3 {
+	margin: 0 0 20px;
+	font-size: 16px;
+	font-weight: 600;
+	text-align: right;
+}
+
+.woocommerce-checkout .woocommerce-billing-fields__field-wrapper .form-row:last-child,
+.woocommerce-checkout .woocommerce-additional-fields__field-wrapper .form-row:last-child {
+	margin-bottom: 0;
+}
+
+.woocommerce-checkout .woocommerce-shipping-fields:empty {
+	display: none;
+}
+
+/* ---- "طلبك": the order review table, its own card ---- */
+.woocommerce-checkout #order_review_heading {
+	margin: 32px 0 16px;
+	font-size: 20px;
+	font-weight: 600;
+	text-align: right;
+}
+
+.woocommerce-checkout #order_review.woocommerce-checkout-review-order {
+	background: transparent;
+}
+
+.woocommerce-checkout table.shop_table.woocommerce-checkout-review-order-table {
+	width: 100%;
+	margin: 0 0 24px;
+	border: 1px solid var(--rwaq-co-border);
+	border-radius: 10px;
+	border-collapse: separate;
+	border-spacing: 0;
+	overflow: hidden;
+	background: var(--rwaq-co-surface);
+}
+
+.woocommerce-checkout table.shop_table.woocommerce-checkout-review-order-table th,
+.woocommerce-checkout table.shop_table.woocommerce-checkout-review-order-table td {
+	padding: 14px 20px;
+	border: 0;
+	border-bottom: 1px solid var(--rwaq-co-border);
+	background: transparent;
+	font-size: 13px;
+	line-height: 19.5px;
+	vertical-align: middle;
+}
+
+.woocommerce-checkout table.shop_table.woocommerce-checkout-review-order-table thead th {
+	font-weight: 600;
+	color: var(--rwaq-co-text);
+}
+
+.woocommerce-checkout table.shop_table.woocommerce-checkout-review-order-table thead th.product-total,
+.woocommerce-checkout table.shop_table.woocommerce-checkout-review-order-table tbody td.product-total,
+.woocommerce-checkout table.shop_table.woocommerce-checkout-review-order-table tfoot td {
+	text-align: left;
+}
+
+.woocommerce-checkout table.shop_table.woocommerce-checkout-review-order-table thead th.product-name,
+.woocommerce-checkout table.shop_table.woocommerce-checkout-review-order-table tbody td.product-name,
+.woocommerce-checkout table.shop_table.woocommerce-checkout-review-order-table tfoot th {
+	text-align: right;
+}
+
+.woocommerce-checkout table.shop_table.woocommerce-checkout-review-order-table tbody td.product-name {
+	font-weight: 600;
+}
+
+.woocommerce-checkout table.shop_table.woocommerce-checkout-review-order-table tbody td.product-name .product-quantity {
+	margin-inline-start: 6px;
+	font-weight: 400;
+	color: var(--rwaq-co-muted);
+}
+
+.woocommerce-checkout table.shop_table.woocommerce-checkout-review-order-table tfoot th {
+	font-weight: 400;
+	color: var(--rwaq-co-muted);
+}
+
+.woocommerce-checkout table.shop_table.woocommerce-checkout-review-order-table tfoot td {
+	font-weight: 600;
+}
+
+.woocommerce-checkout table.shop_table.woocommerce-checkout-review-order-table tfoot tr:last-child th,
+.woocommerce-checkout table.shop_table.woocommerce-checkout-review-order-table tfoot tr:last-child td {
+	border-bottom: 0;
+}
+
+.woocommerce-checkout table.shop_table.woocommerce-checkout-review-order-table tfoot tr.order-total th,
+.woocommerce-checkout table.shop_table.woocommerce-checkout-review-order-table tfoot tr.order-total td {
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--rwaq-co-text);
+}
+
+/* ---- "طريقة الدفع": payment methods, its own card ---- */
+.woocommerce-checkout .tutor-sso-checkout-payment-heading {
+	margin: 0 0 16px;
+	font-size: 20px;
+	font-weight: 600;
+	text-align: right;
+}
+
+.woocommerce-checkout #payment.woocommerce-checkout-payment {
+	width: 100%;
+	box-sizing: border-box;
+	padding: 20px 24px;
+	border: 1px solid var(--rwaq-co-border);
+	border-radius: 10px;
+	background: var(--rwaq-co-surface) !important;
+}
+
+/* WooCommerce's own compiled rule is `.woocommerce-checkout #payment
+   ul.payment_methods { padding:1em; border-bottom:... }` — the #payment id
+   gives it a specificity this rule can't beat without also including #payment,
+   so it's added here purely to win the tiebreak, not for anything semantic. */
+.woocommerce-checkout #payment ul.wc_payment_methods.payment_methods.methods {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	margin: 0 !important;
+	padding: 0 !important;
+	border-bottom: 0 !important;
+	list-style: none;
+}
+
+.woocommerce-checkout #payment ul.payment_methods li.wc_payment_method {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 14px 16px;
+	border: 1px solid var(--rwaq-co-border);
+	border-radius: 8px;
+	text-align: right;
+}
+
+/* ul.payment_methods and li (both float+clearfix before being flexed here, via
+   `content:" ";display:table` pseudo-elements WooCommerce adds for the
+   clearfix) — same issue as .col2-set above. On the li specifically, those two
+   extra phantom flex items sat between label and input, so space-between
+   distributed its gap across three slots instead of two: the label landed in
+   the middle of the row instead of flush against the right edge, which is
+   what read as "centered". */
+.woocommerce-checkout #payment ul.payment_methods::before,
+.woocommerce-checkout #payment ul.payment_methods::after,
+.woocommerce-checkout #payment ul.payment_methods li.wc_payment_method::before,
+.woocommerce-checkout #payment ul.payment_methods li.wc_payment_method::after {
+	content: none !important;
+	display: none !important;
+}
+
+.woocommerce-checkout #payment ul.payment_methods li.wc_payment_method input.input-radio {
+	order: 2;
+	flex: 0 0 auto;
+	width: 18px;
+	height: 18px;
+	margin: 0 !important;
+	accent-color: var(--rwaq-co-brand);
+}
+
+.woocommerce-checkout #payment ul.payment_methods li.wc_payment_method>label {
+	order: 1;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0;
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--rwaq-co-text);
+	text-align: right;
+	cursor: pointer;
+}
+
+/* The expanded method's own fields (Moyasar's card form, Apple Pay's button
+   container). WooCommerce's compiled rule for this is
+   `.woocommerce-checkout #payment div.payment_box{background-color:...;
+   padding:1em;margin:1em 0}` plus a speech-bubble-pointer ::before — all
+   #payment-scoped, so every override below needs the same id to win, and the
+   colour/background need !important since nothing else here is important. */
+.woocommerce-checkout #payment div.payment_box {
+	order: 3;
+	flex: 0 0 100%;
+	width: 100%;
+	margin: 16px 0 0 !important;
+	padding: 16px 0 0 !important;
+	border-top: 1px solid var(--rwaq-co-border);
+	border-radius: 0 !important;
+	background: transparent !important;
+	color: var(--rwaq-co-text) !important;
+	box-sizing: border-box;
+	text-align: right;
+}
+
+.woocommerce-checkout #payment div.payment_box::before {
+	display: none !important;
+}
+
+.woocommerce-checkout #payment div.payment_box>p:first-child {
+	margin-top: 0;
+	font-size: 13px;
+	color: var(--rwaq-co-muted);
+}
+
+.woocommerce-checkout #payment div.payment_box .form-row {
+	margin: 0 0 16px !important;
+}
+
+/* Saved-payment-method radio row inside the card form. */
+.woocommerce-checkout .woocommerce-SavedPaymentMethods {
+	margin: 0 0 16px;
+	padding: 0;
+	list-style: none;
+}
+
+.woocommerce-checkout .woocommerce-SavedPaymentMethods li {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 13px;
+}
+
+.woocommerce-checkout .woocommerce-SavedPaymentMethods-tokenInput {
+	accent-color: var(--rwaq-co-brand);
+}
+
+/* Moyasar's own card-number field wraps a brand-logo overlay positioned via an
+   inline style at the field's physical right edge — fine to leave as-is; only
+   the input itself is restyled here, to match the rest of the form. */
+.woocommerce-checkout .moyasar-cc-expiry-cvc-group {
+	display: flex;
+	gap: 16px;
+}
+
+.woocommerce-checkout .moyasar-cc-expiry-cvc-group .form-row {
+	flex: 1 1 0;
+	min-width: 0;
+}
+
+.woocommerce-checkout .wc-save-payment-method-checkbox .form-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 0;
+}
+
+.woocommerce-checkout .wc-save-payment-method-checkbox input[type='checkbox'] {
+	accent-color: var(--rwaq-co-brand);
+}
+
+.woocommerce-checkout .wc-save-payment-method-checkbox label {
+	margin: 0;
+	font-weight: 400;
+}
+
+/* The Moyasar gateway ships its own "Modern UI" stylesheet that draws a second,
+   nested card around #wc-moyasar-cc-form (border/background/shadow) and styles
+   its own inputs (#ccc border, 6px radius) independently of WooCommerce core —
+   a separate layer from the core conflicts above, also #id-scoped, so this
+   needs the same id-plus-!important treatment to win. Padding is deliberately
+   left alone: Moyasar reserves space on the card-number field for its brand-
+   logo overlay, and touching padding here would undo that. */
+.woocommerce-checkout #wc-moyasar-cc-form,
+.woocommerce-checkout #wc-moyasar-stc-pay-form {
+	border: 0 !important;
+	background: transparent !important;
+	padding: 0 !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+}
+
+.woocommerce-checkout #wc-moyasar-cc-form input.input-text,
+.woocommerce-checkout #wc-moyasar-cc-form input[type='text'],
+.woocommerce-checkout #wc-moyasar-cc-form input[type='password'] {
+	border: 1px solid var(--rwaq-co-border) !important;
+	border-radius: 8px !important;
+}
+
+.woocommerce-checkout #wc-moyasar-cc-form input.input-text:focus,
+.woocommerce-checkout #wc-moyasar-cc-form input[type='text']:focus,
+.woocommerce-checkout #wc-moyasar-cc-form input[type='password']:focus {
+	border-color: var(--rwaq-co-brand) !important;
+	box-shadow: none !important;
+}
+
+.woocommerce-checkout .moyasar-payment-footer {
+	margin-top: 16px !important;
+	padding-top: 16px !important;
+	border-top: 1px solid var(--rwaq-co-border) !important;
+}
+
+/* ---- Place order ---- */
+.woocommerce-checkout .form-row.place-order {
+	display: flex;
+	justify-content: flex-end;
+	margin: 20px 0 0;
+}
+
+.woocommerce-checkout .woocommerce-terms-and-conditions-wrapper:empty {
+	display: none;
+}
+
+.woocommerce-checkout #place_order,
+.woocommerce-checkout #place_order:hover,
+.woocommerce-checkout #place_order:focus {
+	min-width: 220px;
+	padding: 12px 24px;
+	border: 1px solid var(--rwaq-co-brand) !important;
+	border-radius: 8px !important;
+	background: var(--rwaq-co-brand) !important;
+	color: #fff !important;
+	font-size: 16px;
+	font-weight: 600;
+}
+
+.woocommerce-checkout table.shop_table.woocommerce-checkout-review-order-table {
+	width: 70% !important;
+}
+
+.woocommerce-checkout #payment.woocommerce-checkout-payment {
+	width: 70% !important;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 900px) {
+	.woocommerce-checkout #customer_details.col2-set {
+		flex-direction: column;
+	}
+
+	.woocommerce-checkout #customer_details .col-2 {
+		flex-basis: auto;
+		width: 100%;
+	}
+
+	.woocommerce-checkout table.shop_table.woocommerce-checkout-review-order-table {
+		width: 100% !important;
+	}
+
+	.woocommerce-checkout #payment.woocommerce-checkout-payment {
+		width: 100% !important;
+	}
+}
+
+@media (max-width: 600px) {
+	.woocommerce-checkout .woocommerce {
+		padding-block: 24px;
+		padding-inline: 16px;
+	}
+
+	.woocommerce-checkout .entry-title,
+	.woocommerce-checkout .page-title {
+		font-size: 24px;
+		line-height: 32px;
+	}
+
+	.woocommerce-checkout #billing_postcode_field,
+	.woocommerce-checkout #billing_state_field {
+		float: none !important;
+		width: 100% !important;
+	}
+
+	.woocommerce-checkout .moyasar-cc-expiry-cvc-group {
+		flex-direction: column;
+	}
+
+	.woocommerce-checkout .form-row.place-order {
+		justify-content: stretch;
+	}
+
+	.woocommerce-checkout #place_order {
+		width: 100%;
+	}
+}

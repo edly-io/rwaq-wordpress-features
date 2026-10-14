@@ -48,6 +48,7 @@ function ajax_load_courses() {
 	$ordering = isset( $_GET['ordering'] ) ? sanitize_key( wp_unslash( $_GET['ordering'] ) ) : '';
 	$org      = courses_ajax_sanitize_list( isset( $_GET['org'] ) ? wp_unslash( $_GET['org'] ) : array() );
 	$category = courses_ajax_sanitize_list( isset( $_GET['category'] ) ? wp_unslash( $_GET['category'] ) : array() );
+	$pricing  = courses_ajax_sanitize_list( isset( $_GET['pricing'] ) ? wp_unslash( $_GET['pricing'] ) : array() );
 
 	$per_page = min( $per_page, 48 );
 
@@ -59,6 +60,7 @@ function ajax_load_courses() {
 			'ordering' => $ordering,
 			'org'      => $org,
 			'category' => $category,
+			'pricing'  => $pricing,
 		)
 	);
 

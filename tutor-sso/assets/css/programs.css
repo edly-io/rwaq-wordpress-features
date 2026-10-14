@@ -570,6 +570,7 @@
 }
 
 .rwaq-program-card__media {
+	position: relative;
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -577,6 +578,21 @@
 	border-radius: 12px;
 	overflow: hidden;
 	color: #b6bccb;
+}
+
+/* Discount badge (Figma 10400:11124), pinned to the thumbnail's corner. */
+.rwaq-program-card__discount {
+	position: absolute;
+	top: 8px;
+	inset-inline-end: 8px;
+	padding: 2px 5px;
+	border-radius: 4px;
+	background: #ca0003;
+	color: #fff;
+	font-size: 10px;
+	font-weight: 600;
+	line-height: 14px;
+	white-space: nowrap;
 }
 
 .rwaq-program-card__image {
@@ -698,6 +714,36 @@
 	line-height: 20px;
 	color: var(--rwaq-text);
 	background: var(--rwaq-featured);
+}
+
+/* Price line, same rule as the courses catalog (courses.css) — "مجاني" in
+   green, otherwise the WooCommerce-formatted price, sale struck-through-regular
+   when there's a genuine discount. */
+.rwaq-program-card__price {
+	display: flex;
+	align-items: baseline;
+	gap: 8px;
+	margin: 12px 0 0;
+	text-align: right;
+	font-size: 14px;
+	font-weight: 500;
+	line-height: 20px;
+	color: var(--rwaq-heading);
+}
+
+.rwaq-program-card__price--free {
+	color: #2e7d32;
+}
+
+.rwaq-program-card__price-now {
+	font-weight: 600;
+	color: var(--rwaq-heading);
+}
+
+.rwaq-program-card__price-was {
+	font-weight: 400;
+	color: var(--rwaq-muted);
+	text-decoration: line-through;
 }
 
 /* ---- AJAX loader (append spinner on scroll) ---- */
@@ -1359,6 +1405,11 @@
 
 .rwaq-pd__side-body {
 	padding: 22px;
+}
+
+/* Shared price panel (assets/css/price-panel.css) sits above the enroll button. */
+.rwaq-pd__side-body .rwaq-cd__price {
+	margin-bottom: 20px;
 }
 
 .rwaq-pd__enroll {

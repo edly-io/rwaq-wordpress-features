@@ -260,6 +260,7 @@ function courses_request( $url, $cache_key ) {
  *     @type string   $ordering Ordering key (see courses_allowed_ordering()).
  *     @type string[] $org      Organization codes to filter by (OR).
  *     @type string[] $category Category names to filter by (OR).
+ *     @type string[] $pricing  'free' | 'paid' | 'program_only', OR'd.
  * }
  * @return array|\WP_Error { count, next, previous, results } or WP_Error.
  */
@@ -290,6 +291,10 @@ function courses_fetch_public( $page = 1, $per_page = 8, $args = array() ) {
 
 	if ( ! empty( $args['category'] ) ) {
 		$query['category'] = (array) $args['category'];
+	}
+
+	if ( ! empty( $args['pricing'] ) ) {
+		$query['pricing'] = (array) $args['pricing'];
 	}
 
 	$url = $base . COURSES_PUBLIC_ENDPOINT . '?' . courses_build_query( $query );
@@ -384,6 +389,12 @@ function courses_normalize_course( $row ) {
 		'org_name'   => '' !== $org_name ? $org_name : $org_code,
 		'instructor' => isset( $row['instructor'] ) ? trim( (string) $row['instructor'] ) : '',
 		'start_text' => courses_start_date_text( isset( $row['start'] ) ? $row['start'] : '' ),
+		// Same fields, same meaning as the detail page (course_pricing_is_paid(),
+		// in course-detail-client.php) — the list endpoint now carries pricing too.
+		'paid'       => course_pricing_is_paid( isset( $row['pricing_category'] ) ? $row['pricing_category'] : '' ),
+		'regular'    => isset( $row['regular_price'] ) ? trim( (string) $row['regular_price'] ) : '',
+		'sale'       => isset( $row['sale_price'] ) ? trim( (string) $row['sale_price'] ) : '',
+		'discount'   => isset( $row['discount_percentage'] ) ? $row['discount_percentage'] : null,
 	);
 
 	return apply_filters( 'tutor_sso_courses_card_data', $course, $row );
@@ -481,6 +492,7 @@ function courses_fetch_filters() {
 	return array(
 		'organizations' => ( isset( $body['organizations'] ) && is_array( $body['organizations'] ) ) ? $body['organizations'] : array(),
 		'categories'    => ( isset( $body['categories'] ) && is_array( $body['categories'] ) ) ? $body['categories'] : array(),
+		'pricing'       => ( isset( $body['pricing'] ) && is_array( $body['pricing'] ) ) ? $body['pricing'] : array(),
 	);
 }
 
@@ -703,4 +715,40 @@ function courses_categories() {
 	);
 
 	return apply_filters( 'tutor_sso_courses_categories', $categories );
+}
+
+/**
+ * Pricing filter options ('free' | 'paid' | 'program_only'), from the catalog
+ * filters API. Labels come from sso_pricing_label(), not the API's own `label`
+ * (see that function's docblock for why).
+ *
+ * @return array<int,array{slug:string,name:string,count:int}>
+ */
+function courses_pricing_options() {
+	$filters = courses_fetch_filters();
+	$options = array();
+
+	if ( ! is_wp_error( $filters ) ) {
+		foreach ( $filters['pricing'] as $row ) {
+			if ( ! is_array( $row ) ) {
+				continue;
+			}
+
+			$value = isset( $row['value'] ) ? trim( (string) $row['value'] ) : '';
+
+			if ( '' === $value ) {
+				continue;
+			}
+
+			$fallback = isset( $row['label'] ) ? trim( (string) $row['label'] ) : $value;
+
+			$options[] = array(
+				'slug'  => $value,
+				'name'  => sso_pricing_label( $value, $fallback ),
+				'count' => isset( $row['total_courses'] ) ? (int) $row['total_courses'] : 0,
+			);
+		}
+	}
+
+	return apply_filters( 'tutor_sso_courses_pricing_options', $options );
 }
