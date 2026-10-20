@@ -375,9 +375,24 @@ function program_detail_status($program_key)
  * @param bool   $paid        Whether the LMS sells this program.
  * @return string HTML.
  */
-function program_detail_call_to_action($post_id, $program_key, $program_url = '', $paid = false)
+function program_detail_call_to_action($post_id, $program_key, $program_url = '', $paid = false, $part_of_subscription = false)
 {
 	$post_id = (int) $post_id;
+
+	// Subscription content: there is no product to buy. A subscriber (or anyone
+	// already enrolled) joins as usual; anyone else is pointed at the plans —
+	// rather than the nothing a "paid" program with no product would render.
+	if ($part_of_subscription) {
+		$status = program_detail_status($program_key);
+
+		if ($status['enrolled'] || $status['has_paid_access']) {
+			return program_detail_enroll_button($program_key, $program_url);
+		}
+
+		return course_render_subscription_notice(
+			__('هذا البرنامج جزء من اشتراك رواق، ويمكنك الوصول إليه عند الاشتراك.', 'tutor-sso')
+		);
+	}
 
 	// Free program: unchanged behaviour.
 	if (! $paid) {
@@ -712,7 +727,8 @@ function program_detail_render($program, $program_key = '')
 							get_the_ID(),
 							$program_key,
 							program_detail_program_url($program),
-							$program_paid
+							$program_paid,
+							sso_is_part_of_subscription($program)
 						);
 						?>
 

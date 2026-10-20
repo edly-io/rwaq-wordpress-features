@@ -732,6 +732,13 @@
 	color: #2e7d32;
 }
 
+/* Subscription content has no price — "ضمن الاشتراك" in the brand colour,
+   set apart from both a price and the green "مجاني". */
+.rwaq-course-card__price--subscription {
+	color: #565199;
+	font-weight: 600;
+}
+
 .rwaq-course-card__price-now {
 	font-weight: 600;
 	color: var(--rwaq-heading);

@@ -85,7 +85,6 @@ class Settings_Page {
 			'tutor_sso_gtm_id'              => array( $this, 'sanitize_gtm_id' ),
 			'tutor_sso_ga_id'               => array( $this, 'sanitize_ga_id' ),
 			'tutor_sso_enable_subscriptions' => array( $this, 'sanitize_enable_subscriptions' ),
-			'tutor_sso_subscriptions_test_mode' => array( $this, 'sanitize_checkbox' ),
 		);
 
 		foreach ( $options as $name => $cb ) {
@@ -208,14 +207,6 @@ class Settings_Page {
 				) . '</p>';
 			},
 			self::PAGE_SLUG
-		);
-
-		$this->add_checkbox_field(
-			'tutor_sso_subscriptions_test_mode',
-			__( 'Testing mode', 'tutor-sso' ),
-			'tutor_sso_section_subscriptions',
-			__( 'Renew every 10 minutes instead of monthly or yearly', 'tutor-sso' ),
-			__( 'For checking that renewals work, without waiting a month. <strong>Never leave this on in production</strong> — every cycle charges the card again. The plan still reaches the LMS as monthly or yearly, since its API accepts nothing else.', 'tutor-sso' )
 		);
 
 		$this->add_checkbox_field(

@@ -52,22 +52,6 @@ function subscriptions_enabled() {
 }
 
 /**
- * Whether billing is running in testing mode.
- *
- * Shortens every period to ten minutes so a renewal can be watched happening
- * instead of waited a month for. Nothing else changes: the plan still goes to
- * the LMS as `monthly` or `yearly`, because its API accepts nothing else — so
- * in this mode it receives a `monthly` plan whose period is ten minutes long.
- *
- * Not for production. Each cycle charges the card again.
- *
- * @return bool
- */
-function subscriptions_test_mode() {
-	return (bool) apply_filters( 'tutor_sso_subscriptions_test_mode', '1' === (string) sso_option( 'subscriptions_test_mode' ) );
-}
-
-/**
  * The billing periods a plan can use, as value => label.
  *
  * @return array<string,string>
@@ -106,11 +90,6 @@ function subscription_period( $product_id ) {
  */
 function subscription_next_payment( $period, $from = 0 ) {
 	$from = $from > 0 ? (int) $from : time();
-
-	// Testing mode: ten minutes, whatever the plan says.
-	if ( subscriptions_test_mode() ) {
-		return $from + ( 10 * MINUTE_IN_SECONDS );
-	}
 
 	$day   = (int) date( 'j', $from );
 	$month = (int) date( 'n', $from );

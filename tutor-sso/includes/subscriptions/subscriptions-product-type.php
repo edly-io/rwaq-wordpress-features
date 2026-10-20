@@ -308,3 +308,68 @@ function subscription_save_period( $product_id ) {
 	update_post_meta( (int) $product_id, SUBSCRIPTION_PERIOD_META, $posted );
 }
 add_action( 'woocommerce_process_product_meta_' . SUBSCRIPTION_PRODUCT_TYPE, __NAMESPACE__ . '\\subscription_save_period' );
+
+/**
+ * Product meta holding a plan's feature list, one feature per line.
+ */
+const SUBSCRIPTION_FEATURES_META = '_rwaq_sub_features';
+
+/**
+ * The plan's features, shown as the ticked list on the plans page.
+ *
+ * A plain textarea, one feature per line: plans are made here rather than
+ * synced from the LMS, so whoever creates one writes its list too.
+ *
+ * @return void
+ */
+function subscription_features_field() {
+	if ( ! subscriptions_enabled() ) {
+		return;
+	}
+
+	global $post;
+
+	woocommerce_wp_textarea_input(
+		array(
+			'id'            => SUBSCRIPTION_FEATURES_META,
+			'label'         => __( 'Plan features', 'tutor-sso' ),
+			'description'   => __( 'One feature per line. Shown as the ticked list on the plans page.', 'tutor-sso' ),
+			'desc_tip'      => true,
+			'rows'          => 6,
+			'value'         => $post ? (string) get_post_meta( $post->ID, SUBSCRIPTION_FEATURES_META, true ) : '',
+			'wrapper_class' => 'show_if_' . SUBSCRIPTION_PRODUCT_TYPE,
+		)
+	);
+}
+add_action( 'woocommerce_product_options_pricing', __NAMESPACE__ . '\\subscription_features_field', 11 );
+
+/**
+ * Save the feature list.
+ *
+ * @param int $product_id Product being saved.
+ * @return void
+ */
+function subscription_save_features( $product_id ) {
+	// phpcs:ignore WordPress.Security.NonceVerification.Missing -- WooCommerce's own nonce, verified before this hook.
+	if ( ! isset( $_POST[ SUBSCRIPTION_FEATURES_META ] ) ) {
+		return;
+	}
+
+	// phpcs:ignore WordPress.Security.NonceVerification.Missing
+	$value = sanitize_textarea_field( wp_unslash( $_POST[ SUBSCRIPTION_FEATURES_META ] ) );
+
+	update_post_meta( (int) $product_id, SUBSCRIPTION_FEATURES_META, $value );
+}
+add_action( 'woocommerce_process_product_meta_' . SUBSCRIPTION_PRODUCT_TYPE, __NAMESPACE__ . '\\subscription_save_features' );
+
+/**
+ * A plan's features as a list, blank lines dropped.
+ *
+ * @param int $product_id Plan product.
+ * @return string[]
+ */
+function subscription_features( $product_id ) {
+	$lines = preg_split( '/\r\n|\r|\n/', (string) get_post_meta( (int) $product_id, SUBSCRIPTION_FEATURES_META, true ) );
+
+	return array_values( array_filter( array_map( 'trim', (array) $lines ), 'strlen' ) );
+}

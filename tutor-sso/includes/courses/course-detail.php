@@ -656,21 +656,26 @@ function course_render_program_notice( $program_url ) {
  * The button appears only once a plans page has been pointed at — linking to a
  * page that may not exist would be worse than the message on its own.
  *
+ * @param string $message Notice text; defaults to the course wording.
  * @return string HTML.
  */
-function course_render_subscription_notice() {
-	/**
-	 * Filter the URL of the page that sells subscription plans.
-	 *
-	 * @param string $url Plans page URL. Empty renders the message with no button.
-	 */
-	$url = (string) apply_filters( 'tutor_sso_subscription_page_url', '' );
+function course_render_subscription_notice( $message = '' ) {
+	if ( '' === trim( (string) $message ) ) {
+		$message = __( 'هذا المساق جزء من اشتراك رواق، ويمكنك الوصول إليه عند الاشتراك.', 'tutor-sso' );
+	}
+
+	// The page on the "Rwaq Subscription Plans" template; '' renders the
+	// message with no button. The tutor_sso_subscription_page_url filter is
+	// applied inside subscription_plans_page_url().
+	$url = function_exists( __NAMESPACE__ . '\\subscription_plans_page_url' )
+		? subscription_plans_page_url()
+		: (string) apply_filters( 'tutor_sso_subscription_page_url', '' );
 
 	ob_start();
 	?>
 	<div class="tutor-sso-enroll-wrap tutor-sso-enroll-wrap--program">
 		<p class="tutor-sso-enroll-notice">
-			<?php echo esc_html__( 'هذا المساق جزء من اشتراك رواق، ويمكنك الوصول إليه عند الاشتراك.', 'tutor-sso' ); ?>
+			<?php echo esc_html( $message ); ?>
 		</p>
 		<?php if ( '' !== $url ) : ?>
 			<a class="tutor-sso-enroll-btn tutor-sso-enroll-btn--goto" href="<?php echo esc_url( $url ); ?>">

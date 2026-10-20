@@ -35,7 +35,7 @@ function sso_option( $key, $default = '' ) {
  * "Free" / "Paid") — these are used instead so both catalogs read the same way,
  * falling back to the API's own label for any value this doesn't recognize.
  *
- * @param string $value    Filter value ('free' | 'paid' | 'program_only').
+ * @param string $value    Filter value ('free' | 'paid' | 'program_only' | 'subscription').
  * @param string $fallback Label to use when the value isn't recognized.
  * @return string
  */
@@ -44,11 +44,52 @@ function sso_pricing_label( $value, $fallback = '' ) {
 		'free'         => __( 'مجاني', 'tutor-sso' ),
 		'paid'         => __( 'مدفوع', 'tutor-sso' ),
 		'program_only' => __( 'جزء من برنامج', 'tutor-sso' ),
+		// The filters API's own label is "Is part of Subscription".
+		'subscription' => __( 'ضمن الاشتراك', 'tutor-sso' ),
 	);
 
 	$value = (string) $value;
 
 	return isset( $labels[ $value ] ) ? $labels[ $value ] : (string) $fallback;
+}
+
+/**
+ * Whether a course or program from the LMS API is subscription content.
+ *
+ * The API marks it twice — `pricing_category: "is_part_of_subscription"` and a
+ * boolean `is_part_of_subscription` — either is enough. Such an item has no
+ * price (regular/sale are null), so it must not be shown as paid or free.
+ *
+ * @param array $row Course or program object from the API.
+ * @return bool
+ */
+function sso_is_part_of_subscription( $row ) {
+	if ( ! is_array( $row ) ) {
+		return false;
+	}
+
+	if ( ! empty( $row['is_part_of_subscription'] ) ) {
+		return true;
+	}
+
+	$category = isset( $row['pricing_category'] ) ? strtolower( trim( (string) $row['pricing_category'] ) ) : '';
+
+	return 'is_part_of_subscription' === $category;
+}
+
+/**
+ * A catalog card's price line for subscription content: "ضمن الاشتراك".
+ *
+ * Same markup shape as sso_render_price_html()'s free line, with its own
+ * modifier class, so each catalog styles it alongside its other price states.
+ *
+ * @param string $base_class e.g. 'rwaq-course-card__price'.
+ * @return string HTML.
+ */
+function sso_render_subscription_price_html( $base_class ) {
+	$base_class = (string) $base_class;
+
+	return '<p class="' . esc_attr( $base_class ) . ' ' . esc_attr( $base_class ) . '--subscription">' . esc_html__( 'ضمن الاشتراك', 'tutor-sso' ) . '</p>';
 }
 
 // ── Price parsing ─────────────────────────────────────────────────────────────

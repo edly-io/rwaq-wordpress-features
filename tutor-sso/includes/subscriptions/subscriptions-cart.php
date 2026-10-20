@@ -153,3 +153,110 @@ function subscription_sold_individually( $sold_individually, $product ) {
 	return $sold_individually;
 }
 add_filter( 'woocommerce_is_sold_individually', __NAMESPACE__ . '\\subscription_sold_individually', 10, 2 );
+
+/**
+ * Send a logged-out visitor with a plan in the cart to log in before checkout.
+ *
+ * A subscription belongs to an account: capture skips an order with no
+ * customer, so a guest could otherwise pay for a plan and get nothing. Courses
+ * and programs carry the same rule (course_product_require_login_to_checkout());
+ * this covers a plan, which neither of those recognises. Login returns the
+ * visitor to the checkout they were on.
+ *
+ * @return void
+ */
+function subscription_require_login_to_checkout() {
+	if ( is_user_logged_in() || ! function_exists( 'is_checkout' ) || ! is_checkout() ) {
+		return;
+	}
+
+	// The order-received page is part of checkout; nothing to guard there.
+	if ( function_exists( 'is_wc_endpoint_url' ) && is_wc_endpoint_url( 'order-received' ) ) {
+		return;
+	}
+
+	if ( ! subscription_cart_has_subscription() ) {
+		return;
+	}
+
+	wp_redirect( get_lms_login_url() ); // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect -- the SSO gateway may live off-host.
+	exit;
+}
+add_action( 'template_redirect', __NAMESPACE__ . '\\subscription_require_login_to_checkout' );
+
+/**
+ * Require an account at checkout for a plan — the server-side half of the above.
+ *
+ * @param bool $required Whether registration is already required.
+ * @return bool
+ */
+function subscription_force_registration( $required ) {
+	return $required || subscription_cart_has_subscription();
+}
+add_filter( 'woocommerce_checkout_registration_required', __NAMESPACE__ . '\\subscription_force_registration' );
+
+/**
+ * After a plan is added, land on checkout with a clean address.
+ *
+ * The plans page links to `/checkout/?add-to-cart=ID`. Left in the address
+ * bar, that parameter is sent again by back, forward or refresh, and the second
+ * add fails — a plan is one per cart — with "You cannot add another …".
+ * Redirecting replaces the history entry, so the parameter is never resent.
+ *
+ * @param string|false $url     Redirect WooCommerce would use, if any.
+ * @param \WC_Product  $product Product just added.
+ * @return string|false
+ */
+function subscription_add_to_cart_redirect( $url, $product = null ) {
+	if ( is_object( $product ) && method_exists( $product, 'get_id' )
+		&& subscription_product_is_subscription( $product->get_id() )
+		&& function_exists( 'wc_get_checkout_url' ) ) {
+		return wc_get_checkout_url();
+	}
+
+	return $url;
+}
+add_filter( 'woocommerce_add_to_cart_redirect', __NAMESPACE__ . '\\subscription_add_to_cart_redirect', 10, 2 );
+
+/**
+ * A plan that is already in the cart: don't add it again, just tidy the address.
+ *
+ * Covers what the redirect above cannot — an old history entry or a bookmarked
+ * link that still carries `add-to-cart`. Runs before WooCommerce's own handler
+ * (wp_loaded, 20) and after the cart is loaded from the session (wp_loaded, 10).
+ *
+ * @return void
+ */
+function subscription_skip_readding_plan() {
+	// phpcs:disable WordPress.Security.NonceVerification.Recommended -- the same unauthenticated GET WooCommerce itself accepts.
+	if ( empty( $_REQUEST['add-to-cart'] ) || ! is_numeric( wp_unslash( $_REQUEST['add-to-cart'] ) ) ) {
+		return;
+	}
+
+	$product_id = absint( wp_unslash( $_REQUEST['add-to-cart'] ) );
+	// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+	if ( ! function_exists( 'WC' ) || ! WC()->cart || ! subscription_product_is_subscription( $product_id ) ) {
+		return;
+	}
+
+	$in_cart = false;
+
+	foreach ( WC()->cart->get_cart() as $item ) {
+		if ( isset( $item['product_id'] ) && (int) $item['product_id'] === $product_id ) {
+			$in_cart = true;
+			break;
+		}
+	}
+
+	if ( ! $in_cart ) {
+		return;
+	}
+
+	// The same page, minus the add-to-cart parameters.
+	$uri = isset( $_SERVER['REQUEST_URI'] ) ? wp_unslash( $_SERVER['REQUEST_URI'] ) : '/'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- only ever used through wp_safe_redirect().
+
+	wp_safe_redirect( remove_query_arg( array( 'add-to-cart', 'quantity' ), $uri ) );
+	exit;
+}
+add_action( 'wp_loaded', __NAMESPACE__ . '\\subscription_skip_readding_plan', 19 );

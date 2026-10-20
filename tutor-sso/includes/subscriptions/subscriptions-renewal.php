@@ -56,16 +56,16 @@ const SUBSCRIPTION_RENEWAL_APPLIED_META = '_tutor_sso_renewal_applied';
  * @return void
  */
 function subscription_scan_interval() {
-	// A ten-minute period needs looking at more often than once an hour.
-	return subscriptions_test_mode() ? MINUTE_IN_SECONDS : HOUR_IN_SECONDS;
+	return HOUR_IN_SECONDS;
 }
 
 /**
  * Option holding the interval the scan is currently scheduled at.
  *
- * A recurring action's interval is fixed when it is created, so switching
- * testing mode on or off has to replace the schedule rather than adjust it —
- * and that needs to know what it was scheduled at before.
+ * A recurring action's interval is fixed when it is created, so changing it
+ * has to replace the schedule rather than adjust it — and that needs to know
+ * what it was scheduled at before. A site that ran the old every-minute
+ * testing schedule is moved back to hourly this way.
  */
 const SUBSCRIPTION_SCAN_INTERVAL_OPTION = 'tutor_sso_subscription_scan_interval';
 
@@ -114,9 +114,6 @@ function subscription_retry_schedule() {
 
 /**
  * Subscriptions whose next payment is due.
- *
- * Shared by the hourly scan and the "run renewals now" button, so both agree
- * on what "due" means.
  *
  * Batched: a backlog after downtime should not try to take on every
  * subscription in one request. The next run takes the rest.
@@ -621,16 +618,12 @@ function subscription_renewal_failed( $subscription_id, $reason = '' ) {
 		return;
 	}
 
-	// Testing mode bills every ten minutes, so a retry measured in days would
-	// park the subscription a day into the future on its first failure and make
-	// the thing it exists to test unreachable. Same schedule, smaller unit.
-	$unit = subscriptions_test_mode() ? MINUTE_IN_SECONDS : DAY_IN_SECONDS;
 
 	$wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		subscriptions_table(),
 		array(
 			'failure_count'   => $attempts + 1,
-			'next_payment_at' => gmdate( 'Y-m-d H:i:s', time() + ( (int) $schedule[ $attempts ] * $unit ) ),
+			'next_payment_at' => gmdate( 'Y-m-d H:i:s', time() + ( (int) $schedule[ $attempts ] * DAY_IN_SECONDS ) ),
 		),
 		array( 'id' => (int) $subscription_id ),
 		array( '%d', '%s' ),

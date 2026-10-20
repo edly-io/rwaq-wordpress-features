@@ -241,7 +241,7 @@ function subscription_account_period_label( $period ) {
  * @return string URL, or ''.
  */
 function subscription_account_resubscribe_url( $row ) {
-	$url = (string) apply_filters( 'tutor_sso_subscription_page_url', '' );
+	$url = subscription_plans_page_url();
 
 	if ( '' !== $url ) {
 		return $url;

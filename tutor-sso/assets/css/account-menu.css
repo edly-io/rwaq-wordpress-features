@@ -106,8 +106,9 @@
 
 /* ---- Panel ----
    Anchored to the trigger's inline-start edge so it opens "under the name"
-   and extends away from it; the viewport guard keeps it on screen when the
-   trigger sits close to an edge. */
+   and extends away from it. When that would run off the screen — a trigger
+   near the left edge — the script flips it to the other edge (the --flip
+   modifier below), so it extends the other way instead. */
 .tutor-sso-account .tutor-sso-account__panel {
 	position: absolute;
 	inset-block-start: calc(100% + 8px);
@@ -124,6 +125,11 @@
 	border-radius: 10px;
 	background: #fff;
 	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.tutor-sso-account .tutor-sso-account__panel.tutor-sso-account__panel--flip {
+	inset-inline-start: auto;
+	inset-inline-end: 0;
 }
 
 /* `display:flex` above would otherwise beat the `hidden` attribute's own

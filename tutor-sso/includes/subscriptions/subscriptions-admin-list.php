@@ -180,16 +180,22 @@ function subscription_list_payment( $row ) {
 }
 
 /**
- * Whether the LMS has confirmed this subscription's cancellation.
+ * What the LMS knows of this subscription.
  *
- * Only cancellations are sent from here. An active subscription reaches the LMS
- * through its orders, and an expired one needs no call: the LMS works expiry
- * out from the end date itself.
+ * An active subscription reaches the LMS through the order that bought it, so
+ * it reads as active there once that order has been sent — or once a resume
+ * has been confirmed. Cancellations are sent from here, and their outcome is
+ * recorded on the row. An expired one needs no call: the LMS works expiry out
+ * from the end date itself.
  *
  * @param array $row Subscription row.
  * @return string Escaped HTML.
  */
 function subscription_list_lms( $row ) {
+	if ( 'active' === $row['status'] ) {
+		return subscription_list_lms_active( $row );
+	}
+
 	if ( 'cancelled' !== $row['status'] ) {
 		return '—';
 	}
@@ -227,6 +233,49 @@ function subscription_list_lms( $row ) {
 		esc_url( $url ),
 		esc_html__( 'Send to LMS', 'tutor-sso' )
 	);
+}
+
+/**
+ * The LMS column for an active subscription.
+ *
+ * Read from the order sync's own record on the order that bought the plan
+ * (orders_api_handle_order()), so this shows what was actually sent rather
+ * than assuming it. A failed send links to that order, whose notes say why.
+ *
+ * @param array $row Subscription row.
+ * @return string Escaped HTML.
+ */
+function subscription_list_lms_active( $row ) {
+	$active = '<span style="color:#00a32a">' . esc_html__( 'Active', 'tutor-sso' ) . '</span>';
+
+	// Resumed: the LMS confirmed it directly.
+	if ( isset( $row['lms_status'] ) && 'active' === (string) $row['lms_status'] ) {
+		return $active;
+	}
+
+	$order_id = isset( $row['parent_order_id'] ) ? (int) $row['parent_order_id'] : 0;
+	$sent     = $order_id && defined( __NAMESPACE__ . '\\ORDERS_API_SENT_META' )
+		? (string) get_post_meta( $order_id, ORDERS_API_SENT_META, true )
+		: '';
+
+	if ( 'sent' === $sent ) {
+		return $active;
+	}
+
+	if ( 'error' === $sent ) {
+		$out = '<span style="color:#b32d2e">' . esc_html__( 'Not sent to the LMS', 'tutor-sso' ) . '</span>';
+		$order = function_exists( 'wc_get_order' ) ? wc_get_order( $order_id ) : null;
+
+		if ( $order ) {
+			$out .= '<br /><a href="' . esc_url( $order->get_edit_order_url() ) . '">'
+				. esc_html__( 'See the order notes', 'tutor-sso' ) . '</a>';
+		}
+
+		return $out;
+	}
+
+	// Never attempted — the orders sync is switched off, or the order predates it.
+	return '—';
 }
 
 /**
