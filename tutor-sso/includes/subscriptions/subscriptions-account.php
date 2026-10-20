@@ -458,10 +458,15 @@ function subscription_account_render( $value = '' ) {
 	}
 
 	$user_id = get_current_user_id();
+	$page    = max( 1, absint( $value ) );
 	$current = subscription_user_current( $user_id );
 
+	// The payment history stays below the card in every state: past payments
+	// are still the customer's after the subscription ends.
 	if ( ! $current ) {
 		$latest = subscription_user_latest( $user_id );
+
+		echo '<div class="rwaq-sub rwaq-sub--empty">';
 
 		if ( $latest ) {
 			subscription_account_render_expired( $latest );
@@ -469,12 +474,15 @@ function subscription_account_render( $value = '' ) {
 			subscription_account_render_empty();
 		}
 
+		subscription_account_render_history( $user_id, $page );
+		echo '</div>';
+
 		return;
 	}
 
 	echo '<div class="rwaq-sub">';
 	subscription_account_render_card( $current );
-	subscription_account_render_history( $user_id, max( 1, absint( $value ) ) );
+	subscription_account_render_history( $user_id, $page );
 	subscription_account_render_cancel_dialog( $current );
 	echo '</div>';
 }
@@ -496,7 +504,6 @@ function subscription_account_receipt_icon() {
  */
 function subscription_account_render_empty() {
 	?>
-	<div class="rwaq-sub rwaq-sub--empty">
 		<section class="rwaq-sub-card rwaq-sub-empty">
 			<span class="rwaq-sub-empty__icon"><?php echo subscription_account_receipt_icon(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static SVG. ?></span>
 			<h2 class="rwaq-sub-empty__title"><?php esc_html_e( 'لا يوجد شيء هنا بعد.', 'tutor-sso' ); ?></h2>
@@ -507,7 +514,6 @@ function subscription_account_render_empty() {
 				<a class="rwaq-sub-btn rwaq-sub-btn--primary" href="<?php echo esc_url( search_archive_url( 'programs' ) ); ?>"><?php esc_html_e( 'تصفّح البرامج', 'tutor-sso' ); ?></a>
 			</div>
 		</section>
-	</div>
 	<?php
 }
 
@@ -520,7 +526,6 @@ function subscription_account_render_empty() {
 function subscription_account_render_expired( $latest ) {
 	$url = subscription_account_resubscribe_url( $latest );
 	?>
-	<div class="rwaq-sub rwaq-sub--empty">
 		<section class="rwaq-sub-card rwaq-sub-empty">
 			<span class="rwaq-sub-empty__icon"><?php echo subscription_account_receipt_icon(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static SVG. ?></span>
 			<h2 class="rwaq-sub-empty__title"><?php esc_html_e( 'انتهى اشتراكك.', 'tutor-sso' ); ?></h2>
@@ -531,7 +536,6 @@ function subscription_account_render_expired( $latest ) {
 				</div>
 			<?php endif; ?>
 		</section>
-	</div>
 	<?php
 }
 
@@ -597,9 +601,11 @@ function subscription_account_render_card( $row ) {
 			);
 
 			if ( $active ) {
+				// The renewal date is when the paid period ends, not when the
+				// card is charged — a day earlier, see subscription_charge_at().
 				subscription_account_render_cell(
 					__( 'تاريخ التجديد القادم', 'tutor-sso' ),
-					esc_html( subscription_account_date( subscription_account_timestamp( $row['next_payment_at'] ) ) )
+					esc_html( subscription_account_date( $paid_until ) )
 				);
 			} else {
 				subscription_account_render_cell( __( 'تنتهي المزايا في', 'tutor-sso' ), esc_html( subscription_account_date( $paid_until ) ) );
@@ -611,6 +617,23 @@ function subscription_account_render_card( $row ) {
 			);
 			?>
 		</div>
+
+		<?php
+		// The card is charged a day before the renewal date (subscription_charge_at()),
+		// so the charge on their statement is not a surprise. Not while a payment
+		// is failing — the message above already gives the retry date.
+		if ( $active && 0 === (int) $row['failure_count'] && subscription_charge_lead() > 0 && $paid_until > 0 ) :
+			?>
+			<p class="rwaq-sub-card__note">
+				<?php
+				printf(
+					/* translators: %s: date the card is charged. */
+					esc_html__( 'تُحصَّل قيمة التجديد قبل يوم واحد من تاريخ التجديد، أي في %s.', 'tutor-sso' ),
+					esc_html( subscription_account_date( subscription_charge_at( $paid_until ) ) )
+				);
+				?>
+			</p>
+		<?php endif; ?>
 
 		<div class="rwaq-sub-card__actions">
 			<?php if ( $active ) : ?>

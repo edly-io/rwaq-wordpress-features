@@ -133,7 +133,7 @@ function subscription_capture_order( $order_id ) {
 			'currency'        => (string) $order->get_currency(),
 			'gateway_id'      => (string) $order->get_payment_method(),
 			'token_id'        => 0,
-			'next_payment_at' => gmdate( 'Y-m-d H:i:s', $end ),
+			'next_payment_at' => gmdate( 'Y-m-d H:i:s', subscription_charge_at( $end ) ),
 			'paid_until'      => gmdate( 'Y-m-d H:i:s', $end ),
 			'failure_count'   => 0,
 			'created_at'      => gmdate( 'Y-m-d H:i:s' ),

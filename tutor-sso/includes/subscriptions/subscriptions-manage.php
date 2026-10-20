@@ -63,16 +63,24 @@ function subscription_cancel( $subscription_id, $reason ) {
 /**
  * Whether a cancelled subscription can still be resumed.
  *
- * Only inside the period already paid for. After that there is nothing left
- * to resume — the customer buys a new subscription.
+ * Only inside the period already paid for — after that there is nothing left
+ * to resume, and the customer buys a new subscription — and only while it is
+ * the customer's latest. Once they have bought another plan, that one is their
+ * subscription: resuming the old one too would bill them for two. Checked here
+ * rather than only on the account page, so a resume posted from a tab opened
+ * before the new purchase is refused as well.
  *
  * @param array $row Subscription row.
  * @return bool
  */
 function subscription_can_resume( $row ) {
-	return is_array( $row )
-		&& 'cancelled' === ( $row['status'] ?? '' )
-		&& subscription_paid_until( $row ) > time();
+	if ( ! is_array( $row ) || 'cancelled' !== ( $row['status'] ?? '' ) || subscription_paid_until( $row ) <= time() ) {
+		return false;
+	}
+
+	$latest = subscription_user_latest( (int) $row['user_id'] );
+
+	return is_array( $latest ) && (int) $latest['id'] === (int) $row['id'];
 }
 
 /**
@@ -106,7 +114,7 @@ function subscription_reactivate( $subscription_id, $reason ) {
 		subscriptions_table(),
 		array(
 			'status'          => 'active',
-			'next_payment_at' => gmdate( 'Y-m-d H:i:s', subscription_paid_until( $row ) ),
+			'next_payment_at' => gmdate( 'Y-m-d H:i:s', subscription_charge_at( subscription_paid_until( $row ) ) ),
 			'cancelled_at'    => null,
 			'lms_status'      => is_wp_error( $lms ) ? null : 'active',
 			'lms_sync_error'  => null,

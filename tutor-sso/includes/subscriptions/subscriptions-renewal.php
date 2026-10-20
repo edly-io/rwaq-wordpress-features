@@ -47,13 +47,13 @@ const SUBSCRIPTION_AS_GROUP = 'tutor-sso-subscriptions';
 const SUBSCRIPTION_RENEWAL_APPLIED_META = '_tutor_sso_renewal_applied';
 
 /**
- * Keep the scan scheduled.
+ * How often to look for subscriptions that are due.
  *
  * Hourly rather than daily: a subscription falling due at 09:00 should not wait
  * until the next nightly run, and the scan costs one indexed query when nothing
  * is due.
  *
- * @return void
+ * @return int Seconds.
  */
 function subscription_scan_interval() {
 	return HOUR_IN_SECONDS;
@@ -180,7 +180,7 @@ function subscription_get( $subscription_id ) {
 }
 
 /**
- * Whether a renewal order already exists for this subscription and period.
+ * The renewal order already created for this subscription and period, if any.
  *
  * The guard against charging twice: a scan that overlaps its predecessor, or an
  * action retried after a timeout, must not produce a second order for a period
@@ -188,9 +188,9 @@ function subscription_get( $subscription_id ) {
  *
  * @param string $external_id Subscription identifier.
  * @param int    $period_start Period start, Unix timestamp.
- * @return bool
+ * @return int Order ID, or 0.
  */
-function subscription_renewal_exists( $external_id, $period_start ) {
+function subscription_renewal_find( $external_id, $period_start ) {
 	if ( ! function_exists( 'wc_get_orders' ) ) {
 		return false;
 	}
@@ -202,7 +202,9 @@ function subscription_renewal_exists( $external_id, $period_start ) {
 		array(
 			'limit'  => 1,
 			'return' => 'ids',
-			'status' => array( 'pending', 'on-hold', 'processing', 'completed', 'failed' ),
+			// A failed attempt does not count: the period's retries are new
+			// orders for the same period, and must not find it in their way.
+			'status' => array_values( array_diff( array( 'pending', 'on-hold', 'processing', 'completed' ), subscription_renewal_failed_statuses() ) ),
 		),
 		array(
 			'relation' => 'AND',
@@ -217,7 +219,18 @@ function subscription_renewal_exists( $external_id, $period_start ) {
 		)
 	);
 
-	return ! empty( $found );
+	return ! empty( $found ) ? (int) reset( $found ) : 0;
+}
+
+/**
+ * Whether a renewal order already exists for this subscription and period.
+ *
+ * @param string $external_id  Subscription identifier.
+ * @param int    $period_start Period start, Unix timestamp.
+ * @return bool
+ */
+function subscription_renewal_exists( $external_id, $period_start ) {
+	return subscription_renewal_find( $external_id, $period_start ) > 0;
 }
 
 /**
@@ -352,12 +365,99 @@ function subscription_renewal_token( $row ) {
 }
 
 /**
- * Renew one subscription.
+ * How long a renewal may hold its lock before it is treated as abandoned.
+ *
+ * A charge is one request to the gateway, so anything still holding the lock
+ * after this has died mid-way (a fatal error, a killed process) and would
+ * otherwise block the subscription for good.
+ */
+const SUBSCRIPTION_RENEW_LOCK_TTL = 15 * MINUTE_IN_SECONDS;
+
+/**
+ * How long a renewal order may stay pending before it counts as failed.
+ *
+ * Moyasar charges a saved card in the same request and settles by webhook
+ * within minutes, so an order still pending after a day never went through —
+ * a timeout or a fatal error mid-charge. Left alone it would block the
+ * subscription for good, since a pending order counts as the period's renewal.
+ */
+const SUBSCRIPTION_RENEWAL_STALE_AFTER = DAY_IN_SECONDS;
+
+/**
+ * Take the renewal lock for one subscription.
+ *
+ * The scheduled renewal and the admin "renew now" button can run at the same
+ * moment; both would find no order for the period and both would charge. The
+ * lock is a row in the options table, inserted atomically — INSERT IGNORE
+ * reports whether this request created it — rather than add_option(), whose
+ * check-then-insert leaves exactly that window open.
+ *
+ * @param int $subscription_id Row id.
+ * @return bool Whether this request now holds the lock.
+ */
+function subscription_renew_lock( $subscription_id ) {
+	global $wpdb;
+
+	$name = 'tutor_sso_renew_lock_' . (int) $subscription_id;
+	$now  = time();
+
+	// A lock left by a renewal that died is released once it is old enough.
+	$wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$wpdb->prepare(
+			"DELETE FROM {$wpdb->options} WHERE option_name = %s AND option_value < %d",
+			$name,
+			$now - SUBSCRIPTION_RENEW_LOCK_TTL
+		)
+	);
+
+	return 1 === (int) $wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$wpdb->prepare(
+			"INSERT IGNORE INTO {$wpdb->options} ( option_name, option_value, autoload ) VALUES ( %s, %s, 'no' )",
+			$name,
+			(string) $now
+		)
+	);
+}
+
+/**
+ * Release the renewal lock.
+ *
+ * @param int $subscription_id Row id.
+ * @return void
+ */
+function subscription_renew_unlock( $subscription_id ) {
+	global $wpdb;
+
+	$wpdb->delete( $wpdb->options, array( 'option_name' => 'tutor_sso_renew_lock_' . (int) $subscription_id ), array( '%s' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+}
+
+/**
+ * Renew one subscription, unless a renewal of it is already running.
  *
  * @param int $subscription_id Row id.
  * @return void
  */
 function subscription_renew( $subscription_id ) {
+	$subscription_id = (int) $subscription_id;
+
+	if ( ! subscription_renew_lock( $subscription_id ) ) {
+		return;
+	}
+
+	try {
+		subscription_renew_locked( $subscription_id );
+	} finally {
+		subscription_renew_unlock( $subscription_id );
+	}
+}
+
+/**
+ * Renew one subscription. Only called with the renewal lock held.
+ *
+ * @param int $subscription_id Row id.
+ * @return void
+ */
+function subscription_renew_locked( $subscription_id ) {
 	$row = subscription_get( $subscription_id );
 
 	if ( ! $row || 'active' !== $row['status'] ) {
@@ -401,13 +501,22 @@ function subscription_renew( $subscription_id ) {
 		return;
 	}
 
-	// The new period starts where the last one ended, so a late renewal does
-	// not quietly give away the days it was late by.
-	$start = strtotime( (string) $row['next_payment_at'] . ' UTC' );
-	$start = $start ? $start : time();
+	// The new period starts where the paid one ends — not when the charge is
+	// made, which is a day early (subscription_charge_at()), or later still
+	// after a failed attempt. So the subscription's dates never move: charged
+	// early, late or on a retry, each period runs end to end.
+	$start = subscription_paid_until( $row );
+
+	if ( $start <= 0 ) {
+		$start = strtotime( (string) $row['next_payment_at'] . ' UTC' );
+		$start = $start ? $start : time();
+	}
 	$end   = subscription_next_payment( (string) $row['period'], $start );
 
-	if ( subscription_renewal_exists( (string) $row['external_id'], $start ) ) {
+	$existing = subscription_renewal_find( (string) $row['external_id'], $start );
+
+	if ( $existing ) {
+		subscription_renewal_expire_stale( $existing );
 		return;
 	}
 
@@ -542,29 +651,53 @@ function subscription_renewal_paid( $order_id ) {
 
 	global $wpdb;
 
-	$wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		subscriptions_table(),
-		array(
-			'next_payment_at' => gmdate( 'Y-m-d H:i:s', $ends ),
-			'failure_count'   => 0,
-		),
-		array( 'external_id' => $external_id ),
-		array( '%s', '%d' ),
-		array( '%s' )
-	);
-
 	$table = subscriptions_table();
 
-	$id = (int) $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$wpdb->prepare( "SELECT id FROM {$table} WHERE external_id = %s", $external_id )
+	$row = $wpdb->get_row( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->prepare( "SELECT id, status FROM {$table} WHERE external_id = %s", $external_id ),
+		ARRAY_A
 	);
 
-	if ( $id ) {
-		subscription_extend_paid_until( $id, $ends );
+	// Not recorded yet: a first payment reaches here before checkout capture
+	// has written the row, and capture sets the dates itself.
+	if ( ! $row ) {
+		return;
 	}
 
 	$order->update_meta_data( SUBSCRIPTION_RENEWAL_APPLIED_META, 'yes' );
+
+	// A cancelled or expired subscription is not revived by a payment arriving
+	// late — an admin marking an old order paid, say. Said on the order, so the
+	// payment is not mistaken for one that extended anything.
+	if ( 'active' !== $row['status'] ) {
+		$order->add_order_note(
+			sprintf(
+				/* translators: %s: subscription status. */
+				__( 'This payment did not extend the subscription, which is %s.', 'tutor-sso' ),
+				$row['status']
+			)
+		);
+		$order->save();
+		return;
+	}
+
 	$order->save();
+
+	// Forward only: an older renewal completing late must not pull the next
+	// payment back to a date already billed for, or clear the failure count
+	// of a newer renewal that is still being retried.
+	$charge_at = gmdate( 'Y-m-d H:i:s', subscription_charge_at( $ends ) );
+
+	$wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->prepare(
+			"UPDATE {$table} SET next_payment_at = %s, failure_count = 0 WHERE id = %d AND ( next_payment_at IS NULL OR next_payment_at < %s )",
+			$charge_at,
+			(int) $row['id'],
+			$charge_at
+		)
+	);
+
+	subscription_extend_paid_until( (int) $row['id'], $ends );
 }
 add_action( 'woocommerce_order_status_processing', __NAMESPACE__ . '\\subscription_renewal_paid', 10, 1 );
 add_action( 'woocommerce_order_status_completed', __NAMESPACE__ . '\\subscription_renewal_paid', 10, 1 );
@@ -641,40 +774,171 @@ function subscription_renewal_failed( $subscription_id, $reason = '' ) {
 }
 
 /**
- * Catch a renewal order the gateway marked failed.
- *
- * @param int $order_id Order ID.
- * @return void
+ * Order meta: this renewal's failure has been counted.
  */
-function subscription_renewal_order_failed( $order_id ) {
-	if ( ! function_exists( 'wc_get_order' ) ) {
-		return;
+const SUBSCRIPTION_RENEWAL_FAILURE_COUNTED_META = '_tutor_sso_renewal_failure_counted';
+
+/**
+ * The order statuses that mean a renewal payment failed.
+ *
+ * "failed", plus whatever status Moyasar is set to give a failed payment
+ * (Moyasar → Advanced → Failed Status, "failed" unless changed). Paid and
+ * in-progress statuses are never taken as failure, whatever that setting says.
+ *
+ * @return string[]
+ */
+function subscription_renewal_failed_statuses() {
+	$statuses = array( 'failed' );
+
+	$settings = get_option( 'woocommerce_moyasar_settings', array() );
+	$moyasar  = is_array( $settings ) && ! empty( $settings['order_status_failed'] )
+		? preg_replace( '/^wc-/', '', (string) $settings['order_status_failed'] )
+		: '';
+
+	if ( '' !== $moyasar && ! in_array( $moyasar, array( 'pending', 'processing', 'completed' ), true ) ) {
+		$statuses[] = $moyasar;
 	}
 
-	$order = wc_get_order( (int) $order_id );
+	/**
+	 * Filter the order statuses taken as a failed renewal payment.
+	 *
+	 * @param string[] $statuses Status slugs, without the "wc-" prefix.
+	 */
+	return array_unique( (array) apply_filters( 'tutor_sso_subscription_renewal_failed_statuses', $statuses ) );
+}
 
-	if ( ! $order ) {
-		return;
-	}
-
+/**
+ * The subscription row a renewal order belongs to.
+ *
+ * Renewal orders only: the order that first bought the plan carries the same
+ * identifier, but its failure means nothing was ever subscribed, and it must
+ * not count against the subscription it later became.
+ *
+ * @param \WC_Order $order Order.
+ * @return array|null Row, or null when the order is not a renewal.
+ */
+function subscription_renewal_order_row( $order ) {
 	$external_id = trim( (string) $order->get_meta( SUBSCRIPTION_ORDER_ID_META ) );
 
-	// A first payment that failed never became a subscription, so there is
-	// nothing to retry — only renewals reach here with an identifier.
 	if ( '' === $external_id ) {
-		return;
+		return null;
 	}
 
 	global $wpdb;
 
 	$table = subscriptions_table();
 
-	$id = (int) $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$wpdb->prepare( "SELECT id FROM {$table} WHERE external_id = %s", $external_id )
+	$row = $wpdb->get_row( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->prepare( "SELECT * FROM {$table} WHERE external_id = %s", $external_id ),
+		ARRAY_A
 	);
 
-	if ( $id ) {
-		subscription_renewal_failed( $id, 'the gateway declined the renewal payment' );
+	if ( ! is_array( $row ) || (int) $row['parent_order_id'] === (int) $order->get_id() ) {
+		return null;
 	}
+
+	return $row;
 }
-add_action( 'woocommerce_order_status_failed', __NAMESPACE__ . '\\subscription_renewal_order_failed', 10, 1 );
+
+/**
+ * Count a renewal whose order moved to a failed status.
+ *
+ * Once per order: an order can pass through more than one failed status (failed,
+ * then cancelled by hand), and each would otherwise use up a retry.
+ *
+ * @param int       $order_id Order ID.
+ * @param string    $from     Previous status.
+ * @param string    $to       New status.
+ * @param \WC_Order $order    Order.
+ * @return void
+ */
+function subscription_renewal_order_failed( $order_id, $from, $to, $order = null ) {
+	if ( ! in_array( $to, subscription_renewal_failed_statuses(), true ) ) {
+		return;
+	}
+
+	if ( ! $order instanceof \WC_Order ) {
+		$order = function_exists( 'wc_get_order' ) ? wc_get_order( (int) $order_id ) : null;
+	}
+
+	if ( ! $order || 'yes' === $order->get_meta( SUBSCRIPTION_RENEWAL_FAILURE_COUNTED_META ) ) {
+		return;
+	}
+
+	$row = subscription_renewal_order_row( $order );
+
+	if ( ! $row ) {
+		return;
+	}
+
+	$order->update_meta_data( SUBSCRIPTION_RENEWAL_FAILURE_COUNTED_META, 'yes' );
+	$order->save();
+
+	subscription_renewal_failed( (int) $row['id'], 'the gateway declined the renewal payment' );
+}
+add_action( 'woocommerce_order_status_changed', __NAMESPACE__ . '\\subscription_renewal_order_failed', 10, 4 );
+
+/**
+ * Fail a renewal order that has been pending too long.
+ *
+ * Called when the renewal for a period is due again and finds this order in
+ * the way. Moving it to "failed" runs the usual failure handling above: the
+ * attempt is counted, the next retry is scheduled, and WooCommerce emails the
+ * customer that the payment did not go through.
+ *
+ * @param int $order_id Renewal order ID.
+ * @return void
+ */
+function subscription_renewal_expire_stale( $order_id ) {
+	$order = function_exists( 'wc_get_order' ) ? wc_get_order( (int) $order_id ) : null;
+
+	if ( ! $order || ! $order->has_status( 'pending' ) ) {
+		return;
+	}
+
+	$created = $order->get_date_created();
+
+	if ( ! $created || $created->getTimestamp() > time() - SUBSCRIPTION_RENEWAL_STALE_AFTER ) {
+		return;
+	}
+
+	$order->update_status(
+		'failed',
+		__( 'The renewal payment did not complete within a day, so it is treated as failed and will be retried.', 'tutor-sso' )
+	);
+}
+
+/**
+ * Whether a customer may pay a renewal order themselves.
+ *
+ * Renewals are charged automatically, but a customer told their payment failed
+ * may pay the order from My Account with another card. That is only allowed
+ * when it would actually extend an active subscription. Paying an old renewal
+ * whose period a later payment already covered, or one belonging to a
+ * subscription that has been cancelled or has expired, would charge them for
+ * nothing — an expired subscription is replaced by buying a new plan.
+ *
+ * @param string[]  $statuses Statuses WooCommerce allows payment from.
+ * @param \WC_Order $order    Order.
+ * @return string[]
+ */
+function subscription_renewal_payable_statuses( $statuses, $order = null ) {
+	if ( ! $order instanceof \WC_Order ) {
+		return $statuses;
+	}
+
+	$row = subscription_renewal_order_row( $order );
+
+	if ( ! $row ) {
+		return $statuses;
+	}
+
+	$ends = (int) $order->get_meta( SUBSCRIPTION_ORDER_ENDS_META );
+
+	if ( 'active' !== $row['status'] || $ends <= subscription_paid_until( $row ) ) {
+		return array();
+	}
+
+	return $statuses;
+}
+add_filter( 'woocommerce_valid_order_statuses_for_payment', __NAMESPACE__ . '\\subscription_renewal_payable_statuses', 10, 2 );

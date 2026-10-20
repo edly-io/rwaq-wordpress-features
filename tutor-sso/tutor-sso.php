@@ -36,6 +36,7 @@ require_once TUTOR_SSO_PATH . 'includes/enrollment-ajax.php';
 require_once TUTOR_SSO_PATH . 'includes/enrollment-shortcode.php';
 require_once TUTOR_SSO_PATH . 'includes/email-confirm-shortcode.php';
 require_once TUTOR_SSO_PATH . 'includes/account-menu.php';
+require_once TUTOR_SSO_PATH . 'includes/password-reset.php';
 require_once TUTOR_SSO_PATH . 'includes/elementor/elementor-widget-loader.php';
 require_once TUTOR_SSO_PATH . 'includes/partner-logo-shortcode.php';
 require_once TUTOR_SSO_PATH . 'includes/partner-name-shortcode.php';

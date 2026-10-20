@@ -76,6 +76,39 @@ function subscription_period( $product_id ) {
 }
 
 /**
+ * How long before a period ends its renewal is charged.
+ *
+ * The LMS ends access the moment a period runs out with no renewal recorded,
+ * so a renewal charged exactly then leaves a customer whose card fails with no
+ * access from that second on — every retry happens after access is gone.
+ * Charging a day early means the first attempt, and its failure email, come
+ * while the customer still has access and time to change card.
+ *
+ * Only the charge moves. The period it pays for still starts when the current
+ * one ends, so subscription dates never shift.
+ *
+ * @return int Seconds.
+ */
+function subscription_charge_lead() {
+	/**
+	 * Filter how long before a period ends its renewal is charged.
+	 *
+	 * @param int $seconds Seconds. 0 charges at the moment the period ends.
+	 */
+	return max( 0, (int) apply_filters( 'tutor_sso_subscription_charge_lead', DAY_IN_SECONDS ) );
+}
+
+/**
+ * When to charge the renewal of a period ending at a given time.
+ *
+ * @param int $period_end Unix timestamp the paid period ends.
+ * @return int Unix timestamp.
+ */
+function subscription_charge_at( $period_end ) {
+	return max( 0, (int) $period_end - subscription_charge_lead() );
+}
+
+/**
  * Advance a timestamp by one billing period.
  *
  * The day of the month is the anchor and is kept, clamping to the last day of

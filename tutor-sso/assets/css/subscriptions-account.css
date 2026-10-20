@@ -184,6 +184,13 @@
 	background: transparent;
 }
 
+.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-card__note {
+	margin: 16px 0 0;
+	font-size: 14px;
+	line-height: 22px;
+	color: var(--rwaq-acc-muted);
+}
+
 .woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-resume__note {
 	margin: 0;
 	font-size: 14px;
@@ -445,7 +452,9 @@
 	box-sizing: border-box;
 	width: min(716px, calc(100vw - 32px));
 	max-width: none;
-	max-height: calc(100vh - 32px);
+	/* The top margin plus 16px below, so the whole dialog — its buttons
+	   included — always fits on screen and scrolls inside itself if not. */
+	max-height: calc(100vh - 116px);
 	margin: 100px auto auto;
 	padding: 0;
 	border: 0;
@@ -555,6 +564,14 @@
 }
 
 /* ---- Small screens ---- */
+/* Short screens — a phone on its side — have no room for the 100px offset. */
+@media (max-height: 600px) {
+	.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-dialog {
+		max-height: calc(100vh - 32px);
+		margin-top: 16px;
+	}
+}
+
 @media (max-width: 600px) {
 	.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-grid {
 		grid-template-columns: minmax(0, 1fr);
@@ -595,6 +612,7 @@
 	}
 
 	.woocommerce-account.rwaq-account-subscriptions .woocommerce-MyAccount-content .rwaq-sub-dialog {
+		max-height: calc(100vh - 32px);
 		margin-top: 16px;
 	}
 

@@ -82,8 +82,10 @@ function subscriptions_install_table() {
 	// lms_sync_error why the last attempt failed; see subscriptions-lms.php.
 	//
 	// paid_until is the end of the last period actually paid for — what the
-	// customer keeps after cancelling. Not next_payment_at, which is cleared on
-	// cancel and holds the retry date while a payment is failing.
+	// customer keeps after cancelling, and where the next period starts.
+	// next_payment_at is only when the next charge is attempted: a day before
+	// paid_until normally (subscription_charge_at()), the retry date while a
+	// payment is failing, and cleared on cancel.
 	$sql = "CREATE TABLE {$table} (
 		id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 		external_id varchar(64) DEFAULT NULL,
