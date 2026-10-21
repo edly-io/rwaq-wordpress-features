@@ -111,11 +111,16 @@ function subscription_charge_at( $period_end ) {
 /**
  * Advance a timestamp by one billing period.
  *
- * The day of the month is the anchor and is kept, clamping to the last day of
- * the target month when it is shorter. `strtotime( '+1 month' )` cannot be used
- * for this: from 31 January it produces "31 February", which overflows to 3
- * March — the subscriber skips a month's billing, gains a free period, and the
- * anchor day is lost for good. Yearly has the same problem on 29 February.
+ * Same day of the month, clamped to the last day of the target month when it is
+ * shorter. `strtotime( '+1 month' )` cannot be used for this: from 31 January
+ * it produces "31 February", which overflows to 3 March — there is no charge
+ * in February, and the billing day moves to the 3rd from then on. Yearly has
+ * the same problem on 29 February.
+ *
+ * Each period counts from the end of the one before, and the original day is
+ * not stored, so a clamped day stays clamped: 31 January → 28 February →
+ * 28 March → 28 April. Only subscriptions started on the 29th–31st are
+ * affected, and the dates sent to the LMS stay consistent.
  *
  * @param string $period 'monthly' or 'yearly'.
  * @param int    $from   Unix timestamp to count from. Defaults to now.
