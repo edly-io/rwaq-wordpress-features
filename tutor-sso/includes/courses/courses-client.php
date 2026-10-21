@@ -392,6 +392,8 @@ function courses_normalize_course( $row ) {
 		// Same fields, same meaning as the detail page (course_pricing_is_paid(),
 		// in course-detail-client.php) — the list endpoint now carries pricing too.
 		'paid'       => course_pricing_is_paid( isset( $row['pricing_category'] ) ? $row['pricing_category'] : '' ),
+		// Subscription content has no price; the card says so instead.
+		'subscription' => sso_is_part_of_subscription( $row ),
 		'regular'    => isset( $row['regular_price'] ) ? trim( (string) $row['regular_price'] ) : '',
 		'sale'       => isset( $row['sale_price'] ) ? trim( (string) $row['sale_price'] ) : '',
 		'discount'   => isset( $row['discount_percentage'] ) ? $row['discount_percentage'] : null,

@@ -33,7 +33,7 @@ function program_admin_locked_fields() {
 	 */
 	return (array) apply_filters(
 		'tutor_sso_program_locked_fields',
-		array( 'is_paid', 'program_regular_price', 'program_sale_price' )
+		array( 'is_paid', 'program_regular_price', 'program_sale_price', 'is_part_of_subscription' )
 	);
 }
 

@@ -457,7 +457,8 @@ function course_render_enroll_card( $data ) {
 				),
 				$part_of_program,
 				isset( $data['program_url'] ) ? (string) $data['program_url'] : '',
-				! empty( $data['enrollment_closed'] )
+				! empty( $data['enrollment_closed'] ),
+				! empty( $data['part_of_subscription'] )
 			);
 		}
 		?>
@@ -476,7 +477,10 @@ function course_render_enroll_card( $data ) {
  *   part_of_program + enrolled      go to course, no unenroll (see below)
  *   part_of_program + not enrolled  notice + go to program; no enroll/buy UI
  *   enrolled                        go to course, no checkout
- *   has_order                       enroll, never charge twice
+ *   has_paid_access                 bought it, or a live subscription covers
+ *                                   it — enroll, never charge twice
+ *   part_of_subscription            a live subscription enrolls; otherwise a
+ *                                   "subscribe" notice, never a buy button
  *   enrollment_closed               notice, no enroll/buy UI
  *   paid                            buy
  *   otherwise                       free course — enroll
@@ -501,7 +505,7 @@ function course_render_enroll_card( $data ) {
  * @param bool   $enrollment_closed Whether the LMS has closed new enrollment.
  * @return string HTML.
  */
-function course_render_call_to_action( $post_id, $course_key, $paid = false, $price = array(), $part_of_program = false, $program_url = '', $enrollment_closed = false ) {
+function course_render_call_to_action( $post_id, $course_key, $paid = false, $price = array(), $part_of_program = false, $program_url = '', $enrollment_closed = false, $part_of_subscription = false ) {
 	$labels = array(
 		'enroll_label'   => __( 'سجّل الآن', 'tutor-sso' ),
 		'login_label'    => __( 'سجّل الآن', 'tutor-sso' ),
@@ -512,9 +516,11 @@ function course_render_call_to_action( $post_id, $course_key, $paid = false, $pr
 	if ( $part_of_program ) {
 		$status = course_detail_status( $course_key );
 
-		// Enrolled via the program: into the course, with no unenroll action —
-		// the enrollment is not this page's to cancel.
-		if ( $status['enrolled'] ) {
+		// Enrolled via the program, or covered by a live subscription (a
+		// program-only course can sit inside a subscription program): into the
+		// course, with no unenroll action — the enrollment is not this page's
+		// to cancel.
+		if ( $status['enrolled'] || $status['has_paid_access'] ) {
 			$labels['show_unenroll'] = false;
 
 			return render_enroll_button( $course_key, $labels );
@@ -522,6 +528,22 @@ function course_render_call_to_action( $post_id, $course_key, $paid = false, $pr
 
 		// Not enrolled: there is nothing to buy or enroll into here.
 		return course_render_program_notice( $program_url );
+	}
+
+	// Subscription content, handled like a program course: the plan unlocks it,
+	// so it is never sold on its own. Checked before the free/paid split
+	// because its pricing_category carries no amounts — reading it as "paid"
+	// would offer a buy button for a product that does not exist.
+	if ( $part_of_subscription ) {
+		$status = course_detail_status( $course_key );
+
+		// A live subscription joins with no checks: enrollment being closed or
+		// full does not apply (see has_paid_access in the API contract).
+		if ( $status['enrolled'] || $status['has_paid_access'] ) {
+			return render_enroll_button( $course_key, $labels );
+		}
+
+		return course_render_subscription_notice();
 	}
 
 	// Free course: unchanged behaviour, except when enrollment is closed — in
@@ -556,7 +578,7 @@ function course_render_call_to_action( $post_id, $course_key, $paid = false, $pr
 	// Bought it (or owns it through a program): enroll, never charge twice.
 	// A paid-for seat is honoured even once the LMS closes enrollment — the
 	// closed check below is only for viewers with nothing already owed to them.
-	if ( $status['has_order'] ) {
+	if ( $status['has_paid_access'] ) {
 		return render_enroll_button( $course_key, $labels );
 	}
 
@@ -625,6 +647,47 @@ function course_render_program_notice( $program_url ) {
 }
 
 /**
+ * Render the "this needs a subscription" notice.
+ *
+ * The counterpart to course_render_program_notice(): the course is part of the
+ * Rwaq subscription, so there is nothing to buy here and nothing to enrol into
+ * until a plan is live.
+ *
+ * The button appears only once a plans page has been pointed at — linking to a
+ * page that may not exist would be worse than the message on its own.
+ *
+ * @param string $message Notice text; defaults to the course wording.
+ * @return string HTML.
+ */
+function course_render_subscription_notice( $message = '' ) {
+	if ( '' === trim( (string) $message ) ) {
+		$message = __( 'هذا المساق جزء من اشتراك رواق، ويمكنك الوصول إليه عند الاشتراك.', 'tutor-sso' );
+	}
+
+	// The page on the "Rwaq Subscription Plans" template; '' renders the
+	// message with no button. The tutor_sso_subscription_page_url filter is
+	// applied inside subscription_plans_page_url().
+	$url = function_exists( __NAMESPACE__ . '\\subscription_plans_page_url' )
+		? subscription_plans_page_url()
+		: (string) apply_filters( 'tutor_sso_subscription_page_url', '' );
+
+	ob_start();
+	?>
+	<div class="tutor-sso-enroll-wrap tutor-sso-enroll-wrap--program">
+		<p class="tutor-sso-enroll-notice">
+			<?php echo esc_html( $message ); ?>
+		</p>
+		<?php if ( '' !== $url ) : ?>
+			<a class="tutor-sso-enroll-btn tutor-sso-enroll-btn--goto" href="<?php echo esc_url( $url ); ?>">
+				<?php echo esc_html__( 'اشترك الآن', 'tutor-sso' ); ?>
+			</a>
+		<?php endif; ?>
+	</div>
+	<?php
+	return ob_get_clean();
+}
+
+/**
  * Render the "enrollment is closed" notice — the LMS's `is_enrollment_full`
  * or `is_enrollment_closed` reported true and the viewer isn't already in, so
  * there is nothing to offer: no enroll button (free) and no buy button (paid).
@@ -647,14 +710,15 @@ function course_render_enrollment_closed_notice() {
  * The current user's enrollment state for a course, asked once per render.
  *
  * @param string $course_key edX course key.
- * @return array{enrolled:bool,has_order:bool}
+ * @return array{enrolled:bool,has_paid_access:bool,subscription_ends_at:string}
  */
 function course_detail_status( $course_key ) {
 	static $cache = array();
 
 	$none = array(
-		'enrolled'  => false,
-		'has_order' => false,
+		'enrolled'             => false,
+		'has_paid_access'      => false,
+		'subscription_ends_at' => '',
 	);
 
 	if ( ! is_user_logged_in() || ! function_exists( __NAMESPACE__ . '\\enroll_status' ) ) {

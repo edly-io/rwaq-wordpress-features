@@ -169,6 +169,12 @@ function orders_api_coupons( $order, $items ) {
 					$row[ $field ] = $items[0][ $field ];
 				}
 			}
+
+			// A product coupon names its item with exactly one of course_id,
+			// program_key or wordpress_subscription_id.
+			if ( isset( $items[0]['subscription']['wordpress_subscription_id'] ) ) {
+				$row['wordpress_subscription_id'] = $items[0]['subscription']['wordpress_subscription_id'];
+			}
 		}
 
 		$rows[] = $row;
@@ -186,6 +192,13 @@ function orders_api_coupons( $order, $items ) {
 function orders_api_payload( $order ) {
 	$items = array();
 
+	// A subscription order holds that one item only (the API refuses a mixed
+	// one), and the cart keeps plans on their own so this should already be
+	// true — it is stated here so a hand-built order cannot slip past it.
+	$subscription = function_exists( __NAMESPACE__ . '\\subscription_order_payload' )
+		? subscription_order_payload( $order )
+		: array();
+
 	foreach ( $order->get_items() as $item ) {
 		$product_id = method_exists( $item, 'get_product_id' ) ? (int) $item->get_product_id() : 0;
 
@@ -193,7 +206,15 @@ function orders_api_payload( $order ) {
 			continue;
 		}
 
-		$identifier = orders_api_item_identifier( $product_id );
+		$is_subscription_line = ! empty( $subscription )
+			&& function_exists( __NAMESPACE__ . '\\subscription_product_is_subscription' )
+			&& subscription_product_is_subscription( $product_id );
+
+		// `subscription` replaces course_id / program_key: an item carries
+		// exactly one of the three.
+		$identifier = $is_subscription_line
+			? array( 'subscription' => $subscription )
+			: orders_api_item_identifier( $product_id );
 
 		if ( empty( $identifier ) ) {
 			continue;
@@ -215,7 +236,7 @@ function orders_api_payload( $order ) {
 	}
 
 	if ( empty( $items ) ) {
-		return new \WP_Error( 'tutor_sso_no_items', __( 'This order sells no course or program.', 'tutor-sso' ) );
+		return new \WP_Error( 'tutor_sso_no_items', __( 'This order sells no course, program or subscription.', 'tutor-sso' ) );
 	}
 
 	$email = trim( (string) $order->get_billing_email() );

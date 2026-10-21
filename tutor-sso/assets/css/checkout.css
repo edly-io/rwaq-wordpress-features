@@ -132,6 +132,18 @@
 	border-color: var(--rwaq-co-brand) !important;
 }
 
+/* The email is the account's LMS email, filled in and locked — shown as
+   plainly not-editable rather than looking like a field that simply refused. */
+.woocommerce-checkout .form-row .input-text[readonly] {
+	background: #f5f5f5;
+	color: var(--rwaq-co-muted);
+	cursor: not-allowed;
+}
+
+.woocommerce-checkout .form-row .input-text[readonly]:focus {
+	border-color: var(--rwaq-co-border) !important;
+}
+
 .woocommerce-checkout .form-row textarea {
 	min-height: 90px;
 	resize: vertical;

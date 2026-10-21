@@ -34,6 +34,7 @@
  *                            "" when the course belongs to no program
  *   - course_regular_price → ACF field (text)
  *   - course_sale_price    → ACF field (text)
+ *   - is_part_of_subscription → ACF field (true/false), stored as 1 / 0
  *   - category             → course-category term(s), matched by name / created if missing
  *   - org                  → course-partner term,   matched by name / created if missing
  *   - featured_image       → sideloaded + set as the post's featured image
@@ -117,6 +118,7 @@ class Courses_REST_Controller extends \WP_REST_Controller {
 				'part_of_program'      => 'part_of_program',
 				'course_regular_price' => 'course_regular_price',
 				'course_sale_price'    => 'course_sale_price',
+				'is_part_of_subscription' => 'is_part_of_subscription',
 			)
 		);
 	}
@@ -266,6 +268,12 @@ class Courses_REST_Controller extends \WP_REST_Controller {
 				'type'              => 'string',
 				'required'          => false,
 				'sanitize_callback' => 'sanitize_text_field',
+			),
+			'is_part_of_subscription' => array(
+				'description'       => __( 'Whether the course is included in a subscription plan. Accepts true/false, 1/0 or "yes"/"no"; stored as 1 / 0.', 'tutor-sso' ),
+				'type'              => 'boolean',
+				'required'          => false,
+				'sanitize_callback' => array( $this, 'sanitize_bool_flag' ),
 			),
 			'category'             => array(
 				'description'       => __( 'course-category name(s) — string or array. Created if missing.', 'tutor-sso' ),
