@@ -111,25 +111,32 @@ function subscription_charge_at( $period_end ) {
 /**
  * Advance a timestamp by one billing period.
  *
- * Same day of the month, clamped to the last day of the target month when it is
- * shorter. `strtotime( '+1 month' )` cannot be used for this: from 31 January
- * it produces "31 February", which overflows to 3 March — there is no charge
- * in February, and the billing day moves to the 3rd from then on. Yearly has
- * the same problem on 29 February.
+ * Lands on the subscription's billing day — the day of the month it started on
+ * — clamped to the last day of the target month when that month is shorter.
+ * Started on 31 January: 28 February, then back to 31 March, 30 April,
+ * 31 May. Yearly the same for 29 February: 28 February in ordinary years,
+ * 29 February again in leap years.
  *
- * Each period counts from the end of the one before, and the original day is
- * not stored, so a clamped day stays clamped: 31 January → 28 February →
- * 28 March → 28 April. Only subscriptions started on the 29th–31st are
- * affected, and the dates sent to the LMS stay consistent.
+ * The billing day has to be passed in for renewals. Each renewal counts from
+ * the end of the previous period, and after a short month that end is already
+ * clamped (28 February); taking the day from it would keep the subscription on
+ * the 28th for good, a few days short every year.
  *
- * @param string $period 'monthly' or 'yearly'.
- * @param int    $from   Unix timestamp to count from. Defaults to now.
+ * PHP's own `strtotime( '+1 month' )` is not used: from 31 January it gives
+ * "31 February", which overflows to 3 March — no charge in February, and the
+ * billing day moves to the 3rd from then on.
+ *
+ * @param string $period     'monthly' or 'yearly'.
+ * @param int    $from       Unix timestamp to count from. Defaults to now.
+ * @param int    $anchor_day The subscription's billing day, 1–31. 0 takes
+ *                           the day of $from — right for a first period.
  * @return int Unix timestamp of the next payment.
  */
-function subscription_next_payment( $period, $from = 0 ) {
-	$from = $from > 0 ? (int) $from : time();
+function subscription_next_payment( $period, $from = 0, $anchor_day = 0 ) {
+	$from       = $from > 0 ? (int) $from : time();
+	$anchor_day = (int) $anchor_day;
 
-	$day   = (int) date( 'j', $from );
+	$day   = ( $anchor_day >= 1 && $anchor_day <= 31 ) ? $anchor_day : (int) date( 'j', $from );
 	$month = (int) date( 'n', $from );
 	$year  = (int) date( 'Y', $from );
 	$hour  = (int) date( 'G', $from );

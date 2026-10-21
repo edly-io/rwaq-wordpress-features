@@ -365,6 +365,27 @@ function subscription_renewal_token( $row ) {
 }
 
 /**
+ * The day of the month a subscription bills on.
+ *
+ * The day its first period started, read from the order that bought it — every
+ * period end after that is aimed back at this day (see
+ * subscription_next_payment()), so a month shorter than it does not move the
+ * billing day for good. Nothing new is stored: the first order already records
+ * its period start.
+ *
+ * @param array $row Subscription row.
+ * @return int 1–31, or 0 when the first order cannot be read — the period then
+ *             counts from its own start, as it did before this existed.
+ */
+function subscription_anchor_day( $row ) {
+	$order_id = is_array( $row ) && isset( $row['parent_order_id'] ) ? (int) $row['parent_order_id'] : 0;
+	$order    = $order_id && function_exists( 'wc_get_order' ) ? wc_get_order( $order_id ) : null;
+	$start    = $order ? (int) $order->get_meta( SUBSCRIPTION_ORDER_STARTS_META ) : 0;
+
+	return $start > 0 ? (int) date( 'j', $start ) : 0;
+}
+
+/**
  * How long a renewal may hold its lock before it is treated as abandoned.
  *
  * A charge is one request to the gateway, so anything still holding the lock
@@ -511,7 +532,7 @@ function subscription_renew_locked( $subscription_id ) {
 		$start = strtotime( (string) $row['next_payment_at'] . ' UTC' );
 		$start = $start ? $start : time();
 	}
-	$end   = subscription_next_payment( (string) $row['period'], $start );
+	$end   = subscription_next_payment( (string) $row['period'], $start, subscription_anchor_day( $row ) );
 
 	$existing = subscription_renewal_find( (string) $row['external_id'], $start );
 
