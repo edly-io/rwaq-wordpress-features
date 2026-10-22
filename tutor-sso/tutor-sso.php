@@ -74,6 +74,7 @@ require_once TUTOR_SSO_PATH . 'includes/orders/my-account-styles.php';
 require_once TUTOR_SSO_PATH . 'includes/orders/my-account-menu.php';
 require_once TUTOR_SSO_PATH . 'includes/orders/add-payment-method.php';
 require_once TUTOR_SSO_PATH . 'includes/orders/my-account-form.php';
+require_once TUTOR_SSO_PATH . 'includes/orders/my-account-login-redirect.php';
 require_once TUTOR_SSO_PATH . 'includes/orders/shop-redirect.php';
 require_once TUTOR_SSO_PATH . 'includes/orders/duplicate-purchase.php';
 require_once TUTOR_SSO_PATH . 'includes/orders/address-fields.php';
