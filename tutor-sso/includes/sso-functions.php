@@ -819,6 +819,12 @@ function sso_clear_edx_cookies() {
 			continue;
 		}
 
+		// Not a session: the LMS login page reads it to pick its language, and
+		// this runs on the way there. See sso_set_language_cookie().
+		if ( LANGUAGE_COOKIE === $name ) {
+			continue;
+		}
+
 		$match = false;
 		foreach ( $fragments as $fragment ) {
 			if ( false !== strpos( $lower, $fragment ) ) {
@@ -840,6 +846,100 @@ function sso_clear_edx_cookies() {
 	}
 }
 
+// ── Language cookie for the LMS ──────────────────────────────────────────────
+
+/**
+ * The cookie Open edX reads for its language on pages with no signed-in user.
+ *
+ * The LMS login page is one of those, so it cannot use the learner's saved
+ * preference; its login MFE reads this cookie instead and renders Arabic and
+ * RTL when it says `ar`. The marketing site sets it, matching its own language.
+ */
+const LANGUAGE_COOKIE = 'openedx-language-preference';
+
+/**
+ * The language code to send: the current page's language.
+ *
+ * From the site locale — whatever the page's <html lang> is built from — cut
+ * to its language: `ar` → `ar`, `en_US` → `en`. A language switcher added later
+ * (WPML, Polylang…) changes the locale per page, so the cookie follows it.
+ *
+ * @return string e.g. 'ar', or '' when there is no locale.
+ */
+function sso_language_cookie_value() {
+	$locale   = function_exists( 'determine_locale' ) ? determine_locale() : get_locale();
+	$language = strtolower( strtok( str_replace( '-', '_', (string) $locale ), '_' ) );
+
+	/**
+	 * Filter the language code sent to the LMS in the language cookie.
+	 *
+	 * For a language whose Open edX code is not just the two-letter language
+	 * (e.g. `es-419`, `zh-cn`).
+	 *
+	 * @param string $language Language code.
+	 * @param string $locale   The WordPress locale it came from.
+	 */
+	return (string) apply_filters( 'tutor_sso_language_cookie_value', (string) $language, (string) $locale );
+}
+
+/**
+ * Set the language cookie, on the domain the site shares with the LMS.
+ *
+ * Only sent when the browser's value is missing or different, unless forced,
+ * so a visitor whose cookie is already right gets nothing extra.
+ *
+ * Not HttpOnly — the login page reads it in the browser — and on the shared
+ * parent domain (e.g. `.rwaq.org`) so the LMS host receives it. On staging
+ * that parent is the same as production's, so the two share it; the value is
+ * each site's own language, so they only differ if the sites do.
+ *
+ * @param bool $force Send it even when the browser's value already matches.
+ * @return void
+ */
+function sso_set_language_cookie( $force = false ) {
+	if ( headers_sent() ) {
+		return;
+	}
+
+	$value = sso_language_cookie_value();
+
+	if ( '' === $value ) {
+		return;
+	}
+
+	$current = isset( $_COOKIE[ LANGUAGE_COOKIE ] ) ? sanitize_text_field( wp_unslash( $_COOKIE[ LANGUAGE_COOKIE ] ) ) : '';
+
+	if ( ! $force && $current === $value ) {
+		return;
+	}
+
+	setcookie(
+		LANGUAGE_COOKIE,
+		$value,
+		array(
+			'expires'  => time() + YEAR_IN_SECONDS,
+			'path'     => '/',
+			// '' (this host only) when the site and LMS share no parent.
+			'domain'   => sso_shared_cookie_domain(),
+			'secure'   => is_ssl(),
+			'httponly' => false,
+			'samesite' => 'Lax',
+		)
+	);
+
+	$_COOKIE[ LANGUAGE_COOKIE ] = $value;
+}
+
+/**
+ * Keep the cookie current on every front-end page view.
+ *
+ * @return void
+ */
+function sso_language_cookie_on_page() {
+	sso_set_language_cookie();
+}
+add_action( 'template_redirect', __NAMESPACE__ . '\\sso_language_cookie_on_page' );
+
 /**
  * Handle ?tutor_sso_login=1: clear edX cookies, then start the OAuth flow.
  */
@@ -857,6 +957,10 @@ function sso_login_gateway() {
 	}
 
 	sso_clear_edx_cookies();
+
+	// Set again on the way to the login page, whatever the browser had, so
+	// the page always has it — even for a visitor whose first page this is.
+	sso_set_language_cookie( true );
 
 	$url = get_lms_authorize_url( $return_url );
 
