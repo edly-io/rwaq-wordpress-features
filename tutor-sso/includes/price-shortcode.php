@@ -56,7 +56,7 @@ add_action( 'wp_enqueue_scripts', __NAMESPACE__ . '\\price_shortcode_register_st
  * A course's or program's price, read off the post.
  *
  * @param int $post_id Course or program post ID.
- * @return array{subscription:bool,paid:bool,regular:mixed,sale:mixed}|null Null for any other post type.
+ * @return array{subscription:bool,program_only:bool,paid:bool,regular:mixed,sale:mixed}|null Null for any other post type.
  */
 function price_shortcode_values( $post_id ) {
 	$post_id = (int) $post_id;
@@ -65,6 +65,10 @@ function price_shortcode_values( $post_id ) {
 	if ( Courses\Courses_REST_Controller::POST_TYPE === $type ) {
 		return array(
 			'subscription' => (bool) filter_var( course_product_field( 'is_part_of_subscription', $post_id ), FILTER_VALIDATE_BOOLEAN ),
+			// The program's identifier, or "" when the course is in none. A
+			// course in a program is taken through it — the course detail page
+			// shows no buy option for one either.
+			'program_only' => '' !== trim( (string) course_product_field( 'part_of_program', $post_id ) ),
 			'paid'         => (bool) filter_var( course_product_field( 'is_paid', $post_id ), FILTER_VALIDATE_BOOLEAN ),
 			'regular'      => course_product_field( 'course_regular_price', $post_id ),
 			'sale'         => course_product_field( 'course_sale_price', $post_id ),
@@ -74,6 +78,7 @@ function price_shortcode_values( $post_id ) {
 	if ( Programs\Programs_REST_Controller::POST_TYPE === $type ) {
 		return array(
 			'subscription' => (bool) filter_var( program_product_field( 'is_part_of_subscription', $post_id ), FILTER_VALIDATE_BOOLEAN ),
+			'program_only' => false,
 			'paid'         => (bool) filter_var( program_product_field( 'is_paid', $post_id ), FILTER_VALIDATE_BOOLEAN ),
 			'regular'      => program_product_price_field( 'regular', $post_id ),
 			'sale'         => program_product_price_field( 'sale', $post_id ),
@@ -110,9 +115,14 @@ function price_shortcode( $atts ) {
 
 	// Subscription content shows "ضمن الاشتراك", as the catalog cards do: it is
 	// never sold on its own, so neither a price nor "free" would be true.
-	$html = $price['subscription']
-		? sso_render_subscription_price_html( 'rwaq-price' )
-		: sso_render_price_html( 'rwaq-price', $price['paid'], $price['regular'], $price['sale'] );
+	if ( $price['subscription'] ) {
+		$html = sso_render_subscription_price_html( 'rwaq-price' );
+	} elseif ( $price['program_only'] ) {
+		// Taken only through its program: no price of its own, and not free.
+		$html = sso_render_program_only_price_html( 'rwaq-price' );
+	} else {
+		$html = sso_render_price_html( 'rwaq-price', $price['paid'], $price['regular'], $price['sale'] );
+	}
 
 	if ( '' !== $html ) {
 		// Enqueued here rather than site-wide: printed late, in the footer,

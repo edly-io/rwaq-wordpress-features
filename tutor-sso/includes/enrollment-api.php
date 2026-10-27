@@ -338,12 +338,9 @@ function enroll_status( $course_id ) {
 
 	return array(
 		'enrolled'              => $enrolled,
-		// has_paid_access replaces has_order: true when the learner bought this,
-		// and now also while a subscription covering it is live. has_order is
-		// read as a fallback so the plugin works either side of the LMS release
-		// that removes it — the spec allows no transition period, and without
-		// this a deploy in the wrong order would make every buyer look unpaid.
-		'has_paid_access'       => ! empty( $body['has_paid_access'] ) || ! empty( $body['has_order'] ),
+		// True when the learner bought this, and also while a subscription
+		// covering it is live.
+		'has_paid_access'       => ! empty( $body['has_paid_access'] ),
 		// For display only; decisions are made on has_paid_access alone.
 		'subscription_ends_at'  => isset( $body['subscription_ends_at'] ) ? (string) $body['subscription_ends_at'] : '',
 	);

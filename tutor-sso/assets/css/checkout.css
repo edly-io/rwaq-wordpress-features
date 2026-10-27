@@ -531,9 +531,9 @@
    nested card around #wc-moyasar-cc-form (border/background/shadow) and styles
    its own inputs (#ccc border, 6px radius) independently of WooCommerce core —
    a separate layer from the core conflicts above, also #id-scoped, so this
-   needs the same id-plus-!important treatment to win. Padding is deliberately
-   left alone: Moyasar reserves space on the card-number field for its brand-
-   logo overlay, and touching padding here would undo that. */
+   needs the same id-plus-!important treatment to win. Padding is left to
+   Moyasar, which reserves space on the card-number field for its brand-logo
+   overlay — with one exception, the logo side on RTL pages, below. */
 .woocommerce-checkout #wc-moyasar-cc-form,
 .woocommerce-checkout #wc-moyasar-stc-pay-form {
 	border: 0 !important;
@@ -555,6 +555,15 @@
 .woocommerce-checkout #wc-moyasar-cc-form input[type='password']:focus {
 	border-color: var(--rwaq-co-brand) !important;
 	box-shadow: none !important;
+}
+
+/* On an RTL page Moyasar moves the card-brand logo to the field's left edge
+   (left: 12px) and reserves 50px of left padding for it, but lets the logo
+   grow to 55px wide — so a wide logo (mada) reaches ~67px and runs into the
+   first digit. Firefox draws it at full width, which is where it shows. 76px
+   is that 12px offset, the 55px maximum and a 9px gap. */
+[dir='rtl'] .woocommerce-checkout #wc-moyasar-cc-form .moyasar-cc-group input {
+	padding-left: 76px !important;
 }
 
 .woocommerce-checkout .moyasar-payment-footer {

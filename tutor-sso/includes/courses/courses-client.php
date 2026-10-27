@@ -40,7 +40,7 @@
  * AJAX handler consume — only what the card actually renders:
  *   {
  *     id, key, slug, title, image, url,
- *     org_slug, org_name, instructor, start_text
+ *     org_slug, org_name, instructor
  *   }
  *
  * `url` points at the local `course` post detail page ({site}/course/{slug}/),
@@ -388,12 +388,12 @@ function courses_normalize_course( $row ) {
 		'org_slug'   => $org_code,
 		'org_name'   => '' !== $org_name ? $org_name : $org_code,
 		'instructor' => isset( $row['instructor'] ) ? trim( (string) $row['instructor'] ) : '',
-		'start_text' => courses_start_date_text( isset( $row['start'] ) ? $row['start'] : '' ),
 		// Same fields, same meaning as the detail page (course_pricing_is_paid(),
 		// in course-detail-client.php) — the list endpoint now carries pricing too.
 		'paid'       => course_pricing_is_paid( isset( $row['pricing_category'] ) ? $row['pricing_category'] : '' ),
 		// Subscription content has no price; the card says so instead.
 		'subscription' => sso_is_part_of_subscription( $row ),
+		'program_only' => sso_is_program_only( $row ),
 		'regular'    => isset( $row['regular_price'] ) ? trim( (string) $row['regular_price'] ) : '',
 		'sale'       => isset( $row['sale_price'] ) ? trim( (string) $row['sale_price'] ) : '',
 		'discount'   => isset( $row['discount_percentage'] ) ? $row['discount_percentage'] : null,
@@ -442,30 +442,6 @@ function course_detail_url( $row ) {
 	}
 
 	return (string) apply_filters( 'tutor_sso_course_url', $url, $row );
-}
-
-/**
- * Format a course start date, localized (Arabic month names on RTL sites).
- *
- * @param string $start ISO 8601 date from the API.
- * @return string Localized date, or '' when absent / unparseable.
- */
-function courses_start_date_text( $start ) {
-	$start = trim( (string) $start );
-
-	if ( '' === $start ) {
-		return '';
-	}
-
-	$ts = strtotime( $start );
-
-	if ( ! $ts ) {
-		return '';
-	}
-
-	$format = get_option( 'date_format' );
-
-	return date_i18n( $format ? $format : 'j F Y', $ts );
 }
 
 /**

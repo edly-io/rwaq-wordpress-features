@@ -27,28 +27,25 @@
 
 /* ---- Trigger ----
 
-   Typography/colour are the design's own (Subtitle 2: 16px/26px semibold on
-   #242424), not the header's — nothing here inherits from the theme. */
+   Icon only, as in the design (Figma 10699:13511): a 44px outlined button
+   holding the user icon and a chevron — 16px padding on the icon's side, 12px
+   on the chevron's, 6px between them. */
 .tutor-sso-account .tutor-sso-account__trigger {
 	box-sizing: border-box;
 	display: inline-flex;
 	align-items: center;
-	justify-content: space-between;
-	gap: 12px;
+	gap: 6px;
 	min-height: 44px;
 	max-width: 100%;
 	margin: 0;
 	padding-block: 6px;
-	padding-inline-start: 10px;
-	padding-inline-end: 10px;
+	padding-inline-start: 16px;
+	padding-inline-end: 12px;
 	border: 1px solid #d1d1d1;
 	border-radius: 8px;
 	background: #fff;
 	color: #242424;
 	font-family: inherit;
-	font-size: 16px;
-	font-weight: 600;
-	line-height: 26px;
 	cursor: pointer;
 }
 
@@ -59,45 +56,20 @@
 	color: #242424;
 }
 
-/* The name is already clipped to a fixed number of characters by
-   account_menu_short_name(), so there is no max-width to ellipsis against
-   here — this only stops it wrapping if a filter raises that length. */
-.tutor-sso-account .tutor-sso-account__trigger-name {
-	white-space: nowrap;
+/* The icons keep their own sizes (24×24 and 11.25×6.25, from the SVGs'
+   width/height); `max-width: none` stops a theme's img rule shrinking them. */
+.tutor-sso-account .tutor-sso-account__user-icon,
+.tutor-sso-account .tutor-sso-account__chevron {
+	display: block;
+	flex: 0 0 auto;
+	max-width: none;
+	margin: 0;
+	border: 0;
+	box-shadow: none;
 }
 
 .tutor-sso-account .tutor-sso-account__chevron {
-	flex: 0 0 auto;
-	/* 12px from the trigger's gap + 8px here = the design's 20px. */
-	margin-inline-start: 8px;
 	transition: transform 0.15s ease;
-}
-
-/* Avatar badge: the design's 32px circle holding the name's first letter
-   (Figma 10529:105090 — #f1f0f8 on #565199, Body 1 Strong). A letter rather
-   than a photo, so it never depends on an avatar being set or on an external
-   request to Gravatar. */
-.tutor-sso-account .tutor-sso-account__avatar {
-	box-sizing: border-box;
-	flex: 0 0 auto;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	width: 32px;
-	height: 32px;
-	border-radius: 50%;
-	background: #f1f0f8;
-	color: #565199;
-	font-size: 14px;
-	font-weight: 600;
-	line-height: 22px;
-	text-transform: uppercase;
-}
-
-/* Nothing to show for a nameless account — the badge collapses rather than
-   leaving an empty circle. */
-.tutor-sso-account .tutor-sso-account__avatar:empty {
-	display: none;
 }
 
 .tutor-sso-account .tutor-sso-account__trigger[aria-expanded="true"] .tutor-sso-account__chevron {

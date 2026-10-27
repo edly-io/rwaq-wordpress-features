@@ -92,6 +92,78 @@ function sso_render_subscription_price_html( $base_class ) {
 	return '<p class="' . esc_attr( $base_class ) . ' ' . esc_attr( $base_class ) . '--subscription">' . esc_html__( 'ضمن الاشتراك', 'tutor-sso' ) . '</p>';
 }
 
+/**
+ * Whether a course from the LMS API can only be taken through its program.
+ *
+ * `pricing_category: "is_program_only"`. Such a course has no price of its own
+ * (regular/sale are null) and is not free either, so the plain price line would
+ * show nothing for it.
+ *
+ * @param array $row Course object from the API.
+ * @return bool
+ */
+function sso_is_program_only( $row ) {
+	if ( ! is_array( $row ) ) {
+		return false;
+	}
+
+	$category = isset( $row['pricing_category'] ) ? strtolower( trim( (string) $row['pricing_category'] ) ) : '';
+
+	return 'is_program_only' === $category;
+}
+
+/**
+ * A card's price line for a program-only course: "جزء من برنامج".
+ *
+ * Same wording as the pricing filter's label (sso_pricing_label()), styled
+ * like the subscription label.
+ *
+ * @param string $base_class e.g. 'rwaq-course-card__price'.
+ * @return string HTML.
+ */
+function sso_render_program_only_price_html( $base_class ) {
+	$base_class = (string) $base_class;
+
+	return '<p class="' . esc_attr( $base_class ) . ' ' . esc_attr( $base_class ) . '--program-only">' . esc_html__( 'جزء من برنامج', 'tutor-sso' ) . '</p>';
+}
+
+// ── Arabic counts ─────────────────────────────────────────────────────────────
+
+/**
+ * A count with its noun in singular or plural: "1 دورة", "5 دورات", "15 دورة".
+ *
+ * The number always stays as digits; only the noun changes. Arabic takes the
+ * plural for 2–10 (and from 100 up, when the last two digits are 3–10, as in
+ * "103 دورات") and the singular otherwise — 1, 11 and up, 0.
+ *
+ * @param int    $n    Count.
+ * @param string $noun 'course' (دورة) | 'masaq' (مساق) | 'program' (برنامج) |
+ *                     'learner' (طالب) | 'lesson' (درس) | 'instructor' (مدرّب).
+ * @return string Plain text; escape on output.
+ */
+function sso_arabic_count( $n, $noun ) {
+	$n = (int) $n;
+
+	// Singular, plural.
+	$forms = array(
+		'course'     => array( __( '%s دورة', 'tutor-sso' ), __( '%s دورات', 'tutor-sso' ) ),
+		'masaq'      => array( __( '%s مساق', 'tutor-sso' ), __( '%s مساقات', 'tutor-sso' ) ),
+		'program'    => array( __( '%s برنامج', 'tutor-sso' ), __( '%s برامج', 'tutor-sso' ) ),
+		'learner'    => array( __( '%s طالب', 'tutor-sso' ), __( '%s طلاب', 'tutor-sso' ) ),
+		'lesson'     => array( __( '%s درس', 'tutor-sso' ), __( '%s دروس', 'tutor-sso' ) ),
+		'instructor' => array( __( '%s مدرّب', 'tutor-sso' ), __( '%s مدرّبين', 'tutor-sso' ) ),
+	);
+
+	if ( ! isset( $forms[ $noun ] ) ) {
+		return number_format_i18n( $n );
+	}
+
+	$tail   = abs( $n ) % 100;
+	$plural = 2 === abs( $n ) || ( $tail >= 3 && $tail <= 10 );
+
+	return sprintf( $forms[ $noun ][ $plural ? 1 : 0 ], number_format_i18n( $n ) );
+}
+
 // ── Price parsing ─────────────────────────────────────────────────────────────
 
 /**
