@@ -35,7 +35,7 @@ function sso_option( $key, $default = '' ) {
  * "Free" / "Paid") — these are used instead so both catalogs read the same way,
  * falling back to the API's own label for any value this doesn't recognize.
  *
- * @param string $value    Filter value ('free' | 'paid' | 'program_only').
+ * @param string $value    Filter value ('free' | 'paid' | 'program_only' | 'subscription').
  * @param string $fallback Label to use when the value isn't recognized.
  * @return string
  */
@@ -44,11 +44,124 @@ function sso_pricing_label( $value, $fallback = '' ) {
 		'free'         => __( 'مجاني', 'tutor-sso' ),
 		'paid'         => __( 'مدفوع', 'tutor-sso' ),
 		'program_only' => __( 'جزء من برنامج', 'tutor-sso' ),
+		// The filters API's own label is "Is part of Subscription".
+		'subscription' => __( 'ضمن الاشتراك', 'tutor-sso' ),
 	);
 
 	$value = (string) $value;
 
 	return isset( $labels[ $value ] ) ? $labels[ $value ] : (string) $fallback;
+}
+
+/**
+ * Whether a course or program from the LMS API is subscription content.
+ *
+ * The API marks it twice — `pricing_category: "is_part_of_subscription"` and a
+ * boolean `is_part_of_subscription` — either is enough. Such an item has no
+ * price (regular/sale are null), so it must not be shown as paid or free.
+ *
+ * @param array $row Course or program object from the API.
+ * @return bool
+ */
+function sso_is_part_of_subscription( $row ) {
+	if ( ! is_array( $row ) ) {
+		return false;
+	}
+
+	if ( ! empty( $row['is_part_of_subscription'] ) ) {
+		return true;
+	}
+
+	$category = isset( $row['pricing_category'] ) ? strtolower( trim( (string) $row['pricing_category'] ) ) : '';
+
+	return 'is_part_of_subscription' === $category;
+}
+
+/**
+ * A catalog card's price line for subscription content: "ضمن الاشتراك".
+ *
+ * Same markup shape as sso_render_price_html()'s free line, with its own
+ * modifier class, so each catalog styles it alongside its other price states.
+ *
+ * @param string $base_class e.g. 'rwaq-course-card__price'.
+ * @return string HTML.
+ */
+function sso_render_subscription_price_html( $base_class ) {
+	$base_class = (string) $base_class;
+
+	return '<p class="' . esc_attr( $base_class ) . ' ' . esc_attr( $base_class ) . '--subscription">' . esc_html__( 'ضمن الاشتراك', 'tutor-sso' ) . '</p>';
+}
+
+/**
+ * Whether a course from the LMS API can only be taken through its program.
+ *
+ * `pricing_category: "is_program_only"`. Such a course has no price of its own
+ * (regular/sale are null) and is not free either, so the plain price line would
+ * show nothing for it.
+ *
+ * @param array $row Course object from the API.
+ * @return bool
+ */
+function sso_is_program_only( $row ) {
+	if ( ! is_array( $row ) ) {
+		return false;
+	}
+
+	$category = isset( $row['pricing_category'] ) ? strtolower( trim( (string) $row['pricing_category'] ) ) : '';
+
+	return 'is_program_only' === $category;
+}
+
+/**
+ * A card's price line for a program-only course: "جزء من برنامج".
+ *
+ * Same wording as the pricing filter's label (sso_pricing_label()), styled
+ * like the subscription label.
+ *
+ * @param string $base_class e.g. 'rwaq-course-card__price'.
+ * @return string HTML.
+ */
+function sso_render_program_only_price_html( $base_class ) {
+	$base_class = (string) $base_class;
+
+	return '<p class="' . esc_attr( $base_class ) . ' ' . esc_attr( $base_class ) . '--program-only">' . esc_html__( 'جزء من برنامج', 'tutor-sso' ) . '</p>';
+}
+
+// ── Arabic counts ─────────────────────────────────────────────────────────────
+
+/**
+ * A count with its noun in singular or plural: "1 دورة", "5 دورات", "15 دورة".
+ *
+ * The number always stays as digits; only the noun changes. Arabic takes the
+ * plural for 2–10 (and from 100 up, when the last two digits are 3–10, as in
+ * "103 دورات") and the singular otherwise — 1, 11 and up, 0.
+ *
+ * @param int    $n    Count.
+ * @param string $noun 'course' (دورة) | 'masaq' (مساق) | 'program' (برنامج) |
+ *                     'learner' (طالب) | 'lesson' (درس) | 'instructor' (مدرّب).
+ * @return string Plain text; escape on output.
+ */
+function sso_arabic_count( $n, $noun ) {
+	$n = (int) $n;
+
+	// Singular, plural.
+	$forms = array(
+		'course'     => array( __( '%s دورة', 'tutor-sso' ), __( '%s دورات', 'tutor-sso' ) ),
+		'masaq'      => array( __( '%s مساق', 'tutor-sso' ), __( '%s مساقات', 'tutor-sso' ) ),
+		'program'    => array( __( '%s برنامج', 'tutor-sso' ), __( '%s برامج', 'tutor-sso' ) ),
+		'learner'    => array( __( '%s طالب', 'tutor-sso' ), __( '%s طلاب', 'tutor-sso' ) ),
+		'lesson'     => array( __( '%s درس', 'tutor-sso' ), __( '%s دروس', 'tutor-sso' ) ),
+		'instructor' => array( __( '%s مدرّب', 'tutor-sso' ), __( '%s مدرّبين', 'tutor-sso' ) ),
+	);
+
+	if ( ! isset( $forms[ $noun ] ) ) {
+		return number_format_i18n( $n );
+	}
+
+	$tail   = abs( $n ) % 100;
+	$plural = 2 === abs( $n ) || ( $tail >= 3 && $tail <= 10 );
+
+	return sprintf( $forms[ $noun ][ $plural ? 1 : 0 ], number_format_i18n( $n ) );
 }
 
 // ── Price parsing ─────────────────────────────────────────────────────────────
@@ -706,6 +819,12 @@ function sso_clear_edx_cookies() {
 			continue;
 		}
 
+		// Not a session: the LMS login page reads it to pick its language, and
+		// this runs on the way there. See sso_set_language_cookie().
+		if ( LANGUAGE_COOKIE === $name ) {
+			continue;
+		}
+
 		$match = false;
 		foreach ( $fragments as $fragment ) {
 			if ( false !== strpos( $lower, $fragment ) ) {
@@ -727,6 +846,100 @@ function sso_clear_edx_cookies() {
 	}
 }
 
+// ── Language cookie for the LMS ──────────────────────────────────────────────
+
+/**
+ * The cookie Open edX reads for its language on pages with no signed-in user.
+ *
+ * The LMS login page is one of those, so it cannot use the learner's saved
+ * preference; its login MFE reads this cookie instead and renders Arabic and
+ * RTL when it says `ar`. The marketing site sets it, matching its own language.
+ */
+const LANGUAGE_COOKIE = 'openedx-language-preference';
+
+/**
+ * The language code to send: the current page's language.
+ *
+ * From the site locale — whatever the page's <html lang> is built from — cut
+ * to its language: `ar` → `ar`, `en_US` → `en`. A language switcher added later
+ * (WPML, Polylang…) changes the locale per page, so the cookie follows it.
+ *
+ * @return string e.g. 'ar', or '' when there is no locale.
+ */
+function sso_language_cookie_value() {
+	$locale   = function_exists( 'determine_locale' ) ? determine_locale() : get_locale();
+	$language = strtolower( strtok( str_replace( '-', '_', (string) $locale ), '_' ) );
+
+	/**
+	 * Filter the language code sent to the LMS in the language cookie.
+	 *
+	 * For a language whose Open edX code is not just the two-letter language
+	 * (e.g. `es-419`, `zh-cn`).
+	 *
+	 * @param string $language Language code.
+	 * @param string $locale   The WordPress locale it came from.
+	 */
+	return (string) apply_filters( 'tutor_sso_language_cookie_value', (string) $language, (string) $locale );
+}
+
+/**
+ * Set the language cookie, on the domain the site shares with the LMS.
+ *
+ * Only sent when the browser's value is missing or different, unless forced,
+ * so a visitor whose cookie is already right gets nothing extra.
+ *
+ * Not HttpOnly — the login page reads it in the browser — and on the shared
+ * parent domain (e.g. `.rwaq.org`) so the LMS host receives it. On staging
+ * that parent is the same as production's, so the two share it; the value is
+ * each site's own language, so they only differ if the sites do.
+ *
+ * @param bool $force Send it even when the browser's value already matches.
+ * @return void
+ */
+function sso_set_language_cookie( $force = false ) {
+	if ( headers_sent() ) {
+		return;
+	}
+
+	$value = sso_language_cookie_value();
+
+	if ( '' === $value ) {
+		return;
+	}
+
+	$current = isset( $_COOKIE[ LANGUAGE_COOKIE ] ) ? sanitize_text_field( wp_unslash( $_COOKIE[ LANGUAGE_COOKIE ] ) ) : '';
+
+	if ( ! $force && $current === $value ) {
+		return;
+	}
+
+	setcookie(
+		LANGUAGE_COOKIE,
+		$value,
+		array(
+			'expires'  => time() + YEAR_IN_SECONDS,
+			'path'     => '/',
+			// '' (this host only) when the site and LMS share no parent.
+			'domain'   => sso_shared_cookie_domain(),
+			'secure'   => is_ssl(),
+			'httponly' => false,
+			'samesite' => 'Lax',
+		)
+	);
+
+	$_COOKIE[ LANGUAGE_COOKIE ] = $value;
+}
+
+/**
+ * Keep the cookie current on every front-end page view.
+ *
+ * @return void
+ */
+function sso_language_cookie_on_page() {
+	sso_set_language_cookie();
+}
+add_action( 'template_redirect', __NAMESPACE__ . '\\sso_language_cookie_on_page' );
+
 /**
  * Handle ?tutor_sso_login=1: clear edX cookies, then start the OAuth flow.
  */
@@ -744,6 +957,10 @@ function sso_login_gateway() {
 	}
 
 	sso_clear_edx_cookies();
+
+	// Set again on the way to the login page, whatever the browser had, so
+	// the page always has it — even for a visitor whose first page this is.
+	sso_set_language_cookie( true );
 
 	$url = get_lms_authorize_url( $return_url );
 

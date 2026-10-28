@@ -647,18 +647,15 @@ function partner_fetch( $lms_id ) {
 	$stats = array(
 		array(
 			'icon'  => 'stat-courses.svg',
-			/* translators: %s: number of courses. */
-			'label' => sprintf( __( '%s دورة', 'tutor-sso' ), number_format_i18n( $total_courses ) ),
+			'label' => sso_arabic_count( $total_courses, 'course' ),
 		),
 		array(
 			'icon'  => 'stat-programs.svg',
-			/* translators: %s: number of programs. */
-			'label' => sprintf( __( '%s برنامجًا', 'tutor-sso' ), number_format_i18n( $total_programs ) ),
+			'label' => sso_arabic_count( $total_programs, 'program' ),
 		),
 		array(
 			'icon'  => 'stat-instructors.svg',
-			/* translators: %s: number of instructors. */
-			'label' => sprintf( __( '%s المدرّبون', 'tutor-sso' ), number_format_i18n( $total_instructors ) ),
+			'label' => sso_arabic_count( $total_instructors, 'instructor' ),
 		),
 	);
 

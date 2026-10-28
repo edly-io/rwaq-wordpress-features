@@ -291,7 +291,7 @@ function instructors_course_lead_instructor( $row ) {
  *
  * Delegates to courses_normalize_course(), the same mapper the courses catalog
  * uses, so an instructor's course cards are built from identical data — title,
- * image, url, org_name, instructor, start_text — then trims the instructor list
+ * image, url, org_name, instructor — then trims the instructor list
  * to one name. The trim is applied here rather than in the shared card so the
  * courses listing keeps showing its full list.
  *
@@ -435,18 +435,15 @@ function instructors_fetch( $lms_id ) {
 	$stats = array(
 		array(
 			'icon'  => 'stat-courses.svg',
-			/* translators: %s: number of courses. */
-			'label' => sprintf( __( '%s مساق', 'tutor-sso' ), number_format_i18n( $total_courses ) ),
+			'label' => sso_arabic_count( $total_courses, 'masaq' ),
 		),
 		array(
 			'icon'  => 'stat-articles.svg',
-			/* translators: %s: number of programs. */
-			'label' => sprintf( __( '%s برنامج', 'tutor-sso' ), number_format_i18n( $total_programs ) ),
+			'label' => sso_arabic_count( $total_programs, 'program' ),
 		),
 		array(
 			'icon'  => 'stat-students.svg',
-			/* translators: %s: number of enrolled learners. */
-			'label' => sprintf( __( '%s طالب', 'tutor-sso' ), number_format_i18n( $total_learners ) ),
+			'label' => sso_arabic_count( $total_learners, 'learner' ),
 		),
 	);
 

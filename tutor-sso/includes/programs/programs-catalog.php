@@ -444,6 +444,10 @@ function programs_render_card( $program, $detail_base ) {
  * @return string HTML, or '' when there's no usable price to show.
  */
 function programs_render_card_price( $program ) {
+	if ( sso_is_part_of_subscription( $program ) ) {
+		return sso_render_subscription_price_html( 'rwaq-program-card__price' );
+	}
+
 	$category = isset( $program['pricing_category'] ) ? $program['pricing_category'] : '';
 
 	return sso_render_price_html(

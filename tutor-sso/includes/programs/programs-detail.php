@@ -286,8 +286,7 @@ function program_detail_render_course($course, $number)
 				<?php if (null !== $sections) : ?>
 					<div class="rwaq-pd__tl-sub">
 						<?php
-						/* translators: %s: number of lessons/sections in the course. */
-						echo esc_html(sprintf(__('%s دروس', 'tutor-sso'), number_format_i18n($sections)));
+						echo esc_html(sso_arabic_count($sections, 'lesson'));
 						?>
 					</div>
 				<?php endif; ?>
@@ -332,15 +331,16 @@ function program_detail_program_url($program)
  * The current user's enrollment state for a program, asked once per render.
  *
  * @param string $program_key Program key.
- * @return array{enrolled:bool,has_order:bool}
+ * @return array{enrolled:bool,has_paid_access:bool,subscription_ends_at:string}
  */
 function program_detail_status($program_key)
 {
 	static $cache = array();
 
 	$none = array(
-		'enrolled'  => false,
-		'has_order' => false,
+		'enrolled'             => false,
+		'has_paid_access'      => false,
+		'subscription_ends_at' => '',
 	);
 
 	if (! is_user_logged_in()) {
@@ -363,7 +363,8 @@ function program_detail_status($program_key)
  * Order matters, each step outranking the ones below it:
  *
  *   enrolled    already in the program — send them to it
- *   has_order   paid for it, so enrolling is free even after unenrolling
+ *   has_paid_access  bought it, or a live subscription covers it, so enrolling
+ *                    is free even after unenrolling
  *   paid        sell it
  *   otherwise   free program — enroll
  *
@@ -373,9 +374,24 @@ function program_detail_status($program_key)
  * @param bool   $paid        Whether the LMS sells this program.
  * @return string HTML.
  */
-function program_detail_call_to_action($post_id, $program_key, $program_url = '', $paid = false)
+function program_detail_call_to_action($post_id, $program_key, $program_url = '', $paid = false, $part_of_subscription = false)
 {
 	$post_id = (int) $post_id;
+
+	// Subscription content: there is no product to buy. A subscriber (or anyone
+	// already enrolled) joins as usual; anyone else is pointed at the plans —
+	// rather than the nothing a "paid" program with no product would render.
+	if ($part_of_subscription) {
+		$status = program_detail_status($program_key);
+
+		if ($status['enrolled'] || $status['has_paid_access']) {
+			return program_detail_enroll_button($program_key, $program_url);
+		}
+
+		return course_render_subscription_notice(
+			__('هذا البرنامج جزء من اشتراك رواق، ويمكنك الوصول إليه عند الاشتراك.', 'tutor-sso')
+		);
+	}
 
 	// Free program: unchanged behaviour.
 	if (! $paid) {
@@ -385,7 +401,7 @@ function program_detail_call_to_action($post_id, $program_key, $program_url = ''
 	$status = program_detail_status($program_key);
 
 	// Enrolled, or already bought it: enroll rather than sell it twice.
-	if ($status['enrolled'] || $status['has_order']) {
+	if ($status['enrolled'] || $status['has_paid_access']) {
 		return program_detail_enroll_button($program_key, $program_url);
 	}
 
@@ -630,8 +646,8 @@ function program_detail_render($program, $program_key = '')
 						<h2 class="rwaq-pd__section-title">
 							<?php
 							if (null !== $total_courses) {
-								/* translators: %s: number of courses in the program. */
-								echo esc_html(sprintf(__('سلسلة مكوّنة من %s دورات', 'tutor-sso'), number_format_i18n($total_courses)));
+								/* translators: %s: the number of courses in the program, e.g. "1 دورة", "5 دورات". */
+								echo esc_html(sprintf(__('سلسلة مكوّنة من %s', 'tutor-sso'), sso_arabic_count($total_courses, 'course')));
 							} else {
 								echo esc_html__('الدورات', 'tutor-sso');
 							}
@@ -710,7 +726,8 @@ function program_detail_render($program, $program_key = '')
 							get_the_ID(),
 							$program_key,
 							program_detail_program_url($program),
-							$program_paid
+							$program_paid,
+							sso_is_part_of_subscription($program)
 						);
 						?>
 
@@ -724,8 +741,7 @@ function program_detail_render($program, $program_key = '')
 									</div>
 									<span class="rwaq-pd__info-value">
 										<?php
-										/* translators: %s: number of courses. */
-										echo esc_html(sprintf(__('%s دورات', 'tutor-sso'), number_format_i18n($total_courses)));
+										echo esc_html(sso_arabic_count($total_courses, 'course'));
 										?>
 									</span>
 								</li>

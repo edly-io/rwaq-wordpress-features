@@ -117,6 +117,15 @@ function search_register_assets() {
 		TUTOR_SSO_VERSION,
 		true
 	);
+
+	// The search bar's own: stops an empty search being submitted.
+	wp_register_script(
+		'tutor-sso-searchbar',
+		TUTOR_SSO_URL . 'assets/js/searchbar.js',
+		array(),
+		TUTOR_SSO_VERSION,
+		true
+	);
 }
 add_action( 'wp_enqueue_scripts', __NAMESPACE__ . '\\search_register_assets' );
 
@@ -136,9 +145,11 @@ add_action( 'wp_enqueue_scripts', __NAMESPACE__ . '\\search_register_assets' );
 function search_find_template_page() {
 	$cached = get_transient( 'tutor_sso_search_page_id' );
 
-	if ( false !== $cached ) {
-		// 0 is cached too, so a site with no such page does not re-query on
-		// every render.
+	// 0 is cached too, so a site with no such page does not re-query on every
+	// render. A cached page that is no longer published — deleted or changed
+	// some way that did not pass through the hooks below — is looked up again
+	// rather than linked to.
+	if ( false !== $cached && ( 0 === (int) $cached || 'publish' === get_post_status( (int) $cached ) ) ) {
 		return $cached ? (string) get_permalink( (int) $cached ) : '';
 	}
 
@@ -186,7 +197,10 @@ function search_flush_page_cache( $post_id ) {
 	}
 }
 add_action( 'save_post', __NAMESPACE__ . '\\search_flush_page_cache' );
-add_action( 'deleted_post', __NAMESPACE__ . '\\search_flush_page_cache' );
+// Before, not after: once a page is deleted get_post_type() no longer knows it
+// was one, so a flush on `deleted_post` would never fire for the search page.
+// Trashing and unpublishing go through save_post.
+add_action( 'before_delete_post', __NAMESPACE__ . '\\search_flush_page_cache' );
 
 /**
  * The URL the search bar submits to.
@@ -255,6 +269,7 @@ function search_bar_shortcode( $atts ) {
 	);
 
 	wp_enqueue_style( 'tutor-sso-search' );
+	wp_enqueue_script( 'tutor-sso-searchbar' );
 
 	$action = '' !== $atts['action'] ? $atts['action'] : search_page_url();
 	$uid    = wp_unique_id( 'rwaq-search-' );

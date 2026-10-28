@@ -36,6 +36,7 @@ require_once TUTOR_SSO_PATH . 'includes/enrollment-ajax.php';
 require_once TUTOR_SSO_PATH . 'includes/enrollment-shortcode.php';
 require_once TUTOR_SSO_PATH . 'includes/email-confirm-shortcode.php';
 require_once TUTOR_SSO_PATH . 'includes/account-menu.php';
+require_once TUTOR_SSO_PATH . 'includes/password-reset.php';
 require_once TUTOR_SSO_PATH . 'includes/elementor/elementor-widget-loader.php';
 require_once TUTOR_SSO_PATH . 'includes/partner-logo-shortcode.php';
 require_once TUTOR_SSO_PATH . 'includes/partner-name-shortcode.php';
@@ -64,15 +65,39 @@ require_once TUTOR_SSO_PATH . 'includes/programs/programs-order-enrollment.php';
 require_once TUTOR_SSO_PATH . 'includes/orders/orders-api.php';
 require_once TUTOR_SSO_PATH . 'includes/orders/order-course-links.php';
 require_once TUTOR_SSO_PATH . 'includes/orders/cart-styles.php';
+require_once TUTOR_SSO_PATH . 'includes/orders/menu-cart.php';
 require_once TUTOR_SSO_PATH . 'includes/orders/checkout-styles.php';
 require_once TUTOR_SSO_PATH . 'includes/orders/checkout-payment-heading.php';
+require_once TUTOR_SSO_PATH . 'includes/orders/gateway-titles.php';
+require_once TUTOR_SSO_PATH . 'includes/orders/checkout-saved-cards.php';
+require_once TUTOR_SSO_PATH . 'includes/orders/checkout-email.php';
 require_once TUTOR_SSO_PATH . 'includes/orders/order-received-styles.php';
 require_once TUTOR_SSO_PATH . 'includes/orders/my-account-styles.php';
 require_once TUTOR_SSO_PATH . 'includes/orders/my-account-menu.php';
+require_once TUTOR_SSO_PATH . 'includes/orders/my-account-dashboard.php';
+require_once TUTOR_SSO_PATH . 'includes/orders/add-payment-method.php';
 require_once TUTOR_SSO_PATH . 'includes/orders/my-account-form.php';
+require_once TUTOR_SSO_PATH . 'includes/orders/my-account-login-redirect.php';
 require_once TUTOR_SSO_PATH . 'includes/orders/shop-redirect.php';
 require_once TUTOR_SSO_PATH . 'includes/orders/duplicate-purchase.php';
+require_once TUTOR_SSO_PATH . 'includes/orders/coupon-notices.php';
 require_once TUTOR_SSO_PATH . 'includes/orders/address-fields.php';
+require_once TUTOR_SSO_PATH . 'includes/orders/name-validation.php';
+require_once TUTOR_SSO_PATH . 'includes/subscriptions/subscriptions.php';
+require_once TUTOR_SSO_PATH . 'includes/subscriptions/subscriptions-table.php';
+require_once TUTOR_SSO_PATH . 'includes/subscriptions/subscriptions-order.php';
+require_once TUTOR_SSO_PATH . 'includes/subscriptions/subscriptions-checkout.php';
+require_once TUTOR_SSO_PATH . 'includes/subscriptions/subscriptions-renewal.php';
+require_once TUTOR_SSO_PATH . 'includes/subscriptions/subscriptions-lms.php';
+require_once TUTOR_SSO_PATH . 'includes/subscriptions/subscriptions-manage.php';
+require_once TUTOR_SSO_PATH . 'includes/subscriptions/subscriptions-account.php';
+require_once TUTOR_SSO_PATH . 'includes/subscriptions/subscriptions-plans.php';
+require_once TUTOR_SSO_PATH . 'includes/subscriptions/subscriptions-product-page.php';
+require_once TUTOR_SSO_PATH . 'includes/subscriptions/subscriptions-payment-methods.php';
+require_once TUTOR_SSO_PATH . 'includes/subscriptions/subscriptions-admin-list.php';
+require_once TUTOR_SSO_PATH . 'includes/subscriptions/subscriptions-product-type.php';
+require_once TUTOR_SSO_PATH . 'includes/subscriptions/subscriptions-cart.php';
+require_once TUTOR_SSO_PATH . 'includes/subscriptions/subscriptions-save-card.php';
 require_once TUTOR_SSO_PATH . 'includes/programs/program-single.php';
 require_once TUTOR_SSO_PATH . 'includes/blogs/blogs-query.php';
 require_once TUTOR_SSO_PATH . 'includes/blogs/blogs-catalog.php';
@@ -229,10 +254,40 @@ function tutor_sso_account_menu_enqueue_assets() {
  * actually rendered (see \TutorSSO\enroll_enqueue_assets()).
  */
 function tutor_sso_register_enroll_assets() {
+	// The unenroll confirmation for courses and programs: the site's own dialog
+	// rather than window.confirm(), whose OK / Cancel follow the browser's
+	// language. Pulled in as a dependency of both enroll scripts below.
+	wp_register_script(
+		'tutor-sso-confirm-dialog',
+		TUTOR_SSO_URL . 'assets/js/confirm-dialog.js',
+		array(),
+		TUTOR_SSO_VERSION,
+		true
+	);
+
+	wp_localize_script(
+		'tutor-sso-confirm-dialog',
+		'tutorSsoConfirmDialog',
+		array(
+			'i18n' => array(
+				'title'   => __( 'تأكيد إلغاء التسجيل', 'tutor-sso' ),
+				'confirm' => __( 'تأكيد', 'tutor-sso' ),
+				'cancel'  => __( 'تراجع', 'tutor-sso' ),
+			),
+		)
+	);
+
+	wp_register_style(
+		'tutor-sso-confirm-dialog',
+		TUTOR_SSO_URL . 'assets/css/confirm-dialog.css',
+		array(),
+		TUTOR_SSO_VERSION
+	);
+
 	wp_register_script(
 		'tutor-sso-enroll',
 		TUTOR_SSO_URL . 'assets/js/enroll.js',
-		array( 'jquery' ),
+		array( 'jquery', 'tutor-sso-confirm-dialog' ),
 		TUTOR_SSO_VERSION,
 		true
 	);
@@ -253,6 +308,7 @@ add_action( 'wp_enqueue_scripts', 'tutor_sso_register_enroll_assets' );
  */
 function tutor_sso_enroll_enqueue_assets() {
 	wp_enqueue_style( 'tutor-sso-enroll' );
+	wp_enqueue_style( 'tutor-sso-confirm-dialog' );
 	wp_enqueue_script( 'tutor-sso-enroll' );
 
 	wp_localize_script(
@@ -295,7 +351,7 @@ function tutor_sso_register_program_enroll_assets() {
 	wp_register_script(
 		'tutor-sso-program-enroll',
 		TUTOR_SSO_URL . 'assets/js/program-enroll.js',
-		array( 'jquery' ),
+		array( 'jquery', 'tutor-sso-confirm-dialog' ),
 		TUTOR_SSO_VERSION,
 		true
 	);
@@ -307,6 +363,7 @@ add_action( 'wp_enqueue_scripts', 'tutor_sso_register_program_enroll_assets' );
  * catalog stylesheet (tutor-sso-programs), so only the script is enqueued here.
  */
 function tutor_sso_program_enroll_enqueue_assets() {
+	wp_enqueue_style( 'tutor-sso-confirm-dialog' );
 	wp_enqueue_script( 'tutor-sso-program-enroll' );
 
 	wp_localize_script(

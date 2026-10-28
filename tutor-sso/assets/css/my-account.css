@@ -2,7 +2,9 @@
  * WooCommerce My Account pages, styled to the design (Figma 10533:110222).
  *
  * CSS only — WooCommerce's own myaccount templates are untouched, so a
- * WooCommerce update cannot break this. Scoped under .woocommerce-account
+ * WooCommerce update cannot break this. The one exception is the dashboard,
+ * whose markup is the plugin's own (orders/my-account-dashboard.php); its
+ * rules are under "Dashboard". Scoped under .woocommerce-account
  * (the body class WooCommerce adds on every My Account endpoint).
  *
  * The design is two cards side by side under a page title: a 315px navigation
@@ -139,12 +141,29 @@
 	--rwaq-acc-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 10.5 12 3l9 7.5'/%3E%3Cpath d='M5 9.8V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.8'/%3E%3Cpath d='M9.5 21v-6h5v6'/%3E%3C/svg%3E");
 }
 
-.woocommerce-account .woocommerce-MyAccount-navigation li.woocommerce-MyAccount-navigation-link--orders a {
+.woocommerce-account .woocommerce-MyAccount-navigation li.woocommerce-MyAccount-navigation-link--orders a,
+.woocommerce-account .rwaq-acc-dash__card--orders {
 	--rwaq-acc-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2.5' y='5' width='19' height='14' rx='2'/%3E%3Cpath d='M2.5 9.5h19'/%3E%3Cpath d='M6 14.5h4'/%3E%3C/svg%3E");
 }
 
-.woocommerce-account .woocommerce-MyAccount-navigation li.woocommerce-MyAccount-navigation-link--edit-account a {
+.woocommerce-account .woocommerce-MyAccount-navigation li.woocommerce-MyAccount-navigation-link--edit-account a,
+.woocommerce-account .rwaq-acc-dash__card--edit-account {
 	--rwaq-acc-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='8' r='3.6'/%3E%3Cpath d='M4.5 20a7.5 7.5 0 0 1 15 0'/%3E%3C/svg%3E");
+}
+
+.woocommerce-account .woocommerce-MyAccount-navigation li.woocommerce-MyAccount-navigation-link--subscriptions a,
+.woocommerce-account .rwaq-acc-dash__card--subscriptions {
+	--rwaq-acc-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='14' rx='2.5'/%3E%3Cpath d='M3 10h18'/%3E%3Cpath d='M7 15h1.5M11 15h1.5'/%3E%3C/svg%3E");
+}
+
+.woocommerce-account .woocommerce-MyAccount-navigation li.woocommerce-MyAccount-navigation-link--payment-methods a,
+.woocommerce-account .rwaq-acc-dash__card--payment-methods {
+	--rwaq-acc-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M19 7V5.5A1.5 1.5 0 0 0 17.5 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h14a1 1 0 0 0 1-1v-3'/%3E%3Cpath d='M3 6.5A1.5 1.5 0 0 0 4.5 8H20a1 1 0 0 1 1 1v3h-4a2 2 0 0 0 0 4h4'/%3E%3C/svg%3E");
+}
+
+.woocommerce-account .woocommerce-MyAccount-navigation li.woocommerce-MyAccount-navigation-link--edit-address a,
+.woocommerce-account .rwaq-acc-dash__card--edit-address {
+	--rwaq-acc-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z'/%3E%3Ccircle cx='12' cy='9.5' r='2.5'/%3E%3C/svg%3E");
 }
 
 .woocommerce-account .woocommerce-MyAccount-navigation li.woocommerce-MyAccount-navigation-link--customer-logout a {
@@ -177,6 +196,128 @@
 
 .woocommerce-account .woocommerce-MyAccount-content a {
 	color: var(--rwaq-acc-brand);
+}
+
+/* ---- Dashboard ----
+   Markup from includes/orders/my-account-dashboard.php: a greeting, then a
+   card per menu entry. Each card's icon is the menu's own — the endpoint
+   selectors in the navigation section above also name the matching card. */
+.woocommerce-account .rwaq-acc-dash__intro {
+	margin-bottom: 24px;
+}
+
+.woocommerce-account .rwaq-acc-dash__title {
+	margin: 0 0 4px;
+	font-size: 20px;
+	font-weight: 600;
+	line-height: 28px;
+	color: var(--rwaq-acc-text);
+}
+
+.woocommerce-account .rwaq-acc-dash__subtitle {
+	margin: 0;
+	font-size: 14px;
+	line-height: 22px;
+	color: var(--rwaq-acc-muted);
+}
+
+.woocommerce-account .rwaq-acc-dash__cards {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 16px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+/* :where() keeps this fallback below the per-endpoint icons, whatever order
+   the rules come in. */
+.woocommerce-account :where(.rwaq-acc-dash__card) {
+	--rwaq-acc-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6'%3E%3Ccircle cx='12' cy='12' r='3.5'/%3E%3C/svg%3E");
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.woocommerce-account .woocommerce-MyAccount-content .rwaq-acc-dash__link {
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 12px;
+	height: 100%;
+	padding: 20px;
+	border: 1px solid var(--rwaq-acc-border);
+	border-radius: var(--rwaq-acc-radius);
+	color: var(--rwaq-acc-text);
+	text-decoration: none;
+	transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.woocommerce-account .woocommerce-MyAccount-content .rwaq-acc-dash__link:hover,
+.woocommerce-account .woocommerce-MyAccount-content .rwaq-acc-dash__link:focus-visible {
+	border-color: var(--rwaq-acc-brand);
+	background: var(--rwaq-acc-brand-tint);
+	color: var(--rwaq-acc-text);
+	text-decoration: none;
+}
+
+/* The same tinted badge as the empty-state icon, with the menu icon masked
+   in brand colour. */
+.woocommerce-account .rwaq-acc-dash__icon {
+	flex: 0 0 auto;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 44px;
+	height: 44px;
+	border-radius: 50%;
+	background: var(--rwaq-acc-brand-tint);
+}
+
+.woocommerce-account .rwaq-acc-dash__link:hover .rwaq-acc-dash__icon,
+.woocommerce-account .rwaq-acc-dash__link:focus-visible .rwaq-acc-dash__icon {
+	background: #fff;
+}
+
+.woocommerce-account .rwaq-acc-dash__icon::before {
+	content: '';
+	width: 22px;
+	height: 22px;
+	background-color: var(--rwaq-acc-brand);
+	-webkit-mask: var(--rwaq-acc-icon) center / 22px 22px no-repeat;
+	mask: var(--rwaq-acc-icon) center / 22px 22px no-repeat;
+}
+
+.woocommerce-account .rwaq-acc-dash__text {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	min-width: 0;
+}
+
+.woocommerce-account .rwaq-acc-dash__label {
+	font-size: 16px;
+	font-weight: 600;
+	line-height: 24px;
+}
+
+.woocommerce-account .rwaq-acc-dash__desc {
+	font-size: 14px;
+	line-height: 22px;
+	color: var(--rwaq-acc-muted);
+}
+
+@media (max-width: 600px) {
+	.woocommerce-account .rwaq-acc-dash__cards {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	/* One per row: icon beside the text again, so a card is not mostly icon. */
+	.woocommerce-account .woocommerce-MyAccount-content .rwaq-acc-dash__link {
+		flex-direction: row;
+		gap: 16px;
+	}
 }
 
 /* ---- Empty state ----
@@ -221,12 +362,113 @@
 	font-size: 0;
 }
 
-/* The inline CTA is pushed onto its own centred line. */
+/* The inline CTA is pushed onto its own centred line. WooCommerce floats a
+   notice's button to the inline end, which beats the auto margins and leaves it
+   in the corner (the empty orders page), so the float is cleared too.
+
+   The empty payment-methods page prints its "Add payment method" button after
+   the notice rather than inside it, so it gets the same treatment as a sibling;
+   its top margin is smaller to make up for the notice's own bottom padding. */
 .woocommerce-account .woocommerce-MyAccount-content .woocommerce-info .button,
-.woocommerce-account .woocommerce-MyAccount-content .woocommerce-message .button {
+.woocommerce-account .woocommerce-MyAccount-content .woocommerce-message .button,
+.woocommerce-account .woocommerce-MyAccount-content > .woocommerce-info ~ .button {
 	display: flex;
+	float: none !important;
 	width: fit-content;
 	margin: 24px auto 0;
+}
+
+.woocommerce-account .woocommerce-MyAccount-content > .woocommerce-info ~ .button {
+	margin-top: 16px;
+}
+
+/* ---- Notices ----
+   Feedback after an action ("Address changed successfully", a validation
+   error) prints in the same .woocommerce-message / -info / -error boxes as the
+   empty states above, but inside .woocommerce-notices-wrapper at the top of the
+   card. There it is a compact banner, not a centred empty state with a large
+   icon. The wrapper class makes these rules outrank the empty-state ones. */
+/* :has(> *) rather than :not(:empty) — a wrapper holding only whitespace is
+   not :empty, and would push the content down for nothing. */
+.woocommerce-account .woocommerce-MyAccount-content .woocommerce-notices-wrapper:has(> *) {
+	margin-bottom: 24px;
+}
+
+.woocommerce-account .woocommerce-MyAccount-content .woocommerce-notices-wrapper :is(.woocommerce-message, .woocommerce-info, .woocommerce-error) {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 4px 10px;
+	margin: 0 0 8px;
+	padding: 12px 16px;
+	border: 1px solid var(--rwaq-acc-border) !important;
+	border-radius: 8px;
+	background: var(--rwaq-acc-brand-tint) !important;
+	color: var(--rwaq-acc-text);
+	font-size: 14px;
+	line-height: 22px;
+	text-align: start;
+	list-style: none;
+}
+
+.woocommerce-account .woocommerce-MyAccount-content .woocommerce-notices-wrapper :is(.woocommerce-message, .woocommerce-info, .woocommerce-error):last-child {
+	margin-bottom: 0;
+}
+
+/* A notice's own link button (e.g. "View cart") goes to the far end of the
+   banner, not onto a centred line of its own as in the empty state. */
+.woocommerce-account .woocommerce-MyAccount-content .woocommerce-notices-wrapper :is(.woocommerce-message, .woocommerce-info) .button {
+	order: 1;
+	margin: 0;
+	margin-inline-start: auto;
+}
+
+.woocommerce-account .woocommerce-MyAccount-content .woocommerce-notices-wrapper :is(.woocommerce-message, .woocommerce-info, .woocommerce-error)::after {
+	display: none !important;
+}
+
+/* A small status icon in place of the empty state's badge: a tick for
+   success, an "i" for information. */
+.woocommerce-account .woocommerce-MyAccount-content .woocommerce-notices-wrapper :is(.woocommerce-message, .woocommerce-info)::before {
+	content: '';
+	display: block;
+	position: static;
+	flex: 0 0 auto;
+	width: 20px;
+	height: 20px;
+	margin: 0;
+	border-radius: 0;
+	background-color: transparent;
+	background-repeat: no-repeat;
+	background-position: center;
+	background-size: 20px 20px;
+}
+
+.woocommerce-account .woocommerce-MyAccount-content .woocommerce-notices-wrapper .woocommerce-message::before {
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23565199' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='m8 12.5 2.7 2.7L16 9.8'/%3E%3C/svg%3E");
+}
+
+.woocommerce-account .woocommerce-MyAccount-content .woocommerce-notices-wrapper .woocommerce-info::before {
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23565199' stroke-width='1.8' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 11v5.5M12 7.8v.2'/%3E%3C/svg%3E");
+}
+
+/* Errors list one problem per <li>; stacked, in red, without WooCommerce's
+   corner icon. */
+.woocommerce-account .woocommerce-MyAccount-content .woocommerce-notices-wrapper .woocommerce-error {
+	flex-direction: column;
+	align-items: stretch;
+	border-color: #f1c2c2 !important;
+	background: #fdf2f2 !important;
+	color: #a12626;
+}
+
+.woocommerce-account .woocommerce-MyAccount-content .woocommerce-notices-wrapper .woocommerce-error::before {
+	display: none !important;
+}
+
+.woocommerce-account .woocommerce-MyAccount-content .woocommerce-notices-wrapper .woocommerce-error li {
+	margin: 0;
+	padding: 0;
 }
 
 /* ---- Buttons ---- */
@@ -261,6 +503,7 @@
 
 /* Row actions are the design's secondary button: white with a grey hairline. */
 .woocommerce-account .woocommerce-orders-table .button,
+.woocommerce-account .woocommerce-MyAccount-paymentMethods .button,
 .woocommerce-account .woocommerce-pagination .button {
 	border-color: var(--rwaq-acc-border);
 	background: #fff;
@@ -272,6 +515,7 @@
 }
 
 .woocommerce-account .woocommerce-orders-table .button:hover,
+.woocommerce-account .woocommerce-MyAccount-paymentMethods .button:hover,
 .woocommerce-account .woocommerce-pagination .button:hover {
 	border-color: var(--rwaq-acc-border);
 	background: #f5f5f5;
@@ -279,10 +523,16 @@
 }
 
 /* ---- Forms (account details) ----
+   Every selector in this group reads `form:where(:not(#add_payment_method))`.
+   The add-payment-method form holds the gateway's own card form, which these
+   rules would rearrange (see "Add payment method" below). :where() adds no
+   specificity, so for every other form each rule matches and weighs exactly
+   what `form` alone did.
+
    WooCommerce floats form-row-first / form-row-last at 47% and separates them
    with .clear divs. Grid states the two columns directly, so the floats and
    their spacers are retired. */
-.woocommerce-account .woocommerce-MyAccount-content form {
+.woocommerce-account .woocommerce-MyAccount-content form:where(:not(#add_payment_method)) {
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
 	/* Row gap larger than the column gap: rows stack label-over-input, so they
@@ -299,27 +549,27 @@
 
    The inner wrapper is made the grid instead, and the blocks between it and
    the form are told to span the full width. */
-.woocommerce-account .woocommerce-MyAccount-content form > h3,
-.woocommerce-account .woocommerce-MyAccount-content form .woocommerce-address-fields {
+.woocommerce-account .woocommerce-MyAccount-content form:where(:not(#add_payment_method)) > h3,
+.woocommerce-account .woocommerce-MyAccount-content form:where(:not(#add_payment_method)) .woocommerce-address-fields {
 	grid-column: 1 / -1;
 }
 
-.woocommerce-account .woocommerce-MyAccount-content form .woocommerce-address-fields__field-wrapper {
+.woocommerce-account .woocommerce-MyAccount-content form:where(:not(#add_payment_method)) .woocommerce-address-fields__field-wrapper {
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
 	gap: 28px 20px;
 }
 
 /* The save button sits outside that wrapper, so it needs its own separation. */
-.woocommerce-account .woocommerce-MyAccount-content form .woocommerce-address-fields > p:last-child {
+.woocommerce-account .woocommerce-MyAccount-content form:where(:not(#add_payment_method)) .woocommerce-address-fields > p:last-child {
 	margin: 28px 0 0;
 }
 
-.woocommerce-account .woocommerce-MyAccount-content form .clear {
+.woocommerce-account .woocommerce-MyAccount-content form:where(:not(#add_payment_method)) .clear {
 	display: none;
 }
 
-.woocommerce-account .woocommerce-MyAccount-content form .form-row {
+.woocommerce-account .woocommerce-MyAccount-content form:where(:not(#add_payment_method)) .form-row {
 	float: none !important;
 	width: auto !important;
 	/* The overflow fix. A grid item's min-width is `auto`, meaning "never
@@ -335,19 +585,19 @@
 
 /* WooCommerce wraps each control in this inline <span>; as an inline box it
    gives the control no block of its own to be 100% of. */
-.woocommerce-account .woocommerce-MyAccount-content form .woocommerce-input-wrapper {
+.woocommerce-account .woocommerce-MyAccount-content form:where(:not(#add_payment_method)) .woocommerce-input-wrapper {
 	display: block;
 	width: 100%;
 	min-width: 0;
 }
 
-.woocommerce-account .woocommerce-MyAccount-content form .form-row-wide,
-.woocommerce-account .woocommerce-MyAccount-content form fieldset,
-.woocommerce-account .woocommerce-MyAccount-content form > p:last-of-type {
+.woocommerce-account .woocommerce-MyAccount-content form:where(:not(#add_payment_method)) .form-row-wide,
+.woocommerce-account .woocommerce-MyAccount-content form:where(:not(#add_payment_method)) fieldset,
+.woocommerce-account .woocommerce-MyAccount-content form:where(:not(#add_payment_method)) > p:last-of-type {
 	grid-column: 1 / -1;
 }
 
-.woocommerce-account .woocommerce-MyAccount-content form label {
+.woocommerce-account .woocommerce-MyAccount-content form:where(:not(#add_payment_method)) label {
 	display: block;
 	margin-bottom: 10px;
 	font-size: 14px;
@@ -356,14 +606,14 @@
 	color: var(--rwaq-acc-text);
 }
 
-.woocommerce-account .woocommerce-MyAccount-content form .required {
+.woocommerce-account .woocommerce-MyAccount-content form:where(:not(#add_payment_method)) .required {
 	color: #c0392b;
 	text-decoration: none;
 }
 
-.woocommerce-account .woocommerce-MyAccount-content form .input-text,
-.woocommerce-account .woocommerce-MyAccount-content form select,
-.woocommerce-account .woocommerce-MyAccount-content form textarea {
+.woocommerce-account .woocommerce-MyAccount-content form:where(:not(#add_payment_method)) .input-text,
+.woocommerce-account .woocommerce-MyAccount-content form:where(:not(#add_payment_method)) select,
+.woocommerce-account .woocommerce-MyAccount-content form:where(:not(#add_payment_method)) textarea {
 	box-sizing: border-box;
 	width: 100%;
 	/* A `size` attribute, or select2's inline width, would otherwise win. */
@@ -383,17 +633,17 @@
    field in JavaScript and writes the result as an inline pixel width — the one
    place an !important is unavoidable, since an inline style cannot be beaten
    any other way. */
-.woocommerce-account .woocommerce-MyAccount-content form .select2-container {
+.woocommerce-account .woocommerce-MyAccount-content form:where(:not(#add_payment_method)) .select2-container {
 	box-sizing: border-box;
 	width: 100% !important;
 	max-width: 100%;
 }
 
-.woocommerce-account .woocommerce-MyAccount-content form .select2-container .selection {
+.woocommerce-account .woocommerce-MyAccount-content form:where(:not(#add_payment_method)) .select2-container .selection {
 	display: block;
 }
 
-.woocommerce-account .woocommerce-MyAccount-content form .select2-container .select2-selection--single {
+.woocommerce-account .woocommerce-MyAccount-content form:where(:not(#add_payment_method)) .select2-container .select2-selection--single {
 	/* select2's own stylesheet makes these block-level; stated here too so the
 	   control still fills its row if that stylesheet is late, replaced or
 	   dequeued. */
@@ -405,15 +655,15 @@
 	border-radius: 8px;
 }
 
-.woocommerce-account .woocommerce-MyAccount-content form .select2-container .select2-selection__rendered {
+.woocommerce-account .woocommerce-MyAccount-content form:where(:not(#add_payment_method)) .select2-container .select2-selection__rendered {
 	line-height: 42px;
 	padding-inline: 16px;
 	color: var(--rwaq-acc-text);
 }
 
-.woocommerce-account .woocommerce-MyAccount-content form .input-text:focus,
-.woocommerce-account .woocommerce-MyAccount-content form select:focus,
-.woocommerce-account .woocommerce-MyAccount-content form textarea:focus {
+.woocommerce-account .woocommerce-MyAccount-content form:where(:not(#add_payment_method)) .input-text:focus,
+.woocommerce-account .woocommerce-MyAccount-content form:where(:not(#add_payment_method)) select:focus,
+.woocommerce-account .woocommerce-MyAccount-content form:where(:not(#add_payment_method)) textarea:focus {
 	border-color: var(--rwaq-acc-brand);
 	outline: none;
 	box-shadow: 0 0 0 3px rgba(86, 81, 153, 0.12);
@@ -421,13 +671,13 @@
 
 /* The email is the SSO identity, locked server-side — shown as plainly
    not-editable rather than looking like a field that simply refused. */
-.woocommerce-account .woocommerce-MyAccount-content form .input-text[readonly] {
+.woocommerce-account .woocommerce-MyAccount-content form:where(:not(#add_payment_method)) .input-text[readonly] {
 	background: #f5f5f5;
 	color: var(--rwaq-acc-muted);
 	cursor: not-allowed;
 }
 
-.woocommerce-account .woocommerce-MyAccount-content form .input-text[readonly]:focus {
+.woocommerce-account .woocommerce-MyAccount-content form:where(:not(#add_payment_method)) .input-text[readonly]:focus {
 	border-color: var(--rwaq-acc-border);
 	box-shadow: none;
 }
@@ -446,7 +696,7 @@
 	line-height: 20px;
 }
 
-.woocommerce-account .woocommerce-MyAccount-content form span em {
+.woocommerce-account .woocommerce-MyAccount-content form:where(:not(#add_payment_method)) span em {
 	display: block;
 	margin-top: 6px;
 	font-size: 13px;
@@ -462,11 +712,11 @@
    ignores grid-column and lets the separator take the row beside it. Dropping
    the fieldset box entirely puts the legend and its rows directly into the
    form's own grid, where both behave like every other row. */
-.woocommerce-account .woocommerce-MyAccount-content form fieldset {
+.woocommerce-account .woocommerce-MyAccount-content form:where(:not(#add_payment_method)) fieldset {
 	display: contents;
 }
 
-.woocommerce-account .woocommerce-MyAccount-content form fieldset::before {
+.woocommerce-account .woocommerce-MyAccount-content form:where(:not(#add_payment_method)) fieldset::before {
 	content: '';
 	grid-column: 1 / -1;
 	height: 1px;
@@ -474,7 +724,7 @@
 	background: var(--rwaq-acc-border);
 }
 
-.woocommerce-account .woocommerce-MyAccount-content form fieldset legend {
+.woocommerce-account .woocommerce-MyAccount-content form:where(:not(#add_payment_method)) fieldset legend {
 	display: block;
 	grid-column: 1 / -1;
 	float: none;
@@ -487,12 +737,13 @@
 	color: var(--rwaq-acc-text);
 }
 
-.woocommerce-account .woocommerce-MyAccount-content form fieldset .form-row {
+.woocommerce-account .woocommerce-MyAccount-content form:where(:not(#add_payment_method)) fieldset .form-row {
 	grid-column: 1 / -1;
 }
 
 /* ---- Orders table ---- */
-.woocommerce-account .woocommerce-orders-table {
+.woocommerce-account .woocommerce-orders-table,
+.woocommerce-account .woocommerce-MyAccount-paymentMethods {
 	width: 100%;
 	margin: 0;
 	border: 1px solid var(--rwaq-acc-border);
@@ -503,7 +754,9 @@
 }
 
 .woocommerce-account .woocommerce-orders-table th,
-.woocommerce-account .woocommerce-orders-table td {
+.woocommerce-account .woocommerce-MyAccount-paymentMethods th,
+.woocommerce-account .woocommerce-orders-table td,
+.woocommerce-account .woocommerce-MyAccount-paymentMethods td {
 	padding: 14px 20px;
 	border: 0 !important;
 	border-bottom: 1px solid var(--rwaq-acc-border) !important;
@@ -514,16 +767,19 @@
 	vertical-align: middle;
 }
 
-.woocommerce-account .woocommerce-orders-table thead th {
+.woocommerce-account .woocommerce-orders-table thead th,
+.woocommerce-account .woocommerce-MyAccount-paymentMethods thead th {
 	font-weight: 600;
 	color: var(--rwaq-acc-text);
 }
 
-.woocommerce-account .woocommerce-orders-table tbody td {
+.woocommerce-account .woocommerce-orders-table tbody td,
+.woocommerce-account .woocommerce-MyAccount-paymentMethods tbody td {
 	color: var(--rwaq-acc-muted);
 }
 
-.woocommerce-account .woocommerce-orders-table tr:last-child td {
+.woocommerce-account .woocommerce-orders-table tr:last-child td,
+.woocommerce-account .woocommerce-MyAccount-paymentMethods tr:last-child td {
 	border-bottom: 0 !important;
 }
 
@@ -532,6 +788,113 @@
 	justify-content: center;
 	gap: 12px;
 	margin-top: 24px;
+}
+
+/* ---- Addresses ----
+   WooCommerce lays the billing and shipping addresses out as two floated
+   half-width columns, each with the theme's large heading, a plain "Add" link
+   and the address in italics. Each address becomes a bordered card like the
+   tables', stacked full width, with the heading the size of the account form's
+   section titles and the link as the secondary button. */
+.woocommerce-account .woocommerce-MyAccount-content .woocommerce-Addresses {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	margin: 0;
+}
+
+.woocommerce-account .woocommerce-MyAccount-content .woocommerce-Addresses::before,
+.woocommerce-account .woocommerce-MyAccount-content .woocommerce-Addresses::after,
+.woocommerce-account .woocommerce-MyAccount-content .woocommerce-Address-title::before,
+.woocommerce-account .woocommerce-MyAccount-content .woocommerce-Address-title::after {
+	display: none;
+}
+
+.woocommerce-account .woocommerce-MyAccount-content .woocommerce-Address {
+	box-sizing: border-box;
+	float: none !important;
+	width: auto !important;
+	max-width: none;
+	margin: 0;
+	padding: 20px;
+	border: 1px solid var(--rwaq-acc-border);
+	border-radius: var(--rwaq-acc-radius);
+}
+
+.woocommerce-account .woocommerce-MyAccount-content .woocommerce-Address-title {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin: 0 0 12px;
+}
+
+.woocommerce-account .woocommerce-MyAccount-content .woocommerce-Address-title :is(h2, h3) {
+	float: none;
+	margin: 0;
+	padding: 0;
+	font-size: 20px;
+	font-weight: 600;
+	line-height: 28px;
+	color: var(--rwaq-acc-text);
+}
+
+.woocommerce-account .woocommerce-MyAccount-content .woocommerce-Address-title .edit {
+	box-sizing: border-box;
+	display: inline-flex;
+	align-items: center;
+	float: none;
+	min-height: 36px;
+	padding: 6px 16px;
+	border: 1px solid var(--rwaq-acc-border);
+	border-radius: 8px;
+	background: #fff;
+	color: var(--rwaq-acc-text);
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 22px;
+	text-decoration: none;
+	transition: background-color 0.15s ease;
+}
+
+.woocommerce-account .woocommerce-MyAccount-content .woocommerce-Address-title .edit:hover {
+	background: #f5f5f5;
+	color: var(--rwaq-acc-text);
+}
+
+/* A saved address is a stack of bare lines (name, street, city, postcode,
+   country) joined by <br>. It sits in a tinted panel under the heading, with
+   the first line — the name — set as its title. */
+.woocommerce-account .woocommerce-MyAccount-content .woocommerce-Address address {
+	margin: 0;
+	padding: 14px 16px;
+	border-radius: 8px;
+	background: #f7f7f9;
+	font-family: inherit;
+	font-style: normal;
+	font-size: 14px;
+	line-height: 24px;
+	color: var(--rwaq-acc-muted);
+}
+
+.woocommerce-account .woocommerce-MyAccount-content .woocommerce-Address address::first-line {
+	font-weight: 600;
+	color: var(--rwaq-acc-text);
+}
+
+/* ---- Navigation toggle ----
+   assets/js/my-account-menu.js adds a button at the top of the navigation
+   card and marks the card `rwaq-acc-nav--js`. On wide screens the button is
+   hidden and nothing changes. At 900px and below — where the card stacks
+   above the content — the card shrinks to that button, and the list opens
+   under it on tap (`is-open`). Everything here keys off the JS class, so
+   without the script the full list shows as before.
+
+   The button's colours carry !important because WordPress themes restyle
+   every <button> on hover and focus. */
+.woocommerce-account .rwaq-acc-nav-toggle {
+	display: none;
 }
 
 /* ---- Responsive ---- */
@@ -548,6 +911,126 @@
 	.woocommerce-account .woocommerce-MyAccount-content {
 		width: 100% !important;
 	}
+
+	.woocommerce-account .woocommerce-MyAccount-navigation.rwaq-acc-nav--js {
+		padding: 0;
+		overflow: hidden;
+	}
+
+	.woocommerce-account .rwaq-acc-nav--js .rwaq-acc-nav-toggle {
+		box-sizing: border-box;
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		width: 100%;
+		min-height: 64px;
+		margin: 0;
+		padding: 12px 16px;
+		border: 0 !important;
+		border-radius: 0;
+		background: #fff !important;
+		color: var(--rwaq-acc-text) !important;
+		font: inherit;
+		text-align: start;
+		text-transform: none;
+		box-shadow: none !important;
+		cursor: pointer;
+	}
+
+	.woocommerce-account .rwaq-acc-nav--js .rwaq-acc-nav-toggle:hover {
+		background: #fafafa !important;
+	}
+
+	.woocommerce-account .rwaq-acc-nav--js .rwaq-acc-nav-toggle:focus-visible {
+		outline: 2px solid var(--rwaq-acc-brand);
+		outline-offset: -2px;
+	}
+
+	/* The current page's menu icon (copied over by the script), in the same
+	   tinted badge as the dashboard cards. */
+	.woocommerce-account .rwaq-acc-nav-toggle__icon {
+		flex: 0 0 auto;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 40px;
+		height: 40px;
+		border-radius: 50%;
+		background: var(--rwaq-acc-brand-tint);
+	}
+
+	.woocommerce-account .rwaq-acc-nav-toggle__icon::before {
+		content: '';
+		width: 20px;
+		height: 20px;
+		background-color: var(--rwaq-acc-brand);
+		-webkit-mask: var(--rwaq-acc-icon) center / 20px 20px no-repeat;
+		mask: var(--rwaq-acc-icon) center / 20px 20px no-repeat;
+	}
+
+	.woocommerce-account .rwaq-acc-nav-toggle__text {
+		display: flex;
+		flex: 1 1 auto;
+		flex-direction: column;
+		min-width: 0;
+	}
+
+	.woocommerce-account .rwaq-acc-nav-toggle__caption {
+		font-size: 12px;
+		line-height: 18px;
+		color: var(--rwaq-acc-muted);
+	}
+
+	/* A long page name stays on one line rather than pushing the chevron out. */
+	.woocommerce-account .rwaq-acc-nav-toggle__current {
+		overflow: hidden;
+		font-size: 16px;
+		font-weight: 600;
+		line-height: 24px;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	/* Physical right/bottom borders, not logical ones: in RTL the logical
+	   inline-end border is the left one, which turns the chevron sideways. */
+	.woocommerce-account .rwaq-acc-nav-toggle__chevron {
+		box-sizing: border-box;
+		flex: 0 0 auto;
+		width: 10px;
+		height: 10px;
+		margin-inline: 4px;
+		border-right: 2px solid currentColor;
+		border-bottom: 2px solid currentColor;
+		transform: translateY(-3px) rotate(45deg);
+		transition: transform 0.2s ease;
+	}
+
+	.woocommerce-account .rwaq-acc-nav--js.is-open .rwaq-acc-nav-toggle__chevron {
+		transform: translateY(2px) rotate(225deg);
+	}
+
+	/* Collapsed: the list is out of the layout and the tab order. */
+	.woocommerce-account .rwaq-acc-nav--js ul {
+		display: none;
+	}
+
+	.woocommerce-account .rwaq-acc-nav--js.is-open ul {
+		display: flex;
+		gap: 4px;
+		padding: 8px;
+		border-top: 1px solid var(--rwaq-acc-border);
+	}
+
+	.woocommerce-account .rwaq-acc-nav--js li a {
+		gap: 14px;
+		padding: 10px 12px;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.woocommerce-account .rwaq-acc-nav-toggle__chevron {
+		transition: none;
+	}
 }
 
 @media (max-width: 600px) {
@@ -561,8 +1044,217 @@
 		padding: 20px;
 	}
 
-	.woocommerce-account .woocommerce-MyAccount-content form,
-	.woocommerce-account .woocommerce-MyAccount-content form fieldset {
+	.woocommerce-account .woocommerce-MyAccount-content form:where(:not(#add_payment_method)),
+	.woocommerce-account .woocommerce-MyAccount-content form:where(:not(#add_payment_method)) fieldset {
 		grid-template-columns: minmax(0, 1fr);
 	}
+}
+
+/* ---- Payment methods ----
+   The table borrows the orders table's look (its selectors are listed with
+   the orders table's above). These are the bits around it: the note shown
+   when a card cannot be deleted, and room above the "Add payment method"
+   button WooCommerce prints straight after the table. */
+.woocommerce-account .woocommerce-MyAccount-content .rwaq-payment-methods-note {
+	margin: 0 0 16px;
+	padding: 12px 16px;
+	border-radius: 8px;
+	background: var(--rwaq-acc-brand-tint);
+	color: var(--rwaq-acc-text);
+	font-size: 14px;
+	line-height: 22px;
+}
+
+.woocommerce-account .woocommerce-MyAccount-paymentMethods + .button,
+.woocommerce-account .woocommerce-MyAccount-content > .button {
+	margin-top: 20px;
+}
+
+/* The default card is the one renewals charge, so say which it is. WooCommerce
+   marks the row with a class but shows nothing — it only leaves "Make default"
+   off that row, which is easy to miss. */
+.woocommerce-account .woocommerce-MyAccount-paymentMethods .default-payment-method .payment-method-method::after {
+	content: 'الافتراضية';
+	display: inline-flex;
+	align-items: center;
+	margin-inline-start: 8px;
+	padding: 2px 8px;
+	border-radius: 999px;
+	background: var(--rwaq-acc-brand-tint);
+	color: var(--rwaq-acc-brand);
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 16px;
+	vertical-align: middle;
+}
+
+/* ---- Add payment method ----
+   Laid out like the checkout's payment box (assets/css/checkout.css): each
+   method a bordered card, the chosen one's fields inside it.
+
+   The account form rules above (two-column grid, fieldset as display:contents,
+   form rows with their floats and widths forced off) are written for the
+   account details form, and exclude this one — see the note on them. Left to
+   apply here they squeezed the form into half the width and collapsed the
+   gateway's own expiry/CVC row.
+
+   WooCommerce's own rules for this box are `#add_payment_method #payment …` —
+   two ids — so each override below carries both ids plus a class. */
+.woocommerce-account #add_payment_method #payment {
+	padding: 0;
+	border-radius: 0;
+	background: transparent;
+}
+
+.woocommerce-account #add_payment_method #payment ul.payment_methods {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	list-style: none;
+}
+
+.woocommerce-account #add_payment_method #payment ul.payment_methods::before,
+.woocommerce-account #add_payment_method #payment ul.payment_methods::after,
+.woocommerce-account #add_payment_method #payment ul.payment_methods li::before,
+.woocommerce-account #add_payment_method #payment ul.payment_methods li::after {
+	content: none;
+	display: none;
+}
+
+.woocommerce-account #add_payment_method #payment ul.payment_methods li {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px;
+	margin: 0;
+	padding: 14px 16px;
+	border: 1px solid var(--rwaq-acc-border);
+	border-radius: 8px;
+	background: #fff;
+	line-height: 22px;
+	text-align: start;
+}
+
+.woocommerce-account #add_payment_method #payment ul.payment_methods li input.input-radio {
+	flex: 0 0 auto;
+	width: 18px;
+	height: 18px;
+	margin: 0;
+	accent-color: var(--rwaq-acc-brand);
+}
+
+/* One method left to choose from: a radio button with nothing to pick
+   between is noise. */
+.woocommerce-account #add_payment_method #payment ul.payment_methods li:only-child input.input-radio {
+	display: none;
+}
+
+.woocommerce-account #add_payment_method #payment ul.payment_methods li > label {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0;
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--rwaq-acc-text);
+	cursor: pointer;
+}
+
+.woocommerce-account #add_payment_method #payment div.payment_box {
+	flex: 0 0 100%;
+	box-sizing: border-box;
+	width: 100%;
+	margin: 4px 0 0;
+	padding: 16px 0 0;
+	border-top: 1px solid var(--rwaq-acc-border);
+	border-radius: 0;
+	background: transparent;
+	color: var(--rwaq-acc-text);
+}
+
+.woocommerce-account #add_payment_method #payment div.payment_box::before {
+	display: none;
+}
+
+.woocommerce-account #add_payment_method #payment > .form-row {
+	margin: 20px 0 0;
+	padding: 0;
+}
+
+/* Moyasar's card form, as the checkout tidies it (assets/css/checkout.css —
+   those rules are scoped to .woocommerce-checkout and do not reach this page).
+   Moyasar's own stylesheet draws a second card around the form, 25px padded,
+   with its own border and shadow, which sits off-centre inside the method
+   card here. Its rules are #id-scoped and some !important, so these carry the
+   ids and !important to match. Input padding is left to Moyasar, which
+   reserves it for the card-brand logos on the number field — except the logo
+   side on RTL pages, below. */
+.woocommerce-account #add_payment_method #wc-moyasar-cc-form {
+	margin: 0 !important;
+	padding: 0 !important;
+	border: 0 !important;
+	border-radius: 0 !important;
+	background: transparent !important;
+	box-shadow: none !important;
+}
+
+.woocommerce-account #add_payment_method #payment div.payment_box .form-row {
+	margin: 0 0 16px !important;
+	padding: 0;
+}
+
+.woocommerce-account #add_payment_method #wc-moyasar-cc-form input.input-text,
+.woocommerce-account #add_payment_method #wc-moyasar-cc-form input[type='text'],
+.woocommerce-account #add_payment_method #wc-moyasar-cc-form input[type='password'] {
+	border: 1px solid var(--rwaq-acc-border) !important;
+	border-radius: 8px !important;
+}
+
+.woocommerce-account #add_payment_method #wc-moyasar-cc-form input.input-text:focus,
+.woocommerce-account #add_payment_method #wc-moyasar-cc-form input[type='text']:focus,
+.woocommerce-account #add_payment_method #wc-moyasar-cc-form input[type='password']:focus {
+	border-color: var(--rwaq-acc-brand) !important;
+	box-shadow: none !important;
+}
+
+/* Room for the card-brand logo on RTL pages, as at checkout (checkout.css):
+   Moyasar puts the logo 12px in from the left and lets it grow to 55px, but
+   reserves only 50px, so a wide one (mada) overlaps the first digit. */
+[dir='rtl'] .woocommerce-account #add_payment_method #wc-moyasar-cc-form .moyasar-cc-group input {
+	padding-left: 76px !important;
+}
+
+.woocommerce-account #add_payment_method .moyasar-cc-expiry-cvc-group {
+	display: flex;
+	gap: 16px;
+}
+
+.woocommerce-account #add_payment_method .moyasar-cc-expiry-cvc-group .form-row {
+	flex: 1 1 0;
+	float: none !important;
+	width: auto !important;
+	min-width: 0;
+}
+
+.woocommerce-account #add_payment_method .moyasar-payment-footer {
+	margin-top: 16px !important;
+	padding-top: 16px !important;
+	border-top: 1px solid var(--rwaq-acc-border) !important;
+}
+
+@media (max-width: 600px) {
+	.woocommerce-account #add_payment_method .moyasar-cc-expiry-cvc-group {
+		flex-direction: column;
+	}
+}
+
+/* WooCommerce gives `#add_payment_method #payment ul.payment_methods li input`
+   a 1em end margin, meant for the method's radio button. It matches every input
+   in the method — the card fields included — so a full-width field carried an
+   extra 16px and overflowed its card on one side. */
+.woocommerce-account #add_payment_method #payment ul.payment_methods li .payment_box input {
+	margin: 0;
 }

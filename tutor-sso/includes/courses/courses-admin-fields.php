@@ -46,7 +46,7 @@ function course_admin_locked_fields() {
 	 */
 	return (array) apply_filters(
 		'tutor_sso_course_locked_fields',
-		array( 'is_paid', 'part_of_program', 'course_regular_price', 'course_sale_price' )
+		array( 'is_paid', 'part_of_program', 'course_regular_price', 'course_sale_price', 'is_part_of_subscription' )
 	);
 }
 

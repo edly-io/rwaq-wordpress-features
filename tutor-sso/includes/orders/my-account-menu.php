@@ -2,17 +2,19 @@
 /**
  * Trim the WooCommerce My Account navigation.
  *
- * Downloads, Addresses and Payment methods are not part of this site's account
- * area: courses and programs are not downloadable files, and payment details
- * are held by the gateway rather than stored against the customer here.
+ * Downloads is not part of this site's account area: courses and programs are
+ * not downloadable files.
+ *
+ * Addresses stays: it holds the billing address checkout fills in by default.
+ * Payment methods stays too: it is where a subscriber replaces a card before it
+ * expires. See includes/subscriptions/subscriptions-payment-methods.php for
+ * what keeps the last card from being deleted.
  *
  * Done through `woocommerce_account_menu_items` rather than by hiding the
  * links in CSS, so the items are genuinely gone — WooCommerce also reads this
  * list when deciding what to render, and a CSS-hidden link is still a link.
  *
- * The endpoints themselves are deliberately left reachable: WooCommerce links
- * to the address endpoint from the order/checkout flow, and breaking those
- * links would be a wider change than removing three menu entries.
+ * The downloads endpoint itself is left reachable; only its menu entry goes.
  *
  * @package tutor-sso
  */
@@ -36,7 +38,7 @@ function my_account_hidden_endpoints() {
 	 */
 	return (array) apply_filters(
 		'tutor_sso_my_account_hidden_endpoints',
-		array( 'downloads', 'edit-address', 'payment-methods' )
+		array( 'downloads' )
 	);
 }
 

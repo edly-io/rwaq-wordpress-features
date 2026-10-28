@@ -27,6 +27,7 @@
  *   - is_paid              → ACF field (true/false), stored as 1 / 0
  *   - program_regular_price → ACF field (text)
  *   - program_sale_price    → ACF field (text)
+ *   - is_part_of_subscription → ACF field (true/false), stored as 1 / 0
  *   - status               → post status (publish|draft)
  *   - featured_image_url   → sideloaded + set as the post's featured image
  *
@@ -99,6 +100,7 @@ class Programs_REST_Controller extends \WP_REST_Controller {
 				// Legacy names, still accepted; they write the same fields.
 				'course_regular_price'  => 'program_regular_price',
 				'course_sale_price'     => 'program_sale_price',
+				'is_part_of_subscription' => 'is_part_of_subscription',
 			)
 		);
 	}
@@ -184,6 +186,12 @@ class Programs_REST_Controller extends \WP_REST_Controller {
 				'type'              => 'string',
 				'required'          => false,
 				'sanitize_callback' => 'sanitize_text_field',
+			),
+			'is_part_of_subscription' => array(
+				'description'       => __( 'Whether the program is included in a subscription plan. Accepts true/false, 1/0 or "yes"/"no"; stored as 1 / 0.', 'tutor-sso' ),
+				'type'              => 'boolean',
+				'required'          => false,
+				'sanitize_callback' => array( $this, 'sanitize_bool_flag' ),
 			),
 			'status'               => array(
 				'description'       => __( 'Post status: publish or draft. Applied on both create and update.', 'tutor-sso' ),

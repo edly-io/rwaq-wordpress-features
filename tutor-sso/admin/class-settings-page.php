@@ -84,6 +84,7 @@ class Settings_Page {
 			'tutor_sso_search_page_url'     => 'esc_url_raw',
 			'tutor_sso_gtm_id'              => array( $this, 'sanitize_gtm_id' ),
 			'tutor_sso_ga_id'               => array( $this, 'sanitize_ga_id' ),
+			'tutor_sso_enable_subscriptions' => array( $this, 'sanitize_enable_subscriptions' ),
 		);
 
 		foreach ( $options as $name => $cb ) {
@@ -192,6 +193,28 @@ class Settings_Page {
 			'tutor_sso_section_redirects',
 			get_site_url(),
 			__( 'Where to send users after a successful SSO login. Leave empty to use the site home URL.', 'tutor-sso' )
+		);
+
+		// ── Subscriptions ────────────────────────────────────────────────────
+
+		add_settings_section(
+			'tutor_sso_section_subscriptions',
+			__( 'Subscriptions', 'tutor-sso' ),
+			function () {
+				echo '<p>' . esc_html__(
+					'Recurring monthly or yearly plans, billed through the payment gateway\'s saved card.',
+					'tutor-sso'
+				) . '</p>';
+			},
+			self::PAGE_SLUG
+		);
+
+		$this->add_checkbox_field(
+			'tutor_sso_enable_subscriptions',
+			__( 'Enable subscriptions', 'tutor-sso' ),
+			'tutor_sso_section_subscriptions',
+			__( 'Offer subscription products', 'tutor-sso' ),
+			__( 'Adds the <strong>Subscription</strong> product type, the renewal schedule and the account area. Turning this off stops new subscriptions being sold; it does not cancel or stop billing subscriptions that are already running.', 'tutor-sso' )
 		);
 
 		// ── Section 4: Course Enrollment ─────────────────────────────────────
@@ -429,6 +452,67 @@ class Settings_Page {
 	}
 
 	/**
+	 * Sanitize the subscriptions switch, refusing to turn it off while people
+	 * are still being billed.
+	 *
+	 * Switching off stops plans being sold, and would also stop the cart and
+	 * quantity rules that keep a plan on its own — so doing it while live
+	 * subscriptions exist changes how they behave with no warning. Returning
+	 * the current value leaves the option as it was, which is how the Settings
+	 * API rejects a change.
+	 *
+	 * @param mixed $value Raw posted value.
+	 * @return string
+	 */
+	public function sanitize_enable_subscriptions( $value ) {
+		$new     = $this->sanitize_checkbox( $value );
+		$current = (string) get_option( 'tutor_sso_enable_subscriptions', '' );
+
+		// Only a transition from on to off is ever refused.
+		if ( '' !== $new || '1' !== $current ) {
+			return $new;
+		}
+
+		$active = function_exists( '\\TutorSSO\\subscriptions_active_count' )
+			? (int) \TutorSSO\subscriptions_active_count()
+			: 0;
+
+		if ( $active < 1 ) {
+			return $new;
+		}
+
+		add_settings_error(
+			'tutor_sso_enable_subscriptions',
+			'tutor_sso_subscriptions_active',
+			sprintf(
+				/* translators: %d: number of subscriptions still billing. */
+				_n(
+					'Subscriptions cannot be switched off: %d subscription is still being billed. Cancel it first.',
+					'Subscriptions cannot be switched off: %d subscriptions are still being billed. Cancel them first.',
+					$active,
+					'tutor-sso'
+				),
+				$active
+			),
+			'error'
+		);
+
+		return '1';
+	}
+
+	/**
+	 * Sanitize a checkbox: '1' when ticked, '' when not.
+	 *
+	 * An unchecked box posts nothing at all, so WordPress passes null here.
+	 *
+	 * @param mixed $value Raw posted value.
+	 * @return string
+	 */
+	public function sanitize_checkbox( $value ) {
+		return '1' === (string) $value ? '1' : '';
+	}
+
+	/**
 	 * Sanitize a Google Tag Manager container ID.
 	 *
 	 * @param string $value Submitted value.
@@ -526,6 +610,30 @@ class Settings_Page {
 		);
 	}
 
+	/**
+	 * Helper: register a checkbox field in one call.
+	 *
+	 * @param string $id          Option name / field ID.
+	 * @param string $label       Field label (the left column).
+	 * @param string $section     Section to attach to.
+	 * @param string $checkbox    Text shown beside the checkbox itself.
+	 * @param string $description Help text (may contain basic HTML).
+	 */
+	private function add_checkbox_field( $id, $label, $section, $checkbox, $description ) {
+		add_settings_field(
+			$id,
+			$label,
+			array( $this, 'render_checkbox_field' ),
+			self::PAGE_SLUG,
+			$section,
+			array(
+				'option_name' => $id,
+				'checkbox'    => $checkbox,
+				'description' => $description,
+			)
+		);
+	}
+
 	// ── Field renderers ───────────────────────────────────────────────────────
 
 	/**
@@ -544,6 +652,29 @@ class Settings_Page {
 			esc_attr( $args['option_name'] ),
 			esc_attr( $value ),
 			esc_attr( $args['placeholder'] ?? '' )
+		);
+		$this->maybe_description( $args );
+	}
+
+	/**
+	 * Render a checkbox.
+	 *
+	 * Stored as '1' or '' so an unchecked box is falsy for a plain truth test,
+	 * which is how tutor_sso_subscriptions_enabled() reads it.
+	 *
+	 * @param array $args {
+	 *     @type string $option_name  Option name.
+	 *     @type string $checkbox     Label beside the box.
+	 *     @type string $description  Optional help text.
+	 * }
+	 */
+	public function render_checkbox_field( $args ) {
+		$value = get_option( $args['option_name'], '' );
+		printf(
+			'<label for="%1$s"><input type="checkbox" id="%1$s" name="%1$s" value="1" %2$s /> %3$s</label>',
+			esc_attr( $args['option_name'] ),
+			checked( '1', $value, false ), // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			esc_html( $args['checkbox'] ?? '' )
 		);
 		$this->maybe_description( $args );
 	}

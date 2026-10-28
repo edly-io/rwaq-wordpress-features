@@ -23,6 +23,12 @@ p.rwaq-price--free {
 	color: #2e7d32;
 }
 
+p.rwaq-price--subscription,
+p.rwaq-price--program-only {
+	font-weight: 600;
+	color: #565199;
+}
+
 p.rwaq-price .rwaq-price-now {
 	font-weight: 600;
 	color: #242424;

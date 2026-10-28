@@ -78,34 +78,6 @@ function account_menu_icon( $name ) {
 }
 
 /**
- * First character of a display name, for the trigger's avatar badge.
- *
- * mb_substr, not substr: an Arabic name's first letter is a multi-byte
- * sequence, and cutting it at one byte would yield a broken character rather
- * than "ف". WordPress polyfills mb_substr where the extension is missing.
- *
- * @param string $name Display name.
- * @return string One character, uppercased where the script has case, or ''
- *                when the name is empty (the badge is then skipped).
- */
-function account_menu_initial( $name ) {
-	$name = trim( (string) $name );
-
-	if ( '' === $name ) {
-		return '';
-	}
-
-	$initial = function_exists( 'mb_substr' )
-		? mb_substr( $name, 0, 1, 'UTF-8' )
-		: substr( $name, 0, 1 );
-
-	// Arabic is caseless, so this only affects a Latin-script name.
-	return function_exists( 'mb_strtoupper' )
-		? mb_strtoupper( $initial, 'UTF-8' )
-		: strtoupper( $initial );
-}
-
-/**
  * The name to show for an account — a person's name, not their login.
  *
  * WordPress defaults display_name to the username, and an SSO account created
@@ -140,50 +112,6 @@ function account_menu_display_name( $user ) {
  * How many characters of the display name the trigger button shows.
  */
 const ACCOUNT_MENU_NAME_LENGTH = 4;
-
-/**
- * The display name as the trigger button shows it: clipped, with an ellipsis.
- *
- * Clipped here rather than with CSS `text-overflow`, so the button is exactly
- * as wide as N characters whatever the name is — a CSS clip needs a fixed
- * max-width in px, which is a different number of characters in every script
- * and at every zoom level. The full name stays available in the button's title
- * attribute and in the panel the button opens.
- *
- * @param string $name Display name.
- * @return string
- */
-function account_menu_short_name( $name ) {
-	$name = trim( (string) $name );
-
-	/**
-	 * Filter how many characters of the name the trigger shows.
-	 *
-	 * @param int    $length Character count.
-	 * @param string $name   Full display name.
-	 */
-	$length = (int) apply_filters( 'tutor_sso_account_menu_name_length', ACCOUNT_MENU_NAME_LENGTH, $name );
-
-	if ( $length < 1 || '' === $name ) {
-		return $name;
-	}
-
-	// mb_*, not substr/strlen: an Arabic name is multi-byte, so byte counts
-	// would both mis-measure the length and cut a character in half.
-	$count = function_exists( 'mb_strlen' ) ? mb_strlen( $name, 'UTF-8' ) : strlen( $name );
-
-	if ( $count <= $length ) {
-		return $name;
-	}
-
-	$short = function_exists( 'mb_substr' )
-		? mb_substr( $name, 0, $length, 'UTF-8' )
-		: substr( $name, 0, $length );
-
-	// A name clipped mid-word often ends on the space that followed the first
-	// word; trailing whitespace before the ellipsis reads as a typo.
-	return rtrim( $short ) . '…';
-}
 
 /**
  * Render the account dropdown for the current user.
@@ -237,13 +165,11 @@ function render_account_menu( $args = array() ) {
 			aria-expanded="false"
 			aria-haspopup="true"
 			aria-controls="<?php echo esc_attr( $panel_id ); ?>"
+			aria-label="<?php echo esc_attr( '' !== $name ? sprintf( /* translators: %s: the user's name. */ __( 'قائمة الحساب: %s', 'tutor-sso' ), $name ) : __( 'قائمة الحساب', 'tutor-sso' ) ); ?>"
 		>
-			<span class="tutor-sso-account__avatar" aria-hidden="true"><?php echo esc_html( account_menu_initial( $name ) ); ?></span>
-			<?php // The full name is the title attribute's, and the panel below shows it in full. ?>
-			<span class="tutor-sso-account__trigger-name" title="<?php echo esc_attr( $name ); ?>"><?php echo esc_html( account_menu_short_name( $name ) ); ?></span>
-			<svg class="tutor-sso-account__chevron" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-				<path d="m5 7.5 5 5 5-5"/>
-			</svg>
+			<?php // Icon only, as designed (Figma 10699:13511): the name is the button's label for screen readers, and the panel below shows it in full. ?>
+			<img class="tutor-sso-account__user-icon" src="<?php echo esc_url( TUTOR_SSO_URL . 'assets/images/account/user.svg' ); ?>" alt="" aria-hidden="true">
+			<img class="tutor-sso-account__chevron" src="<?php echo esc_url( TUTOR_SSO_URL . 'assets/images/account/chevron.svg' ); ?>" alt="" aria-hidden="true">
 		</button>
 
 		<div class="tutor-sso-account__panel" id="<?php echo esc_attr( $panel_id ); ?>" hidden>

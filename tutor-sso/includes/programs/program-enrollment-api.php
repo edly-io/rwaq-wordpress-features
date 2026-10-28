@@ -132,16 +132,18 @@ function program_change_enrollment( $program_key, $action ) {
 /**
  * The current user's state for a program, as the LMS reports it.
  *
- * `has_order` is true when the learner has paid for this program, and stays true
+ * `has_paid_access` is true when the learner may join with no checks: they paid
+ * for this program or a live subscription covers it. It stays true
  * after they unenroll — so a buyer can re-enroll without paying again.
  *
  * @param string $program_key Program key.
- * @return array{enrolled:bool,has_order:bool}|\WP_Error
+ * @return array{enrolled:bool,has_paid_access:bool,subscription_ends_at:string}|\WP_Error
  */
 function program_enroll_status( $program_key ) {
 	$none = array(
-		'enrolled'  => false,
-		'has_order' => false,
+		'enrolled'             => false,
+		'has_paid_access'      => false,
+		'subscription_ends_at' => '',
 	);
 
 	$base = enroll_lms_base_url();
@@ -188,10 +190,14 @@ function program_enroll_status( $program_key ) {
 		);
 	}
 
-	// { program_key, is_active, enrollment_date, completion_date, has_order }
+	// { program_key, is_active, enrollment_date, completion_date, has_paid_access }
 	return array(
-		'enrolled'  => ! empty( $body['is_active'] ),
-		'has_order' => ! empty( $body['has_order'] ),
+		'enrolled'              => ! empty( $body['is_active'] ),
+		// True when the learner bought this, and also while a subscription
+		// covering it is live.
+		'has_paid_access'       => ! empty( $body['has_paid_access'] ),
+		// For display only; decisions are made on has_paid_access alone.
+		'subscription_ends_at'  => isset( $body['subscription_ends_at'] ) ? (string) $body['subscription_ends_at'] : '',
 	);
 }
 
