@@ -26,15 +26,44 @@
 		if ( $btn.prop( 'disabled' ) ) {
 			return;
 		}
-		if ( i18n.confirmUnenroll && ! window.confirm( i18n.confirmUnenroll ) ) {
-			return;
-		}
 		var $wrap = $btn.closest( '.rwaq-pd__enroll-wrap' );
 
-		request( $btn, $wrap, 'tutor_sso_program_unenroll', i18n.unenrolling, function () {
-			swapToNotEnrolled( $wrap );
+		confirmUnenroll( function () {
+			request( $btn, $wrap, 'tutor_sso_program_unenroll', i18n.unenrolling, function () {
+				swapToNotEnrolled( $wrap );
+			} );
 		} );
 	} );
+
+	/**
+	 * Ask before unenrolling, then run `proceed` if confirmed.
+	 *
+	 * Uses the site's own dialog (confirm-dialog.js) so the buttons are in the
+	 * page's language; window.confirm() only if that script is missing.
+	 */
+	function confirmUnenroll( proceed ) {
+		if ( ! i18n.confirmUnenroll ) {
+			proceed();
+			return;
+		}
+
+		if ( typeof window.tutorSsoConfirm === 'function' ) {
+			window.tutorSsoConfirm(
+				i18n.confirmUnenroll,
+				{ confirmLabel: i18n.unenroll },
+				function ( ok ) {
+					if ( ok ) {
+						proceed();
+					}
+				}
+			);
+			return;
+		}
+
+		if ( window.confirm( i18n.confirmUnenroll ) ) {
+			proceed();
+		}
+	}
 
 	/**
 	 * Fire an AJAX action for the wrapper's program, toggling button state.

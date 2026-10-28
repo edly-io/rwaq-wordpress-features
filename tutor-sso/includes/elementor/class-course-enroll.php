@@ -81,7 +81,9 @@ class Course_Enroll_Widget extends \Elementor\Widget_Base {
 	 * @return string[]
 	 */
 	public function get_style_depends() {
-		return array( 'tutor-sso-enroll' );
+		// The unenroll confirmation dialog; its script comes in as a dependency
+		// of tutor-sso-enroll, but a stylesheet has to be named.
+		return array( 'tutor-sso-enroll', 'tutor-sso-confirm-dialog' );
 	}
 
 	/**

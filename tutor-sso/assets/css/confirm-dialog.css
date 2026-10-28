@@ -1,0 +1,130 @@
+/**
+ * Confirmation dialog (assets/js/confirm-dialog.js).
+ *
+ * A small centred card over a dimmed page, in the account pages' scale and
+ * colours (assets/css/my-account.css): brand button for the action, white
+ * secondary button to go back. The buttons carry !important on their colours
+ * for the same reason programs.css does — WordPress themes restyle every
+ * <button> on hover and focus.
+ */
+
+.rwaq-confirm {
+	box-sizing: border-box;
+	width: min(420px, calc(100vw - 32px));
+	max-width: none;
+	margin: auto;
+	padding: 0;
+	border: 0;
+	border-radius: 12px;
+	background: #fff;
+	color: #242424;
+	box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+	direction: rtl;
+	text-align: right;
+}
+
+.rwaq-confirm::backdrop {
+	background: rgba(17, 17, 17, 0.45);
+}
+
+.rwaq-confirm[open] {
+	animation: rwaq-confirm-in 0.15s ease-out;
+}
+
+@keyframes rwaq-confirm-in {
+	from {
+		opacity: 0;
+		transform: translateY(6px);
+	}
+
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.rwaq-confirm[open] {
+		animation: none;
+	}
+}
+
+.rwaq-confirm__box {
+	padding: 24px;
+}
+
+.rwaq-confirm__title {
+	margin: 0 0 8px;
+	padding: 0;
+	font-size: 18px;
+	font-weight: 600;
+	line-height: 28px;
+	color: #242424;
+}
+
+.rwaq-confirm__title[hidden] {
+	display: none;
+}
+
+.rwaq-confirm__message {
+	margin: 0;
+	font-size: 15px;
+	line-height: 24px;
+	color: #616161;
+}
+
+.rwaq-confirm__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin-top: 24px;
+}
+
+.rwaq-confirm .rwaq-confirm__btn {
+	box-sizing: border-box;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: 1 1 0;
+	min-width: 120px;
+	min-height: 44px;
+	margin: 0;
+	padding: 10px 20px;
+	border-radius: 8px;
+	font: inherit;
+	font-size: 15px;
+	font-weight: 600;
+	line-height: 22px;
+	text-transform: none;
+	cursor: pointer;
+	box-shadow: none;
+	transition: background-color 0.15s ease;
+}
+
+.rwaq-confirm .rwaq-confirm__btn--confirm {
+	border: 1px solid #565199 !important;
+	background: #565199 !important;
+	color: #fff !important;
+}
+
+.rwaq-confirm .rwaq-confirm__btn--confirm:hover {
+	border-color: #474293 !important;
+	background: #474293 !important;
+	color: #fff !important;
+}
+
+.rwaq-confirm .rwaq-confirm__btn--cancel {
+	border: 1px solid #d1d1d1 !important;
+	background: #fff !important;
+	color: #242424 !important;
+}
+
+.rwaq-confirm .rwaq-confirm__btn--cancel:hover {
+	background: #f5f5f5 !important;
+	color: #242424 !important;
+}
+
+.rwaq-confirm .rwaq-confirm__btn:focus-visible {
+	outline: 2px solid #565199;
+	outline-offset: 2px;
+}

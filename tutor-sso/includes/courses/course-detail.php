@@ -772,18 +772,15 @@ function course_render_instructors( $data ) {
 			$rows = array(
 				array(
 					'icon'  => 'stat-courses.svg',
-					/* translators: %s: number of courses. */
-					'label' => sprintf( __( '%s مساق', 'tutor-sso' ), number_format_i18n( isset( $counts['courses'] ) ? (int) $counts['courses'] : 0 ) ),
+					'label' => sso_arabic_count( isset( $counts['courses'] ) ? (int) $counts['courses'] : 0, 'masaq' ),
 				),
 				array(
 					'icon'  => 'stat-learners.svg',
-					/* translators: %s: number of learners. */
-					'label' => sprintf( __( '%s طالب', 'tutor-sso' ), number_format_i18n( isset( $counts['learners'] ) ? (int) $counts['learners'] : 0 ) ),
+					'label' => sso_arabic_count( isset( $counts['learners'] ) ? (int) $counts['learners'] : 0, 'learner' ),
 				),
 				array(
 					'icon'  => 'stat-programs.svg',
-					/* translators: %s: number of programs. */
-					'label' => sprintf( __( '%s برنامج', 'tutor-sso' ), number_format_i18n( isset( $counts['programs'] ) ? (int) $counts['programs'] : 0 ) ),
+					'label' => sso_arabic_count( isset( $counts['programs'] ) ? (int) $counts['programs'] : 0, 'program' ),
 				),
 			);
 			?>

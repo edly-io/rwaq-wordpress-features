@@ -286,8 +286,7 @@ function program_detail_render_course($course, $number)
 				<?php if (null !== $sections) : ?>
 					<div class="rwaq-pd__tl-sub">
 						<?php
-						/* translators: %s: number of lessons/sections in the course. */
-						echo esc_html(sprintf(__('%s دروس', 'tutor-sso'), number_format_i18n($sections)));
+						echo esc_html(sso_arabic_count($sections, 'lesson'));
 						?>
 					</div>
 				<?php endif; ?>
@@ -647,8 +646,8 @@ function program_detail_render($program, $program_key = '')
 						<h2 class="rwaq-pd__section-title">
 							<?php
 							if (null !== $total_courses) {
-								/* translators: %s: number of courses in the program. */
-								echo esc_html(sprintf(__('سلسلة مكوّنة من %s دورات', 'tutor-sso'), number_format_i18n($total_courses)));
+								/* translators: %s: the number of courses in the program, e.g. "1 دورة", "5 دورات". */
+								echo esc_html(sprintf(__('سلسلة مكوّنة من %s', 'tutor-sso'), sso_arabic_count($total_courses, 'course')));
 							} else {
 								echo esc_html__('الدورات', 'tutor-sso');
 							}
@@ -742,8 +741,7 @@ function program_detail_render($program, $program_key = '')
 									</div>
 									<span class="rwaq-pd__info-value">
 										<?php
-										/* translators: %s: number of courses. */
-										echo esc_html(sprintf(__('%s دورات', 'tutor-sso'), number_format_i18n($total_courses)));
+										echo esc_html(sso_arabic_count($total_courses, 'course'));
 										?>
 									</span>
 								</li>

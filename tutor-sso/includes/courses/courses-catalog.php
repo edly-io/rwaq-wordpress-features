@@ -137,7 +137,6 @@ function courses_icon( $name ) {
 		'check'    => '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4 10-10"/></svg>',
 		'close'    => '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4.08859 4.21569L4.14645 4.14645C4.32001 3.97288 4.58944 3.9536 4.78431 4.08859L4.85355 4.14645L10 9.293L15.1464 4.14645C15.32 3.97288 15.5894 3.9536 15.7843 4.08859L15.8536 4.14645C16.0271 4.32001 16.0464 4.58944 15.9114 4.78431L15.8536 4.85355L10.707 10L15.8536 15.1464C16.0271 15.32 16.0464 15.5894 15.9114 15.7843L15.8536 15.8536C15.68 16.0271 15.4106 16.0464 15.2157 15.9114L15.1464 15.8536L10 10.707L4.85355 15.8536C4.67999 16.0271 4.41056 16.0464 4.21569 15.9114L4.14645 15.8536C3.97288 15.68 3.9536 15.4106 4.08859 15.2157L4.14645 15.1464L9.293 10L4.14645 4.85355C3.97288 4.67999 3.9536 4.41056 4.08859 4.21569L4.14645 4.14645L4.08859 4.21569Z" fill="#616161"/></svg>',
 		// Card meta.
-		'calendar' => '<svg class="rwaq-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="2.5" y="3.5" width="11" height="10" rx="2" stroke="#616161" stroke-width="1.2"/><path d="M5.5 2v3M10.5 2v3M2.5 7h11" stroke="#616161" stroke-width="1.2" stroke-linecap="round"/></svg>',
 		'user'     => '<svg class="rwaq-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="5.5" r="2.5" stroke="#616161" stroke-width="1.2"/><path d="M3 13c0-2.2 2.2-3.5 5-3.5s5 1.3 5 3.5" stroke="#616161" stroke-width="1.2" stroke-linecap="round"/></svg>',
 	);
 
@@ -169,7 +168,6 @@ function courses_render_card( $course ) {
 	$url        = ! empty( $course['url'] ) ? (string) $course['url'] : '#';
 	$org_name   = isset( $course['org_name'] ) ? (string) $course['org_name'] : '';
 	$instructor = isset( $course['instructor'] ) ? (string) $course['instructor'] : '';
-	$start_text = isset( $course['start_text'] ) ? (string) $course['start_text'] : '';
 	$paid       = ! empty( $course['paid'] );
 	$discount   = isset( $course['discount'] ) ? $course['discount'] : null;
 
@@ -198,12 +196,6 @@ function courses_render_card( $course ) {
 						<span><?php echo esc_html( $instructor ); ?></span>
 					</li>
 				<?php endif; ?>
-				<?php if ( '' !== $start_text ) : ?>
-					<li class="rwaq-course-card__meta-item">
-						<?php echo courses_icon( 'calendar' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-						<span><?php echo esc_html( $start_text ); ?></span>
-					</li>
-				<?php endif; ?>
 			</ul>
 
 			<?php if ( '' !== $org_name ) : ?>
@@ -229,6 +221,11 @@ function courses_render_card( $course ) {
 function courses_render_card_price( $course ) {
 	if ( ! empty( $course['subscription'] ) ) {
 		return sso_render_subscription_price_html( 'rwaq-course-card__price' );
+	}
+
+	// Taken only through its program: no price of its own, and not free.
+	if ( ! empty( $course['program_only'] ) ) {
+		return sso_render_program_only_price_html( 'rwaq-course-card__price' );
 	}
 
 	return sso_render_price_html(

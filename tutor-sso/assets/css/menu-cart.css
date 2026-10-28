@@ -1,0 +1,115 @@
+/**
+ * Elementor Menu Cart in the site header (see includes/orders/menu-cart.php):
+ * a full cart's text and buttons, then the empty state.
+ *
+ * Elementor sizes the dropdown for a list of items: at least 330px wide and
+ * 200px tall. With nothing in the cart that
+ * leaves one line of text in a mostly blank box, so the panel shrinks to fit
+ * while the empty message is all it holds. A cart with items keeps its size;
+ * only its corners are rounded.
+ *
+ * :has() keeps it to the empty state without any markup changes; a browser
+ * without it just shows Elementor's normal box.
+ */
+
+/* Rounded like the site's other cards and the header buttons above it, empty
+   or not. Set through Elementor's own variable, on the panel itself so it wins
+   over the square default the widget sets on its wrapper. */
+.elementor-widget-woocommerce-menu-cart.elementor-menu-cart--cart-type-mini-cart .elementor-menu-cart__main {
+	--cart-border-radius: 10px;
+}
+
+/* No close button on the dropdown: it already closes on a click outside it or
+   on the cart icon again, so the cross only took a row of space. The side cart
+   keeps it — a drawer that can fill a phone screen needs a visible way out. */
+.elementor-widget-woocommerce-menu-cart.elementor-menu-cart--cart-type-mini-cart .elementor-menu-cart__main :is(.elementor-menu-cart__close-button, .elementor-menu-cart__close-button-custom) {
+	display: none;
+}
+
+/* ---- Cart with items ----
+   Elementor's defaults are 20px subtotal and button text, grey buttons and a
+   near-invisible price. Brought to the account pages' scale and colours
+   (assets/css/my-account.css): 14px body text, a 16px subtotal, the brand
+   button for checkout and the white secondary button for the cart.
+
+   Colours, gaps and paddings go through Elementor's own variables, set on the
+   panel so they win over the widget's defaults on its wrapper. Font sizes have
+   no variable, so those are set directly. */
+.elementor-widget-woocommerce-menu-cart .elementor-menu-cart__main {
+	--product-price-color: #616161;
+	--product-divider-gap: 16px;
+	--divider-color: #d1d1d1;
+	--subtotal-divider-color: #d1d1d1;
+	--cart-footer-buttons-border-radius: 8px;
+	--view-cart-button-padding: 9px 16px;
+	--view-cart-button-background-color: #fff;
+	--view-cart-button-text-color: #242424;
+	--view-cart-button-hover-background-color: #f5f5f5;
+	--view-cart-button-hover-text-color: #242424;
+	--checkout-button-padding: 9px 16px;
+	--checkout-button-background-color: #565199;
+	--checkout-button-text-color: #fff;
+	--checkout-button-hover-background-color: #474293;
+	--checkout-button-hover-text-color: #fff;
+}
+
+.elementor-widget-woocommerce-menu-cart .elementor-menu-cart__main .elementor-menu-cart__product-name,
+.elementor-widget-woocommerce-menu-cart .elementor-menu-cart__main .elementor-menu-cart__product-price {
+	font-size: 14px;
+	line-height: 22px;
+}
+
+.elementor-widget-woocommerce-menu-cart .elementor-menu-cart__main .elementor-menu-cart__product-name a {
+	color: #242424;
+}
+
+.elementor-widget-woocommerce-menu-cart .elementor-menu-cart__main .elementor-menu-cart__product-price {
+	font-weight: 400;
+}
+
+.elementor-widget-woocommerce-menu-cart .elementor-menu-cart__main .elementor-menu-cart__subtotal {
+	font-size: 16px;
+	line-height: 24px;
+	color: #242424;
+}
+
+.elementor-widget-woocommerce-menu-cart .elementor-menu-cart__main .elementor-menu-cart__footer-buttons .elementor-button {
+	border: 1px solid #d1d1d1;
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 22px;
+}
+
+/* A brand-coloured border, so both buttons are the same height. */
+.elementor-widget-woocommerce-menu-cart .elementor-menu-cart__main .elementor-menu-cart__footer-buttons .elementor-button--checkout {
+	border-color: #565199;
+}
+
+.elementor-widget-woocommerce-menu-cart .elementor-menu-cart__main .elementor-menu-cart__footer-buttons .elementor-button--checkout:hover {
+	border-color: #474293;
+}
+
+/* Dropdown ("mini cart") type only: the side cart is a full-height drawer,
+   where width is not what makes it look empty. */
+.elementor-widget-woocommerce-menu-cart.elementor-menu-cart--cart-type-mini-cart .elementor-menu-cart__container:has(.woocommerce-mini-cart__empty-message) {
+	min-width: 240px;
+}
+
+/* Even padding now the close button no longer sits above the message. */
+.elementor-widget-woocommerce-menu-cart.elementor-menu-cart--cart-type-mini-cart .elementor-menu-cart__main:has(.woocommerce-mini-cart__empty-message) {
+	min-height: 0;
+	padding: 20px;
+}
+
+/* Side cart only, where the close button stays. */
+.elementor-widget-woocommerce-menu-cart .elementor-menu-cart__main:has(.woocommerce-mini-cart__empty-message) :is(.elementor-menu-cart__close-button, .elementor-menu-cart__close-button-custom) {
+	margin-bottom: 8px;
+	--cart-close-icon-size: 18px;
+}
+
+/* One class more than Elementor's own rule, which can load after this sheet. */
+.elementor-widget-woocommerce-menu-cart .elementor-menu-cart__main .widget_shopping_cart_content .woocommerce-mini-cart__empty-message {
+	font-size: 14px;
+	line-height: 22px;
+	text-align: center;
+}
