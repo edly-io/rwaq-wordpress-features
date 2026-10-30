@@ -25,18 +25,18 @@
    ========================================================================== */
 
 .rwaq-amb {
-	--rwaq-amb-primary: #565199;
-	--rwaq-amb-primary-dark: #474283;
-	--rwaq-amb-deep: #3A356E;
+	--rwaq-amb-primary: #6c98c9;
+	--rwaq-amb-primary-dark: #5a86b8;
+	--rwaq-amb-deep: #161e2b;
 	--rwaq-amb-accent: #D33B89;
 	--rwaq-amb-gold: #F3B44F;
-	--rwaq-amb-soft: #F1F0F8;
+	--rwaq-amb-soft: #f6fbff;
 	--rwaq-amb-surface: #FBFBFB;
 	--rwaq-amb-text: #242424;
 	--rwaq-amb-muted: #616161;
 	--rwaq-amb-placeholder: #707070; /* NeutralForeground4.Rest */
 	--rwaq-amb-border: #D1D1D1;
-	--rwaq-amb-border-soft: #C9C7D6;
+	--rwaq-amb-border-soft: #c8d6e6;
 
 	/* Layout */
 	--rwaq-amb-max: 1232px;
@@ -483,31 +483,6 @@
 	text-align: center;
 }
 
-.rwaq-amb__hashtag {
-	margin-top: 24px;
-	min-height: 45px;
-	padding: 12px 16px;
-	border-radius: 8px;
-	background: var(--rwaq-amb-soft);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	gap: 12px;
-	font-size: 14px;
-	text-align: center;
-	font-weight: 600;
-}
-
-.rwaq-amb__hashtag svg {
-	flex: none;
-	color: var(--rwaq-amb-primary);
-}
-
-.rwaq-amb__hashtag b {
-	color: var(--rwaq-amb-primary);
-	font-weight: 600;
-}
-
 /* ==========================================================================
    FORM — Contact Form 7 re-skin
    The card below wraps whatever CF7 outputs, so the rules target CF7's own
@@ -741,7 +716,7 @@
 
 /* Selected option is highlighted, as in the design. */
 .rwaq-amb__form-card .wpcf7-list-item input:checked + .wpcf7-list-item-label {
-	color: #4C478C;
+	color: #5a86b8;
 }
 .rwaq-amb__form-card .wpcf7,
 .rwaq-amb__form-card .wpcf7[dir='ltr'],
@@ -820,7 +795,7 @@
 
 .rwaq-amb__form-card .wpcf7-form .rwaq-amb-upload:hover,
 .rwaq-amb__form-card .wpcf7-form .rwaq-amb-upload:focus-within {
-	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='100%25' height='100%25' fill='none' rx='8' stroke='%23565199' stroke-width='2' stroke-dasharray='7 7'/%3E%3C/svg%3E");
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='100%25' height='100%25' fill='none' rx='8' stroke='%236c98c9' stroke-width='2' stroke-dasharray='7 7'/%3E%3C/svg%3E");
 }
 
 /* CF7 wraps every field in its own <span class="wpcf7-form-control-wrap">, so the

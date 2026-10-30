@@ -102,14 +102,14 @@
 }
 
 .rwaq-confirm .rwaq-confirm__btn--confirm {
-	border: 1px solid #565199 !important;
-	background: #565199 !important;
+	border: 1px solid #6c98c9 !important;
+	background: #6c98c9 !important;
 	color: #fff !important;
 }
 
 .rwaq-confirm .rwaq-confirm__btn--confirm:hover {
-	border-color: #474293 !important;
-	background: #474293 !important;
+	border-color: #5a86b8 !important;
+	background: #5a86b8 !important;
 	color: #fff !important;
 }
 
@@ -125,6 +125,6 @@
 }
 
 .rwaq-confirm .rwaq-confirm__btn:focus-visible {
-	outline: 2px solid #565199;
+	outline: 2px solid #6c98c9;
 	outline-offset: 2px;
 }

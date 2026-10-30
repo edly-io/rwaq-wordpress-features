@@ -59,12 +59,12 @@ function quote_block_render($attributes)
 function quote_block_css()
 {
 	// Purple double-quote glyph, inlined as a data URI (only '#' needs encoding).
-	$glyph = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23565199'%3E%3Cpath d='M9.5 5C6.5 6.4 5 9 5 12v6h6v-6H7.8c.1-1.6.9-2.9 2.7-3.7L9.5 5zm9 0C15.5 6.4 14 9 14 12v6h6v-6h-3.2c.1-1.6.9-2.9 2.7-3.7L18.5 5z'/%3E%3C/svg%3E";
+	$glyph = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236c98c9'%3E%3Cpath d='M9.5 5C6.5 6.4 5 9 5 12v6h6v-6H7.8c.1-1.6.9-2.9 2.7-3.7L9.5 5zm9 0C15.5 6.4 14 9 14 12v6h6v-6h-3.2c.1-1.6.9-2.9 2.7-3.7L18.5 5z'/%3E%3C/svg%3E";
 
 	return "
 	.rwaq-quote {
 		position: relative;
-		background: #F1F0F8;
+		background: #f6fbff;
 		border-radius: 14px;
 		padding: 30px 34px;
 		margin: 0 0 24px;

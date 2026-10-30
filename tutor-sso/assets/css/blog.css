@@ -31,8 +31,8 @@
 .rwaq-bd,
 .rwaq-author {
 	/* Shared palette — used by both the listing and the detail view */
-	--rwaq-primary: #565199;
-	--rwaq-primary-soft: #EFEEFA;
+	--rwaq-primary: #6c98c9;
+	--rwaq-primary-soft: #f6fbff;
 	--rwaq-text: #242424;
 	--rwaq-heading: #242424;
 	--rwaq-muted: #616161;
@@ -44,8 +44,8 @@
 	--rwaq-surface-soft: #F7F7F8;
 
 	/* Detail-only values (no listing equivalent) */
-	--rwaq-bd-primary-dark: #4f3a91;
-	--rwaq-bd-primary-soft: #F1F0F8;
+	--rwaq-bd-primary-dark: #5a86b8;
+	--rwaq-bd-primary-soft: #f6fbff;
 	--rwaq-bd-text: #424242;
 	--rwaq-bd-name: #2b2b3a;
 	--rwaq-bd-surface: #eef0f3;
@@ -437,7 +437,7 @@
 }
 
 .rwaq-blogs__filter-input:focus-visible + .rwaq-blogs__filter-box {
-	box-shadow: 0 0 0 3px rgba(86, 81, 153, 0.25);
+	box-shadow: 0 0 0 3px rgba(108, 152, 201, 0.25);
 }
 
 .rwaq-blogs__filter-footer {
@@ -1062,7 +1062,7 @@
 
 .rwaq-bd__prose blockquote {
 	margin: 0 0 24px;
-	background: #f6f4fb;
+	background: #f6fbff;
 	border-radius: 14px;
 	padding: 26px 28px;
 	color: var(--rwaq-bd-text);

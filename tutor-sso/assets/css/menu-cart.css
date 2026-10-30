@@ -47,9 +47,9 @@
 	--view-cart-button-hover-background-color: #f5f5f5;
 	--view-cart-button-hover-text-color: #242424;
 	--checkout-button-padding: 9px 16px;
-	--checkout-button-background-color: #565199;
+	--checkout-button-background-color: #6c98c9;
 	--checkout-button-text-color: #fff;
-	--checkout-button-hover-background-color: #474293;
+	--checkout-button-hover-background-color: #5a86b8;
 	--checkout-button-hover-text-color: #fff;
 }
 
@@ -82,11 +82,11 @@
 
 /* A brand-coloured border, so both buttons are the same height. */
 .elementor-widget-woocommerce-menu-cart .elementor-menu-cart__main .elementor-menu-cart__footer-buttons .elementor-button--checkout {
-	border-color: #565199;
+	border-color: #6c98c9;
 }
 
 .elementor-widget-woocommerce-menu-cart .elementor-menu-cart__main .elementor-menu-cart__footer-buttons .elementor-button--checkout:hover {
-	border-color: #474293;
+	border-color: #5a86b8;
 }
 
 /* Dropdown ("mini cart") type only: the side cart is a full-height drawer,

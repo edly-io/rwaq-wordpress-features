@@ -23,9 +23,9 @@
 	--rwaq-acc-border: #d1d1d1;
 	--rwaq-acc-text: #242424;
 	--rwaq-acc-muted: #616161;
-	--rwaq-acc-brand: #565199;
-	--rwaq-acc-brand-hover: #474293;
-	--rwaq-acc-brand-tint: #f1f0f8;
+	--rwaq-acc-brand: #6c98c9;
+	--rwaq-acc-brand-hover: #5a86b8;
+	--rwaq-acc-brand-tint: #f6fbff;
 	--rwaq-acc-radius: 10px;
 }
 
@@ -354,7 +354,7 @@
 	padding: 0;
 	border-radius: 50%;
 	background-color: var(--rwaq-acc-brand-tint);
-	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23565199' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 3h12a1 1 0 0 1 1 1v17l-3-2-3 2-3-2-3 2V4a1 1 0 0 1 1-1z'/%3E%3Cpath d='M9 8h6M9 12h6'/%3E%3C/svg%3E");
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236c98c9' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 3h12a1 1 0 0 1 1 1v17l-3-2-3 2-3-2-3 2V4a1 1 0 0 1 1-1z'/%3E%3Cpath d='M9 8h6M9 12h6'/%3E%3C/svg%3E");
 	background-repeat: no-repeat;
 	background-position: center;
 	background-size: 24px 24px;
@@ -445,11 +445,11 @@
 }
 
 .woocommerce-account .woocommerce-MyAccount-content .woocommerce-notices-wrapper .woocommerce-message::before {
-	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23565199' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='m8 12.5 2.7 2.7L16 9.8'/%3E%3C/svg%3E");
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236c98c9' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='m8 12.5 2.7 2.7L16 9.8'/%3E%3C/svg%3E");
 }
 
 .woocommerce-account .woocommerce-MyAccount-content .woocommerce-notices-wrapper .woocommerce-info::before {
-	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23565199' stroke-width='1.8' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 11v5.5M12 7.8v.2'/%3E%3C/svg%3E");
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236c98c9' stroke-width='1.8' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 11v5.5M12 7.8v.2'/%3E%3C/svg%3E");
 }
 
 /* Errors list one problem per <li>; stacked, in red, without WooCommerce's
@@ -666,7 +666,7 @@
 .woocommerce-account .woocommerce-MyAccount-content form:where(:not(#add_payment_method)) textarea:focus {
 	border-color: var(--rwaq-acc-brand);
 	outline: none;
-	box-shadow: 0 0 0 3px rgba(86, 81, 153, 0.12);
+	box-shadow: 0 0 0 3px rgba(108, 152, 201, 0.12);
 }
 
 /* The email is the SSO identity, locked server-side — shown as plainly

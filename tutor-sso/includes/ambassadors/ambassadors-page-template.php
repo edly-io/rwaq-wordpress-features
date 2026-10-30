@@ -310,9 +310,6 @@ function ambassadors_icon( $name ) {
 		'chat'        => '<svg width="24" height="24" viewBox="12 12 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21H28"/><path d="M20 25H26"/><path d="M30 16C30.7956 16 31.5587 16.3161 32.1213 16.8787C32.6839 17.4413 33 18.2044 33 19V27C33 27.7956 32.6839 28.5587 32.1213 29.1213C31.5587 29.6839 30.7956 30 30 30H25L20 33V30H18C17.2044 30 16.4413 29.6839 15.8787 29.1213C15.3161 28.5587 15 27.7956 15 27V19C15 18.2044 15.3161 17.4413 15.8787 16.8787C16.4413 16.3161 17.2044 16 18 16H30Z"/></svg>',
 		'alarm'       => '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9.5V13l2.5 1.8M5 4l2.5 2M19 4l-2.5 2"/></svg>',
 		'book'        => '<svg width="24" height="24" viewBox="12 12 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M31 16V32H19C18.4696 32 17.9609 31.7893 17.5858 31.4142C17.2107 31.0391 17 30.5304 17 30V18C17 17.4696 17.2107 16.9609 17.5858 16.5858C17.9609 16.2107 18.4696 16 19 16H31Z"/><path d="M31 28H19C18.4696 28 17.9609 28.2107 17.5858 28.5858C17.2107 28.9609 17 29.4696 17 30"/><path d="M21 20H27"/></svg>',
-
-		// Gallery footer.
-		'instagram'   => '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><path d="M17.5 6.5h.01"/></svg>',
 	);
 
 	return isset( $icons[ $name ] ) ? $icons[ $name ] : '';

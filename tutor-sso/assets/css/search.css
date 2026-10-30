@@ -9,8 +9,8 @@
    where the results wrapper is not present. */
 .rwaq-searchbar,
 .rwaq-search {
-	--rwaq-primary: #565199;          /* Brand-80 */
-	--rwaq-primary-soft: #F1F0F8;     /* Brand-10 */
+	--rwaq-primary: #6c98c9;          /* Brand-80 */
+	--rwaq-primary-soft: #f6fbff;     /* Brand-10 */
 	--rwaq-text: #242424;             /* NeutralForeground1.Rest */
 	--rwaq-muted: #616161;            /* NeutralForeground3.Rest */
 	--rwaq-placeholder: #707070;      /* NeutralForeground4.Rest */

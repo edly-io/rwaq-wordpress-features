@@ -26,8 +26,8 @@
 .rwaq-programs,
 .rwaq-pd {
 	/* Catalog palette */
-	--rwaq-primary: #565199;
-	--rwaq-primary-soft: #EFEEFA;
+	--rwaq-primary: #6c98c9;
+	--rwaq-primary-soft: #f6fbff;
 	--rwaq-text: #242424;
 	--rwaq-heading: #242424;
 	--rwaq-carrot: #242424;
@@ -40,7 +40,7 @@
 
 	/* Detail-page palette */
 	--rwaq-pd-gray: #424242;
-	--rwaq-pd-purple-dark: #4a3d96;
+	--rwaq-pd-purple-dark: #161e2b;
 	--rwaq-pd-orange2: #F2B07F;
 }
 
@@ -327,7 +327,7 @@
 
 /* Focus ring on the custom box when the hidden input is focused via keyboard. */
 .rwaq-programs__filter-input:focus-visible+.rwaq-programs__filter-box {
-	box-shadow: 0 0 0 3px rgba(108, 93, 211, 0.25);
+	box-shadow: 0 0 0 3px rgba(108, 152, 201, 0.25);
 }
 
 /* Radio variant */
@@ -738,7 +738,7 @@
 /* Subscription content has no price — "ضمن الاشتراك" in the brand colour,
    set apart from both a price and the green "مجاني". */
 .rwaq-program-card__price--subscription {
-	color: #565199;
+	color: #6c98c9;
 	font-weight: 600;
 }
 
@@ -981,11 +981,11 @@
 }
 
 .rwaq-pd__breadcrumb a {
-	color: #565199;
+	color: #6c98c9;
 }
 
 .rwaq-pd__breadcrumb a:hover {
-	color: #454084;
+	color: #5a86b8;
 }
 
 .rwaq-pd__sep {
@@ -999,9 +999,9 @@
 
 /* Header bar + tabs — full-width dark background + sticky, content centered */
 .rwaq-pd__header-bar {
-	background: #292929;
+	background: #161e2b;
 	color: #fff;
-	border-top: 1px solid #292929;
+	border-top: 1px solid #161e2b;
 	position: sticky;
 	top: 0;
 	z-index: 6;
@@ -1098,7 +1098,7 @@
 	border-radius: 16px;
 	overflow: hidden;
 	margin-bottom: 32px;
-	background: linear-gradient(135deg, #4a4a5c 0%, #2e2e3c 60%, #3a3648 100%);
+	background: linear-gradient(135deg, #2a3446 0%, #161e2b 60%, #1f2938 100%);
 }
 
 .rwaq-pd__hero-img {
@@ -1135,13 +1135,13 @@
 }
 
 .rwaq-pd__badge-level {
-	background: #F1F0F8;
+	background: #f6fbff;
 	color: var(--rwaq-primary);
 	font-size: 12px;
 	font-weight: 500;
 	padding: 6px 16px;
 	border-radius: 8px;
-	border: 1 px solid #F1F0F8;
+	border: 1 px solid #f6fbff;
 }
 
 .rwaq-pd__title {
@@ -1190,7 +1190,7 @@
 
 .rwaq-pd__provider-name {
 	font-size: 14px;
-	color: #565199;
+	color: #6c98c9;
 	font-weight: 400;
 }
 
@@ -1337,7 +1337,7 @@
 .rwaq-pd__cert-banner {
 	flex: 1;
 	margin-bottom: 18px;
-	background: #292929;
+	background: #161e2b;
 	color: #fff;
 	border-radius: 10px;
 	padding: 26px 32px;
@@ -1401,7 +1401,7 @@
 .rwaq-pd__video-thumb {
 	position: relative;
 	aspect-ratio: 372 / 240;
-	background: linear-gradient(135deg, #4a4a5c 0%, #2e2e3c 60%, #3a3648 100%);
+	background: linear-gradient(135deg, #2a3446 0%, #161e2b 60%, #1f2938 100%);
 }
 
 .rwaq-pd__video-thumb img {

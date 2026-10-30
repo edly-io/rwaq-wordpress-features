@@ -6,9 +6,9 @@
 
 .rwaq-pt {
 	/* Design tokens from the Figma library, on the plugin's --rwaq-* convention. */
-	--rwaq-primary: #565199;          /* Brand-80 */
-	--rwaq-primary-soft: #F1F0F8;     /* Brand-10 */
-	--rwaq-pill-bg: #EFEEFA;          /* Count pill */
+	--rwaq-primary: #6c98c9;          /* Brand-80 */
+	--rwaq-primary-soft: #f6fbff;     /* Brand-10 */
+	--rwaq-pill-bg: #f6fbff;          /* Count pill */
 	--rwaq-text: #242424;             /* NeutralForeground1.Rest */
 	--rwaq-text-2: #424242;           /* NeutralForeground2.Rest */
 	--rwaq-muted: #616161;            /* NeutralForeground3.Rest */

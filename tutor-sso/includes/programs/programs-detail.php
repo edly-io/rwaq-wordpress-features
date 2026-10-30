@@ -389,7 +389,7 @@ function program_detail_call_to_action($post_id, $program_key, $program_url = ''
 		}
 
 		return course_render_subscription_notice(
-			__('هذا البرنامج جزء من اشتراك رواق، ويمكنك الوصول إليه عند الاشتراك.', 'tutor-sso')
+			__('هذا البرنامج ضمن باقة الاشتراك، ويمكنك الوصول إليه عند الاشتراك.', 'tutor-sso')
 		);
 	}
 

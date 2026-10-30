@@ -298,9 +298,9 @@ class Course_Enroll_Widget extends \Elementor\Widget_Base {
 			'enroll_btn',
 			array(
 				'text'       => '#ffffff',
-				'bg'         => '#565199',
+				'bg'         => '#6c98c9',
 				'text_hover' => '#ffffff',
-				'bg_hover'   => '#474293',
+				'bg_hover'   => '#5a86b8',
 			)
 		);
 
@@ -311,9 +311,9 @@ class Course_Enroll_Widget extends \Elementor\Widget_Base {
 			'goto_btn',
 			array(
 				'text'       => '#ffffff',
-				'bg'         => '#565199',
+				'bg'         => '#6c98c9',
 				'text_hover' => '#ffffff',
-				'bg_hover'   => '#474293',
+				'bg_hover'   => '#5a86b8',
 			)
 		);
 

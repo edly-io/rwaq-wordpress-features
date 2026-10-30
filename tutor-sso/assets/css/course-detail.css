@@ -6,8 +6,8 @@
 
 .rwaq-cd {
 	/* Design tokens from the Figma library, on the plugin's --rwaq-* convention. */
-	--rwaq-primary: #565199;          /* Brand-80 */
-	--rwaq-primary-soft: #F1F0F8;     /* Brand-10 */
+	--rwaq-primary: #6c98c9;          /* Brand-80 */
+	--rwaq-primary-soft: #f6fbff;     /* Brand-10 */
 	--rwaq-text: #242424;             /* NeutralForeground1.Rest */
 	--rwaq-muted: #616161;            /* NeutralForeground3.Rest */
 	--rwaq-border: #D1D1D1;           /* NeutralStroke1.Rest */

@@ -13,8 +13,8 @@
  */
 
 .rwaq-courses {
-	--rwaq-primary: #565199;
-	--rwaq-primary-soft: #EFEEFA;
+	--rwaq-primary: #6c98c9;
+	--rwaq-primary-soft: #f6fbff;
 	--rwaq-text: #242424;
 	--rwaq-heading: #242424;
 	--rwaq-muted: #616161;
@@ -387,7 +387,7 @@
 
 /* Focus ring on the custom box when the hidden input is focused via keyboard. */
 .rwaq-courses__filter-input:focus-visible + .rwaq-courses__filter-box {
-	box-shadow: 0 0 0 3px rgba(86, 81, 153, 0.25);
+	box-shadow: 0 0 0 3px rgba(108, 152, 201, 0.25);
 }
 
 .rwaq-courses__filter-label {
@@ -736,7 +736,7 @@
    set apart from both a price and the green "مجاني". */
 .rwaq-course-card__price--subscription,
 .rwaq-course-card__price--program-only {
-	color: #565199;
+	color: #6c98c9;
 	font-weight: 600;
 }
 

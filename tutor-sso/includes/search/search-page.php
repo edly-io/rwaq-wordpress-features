@@ -536,7 +536,7 @@ function search_render_cta() {
 	<section class="rwaq-search__cta">
 		<div class="rwaq-search__cta-text">
 			<h2 class="rwaq-search__cta-title"><?php echo esc_html__( 'لم تجد ما يناسبك؟', 'tutor-sso' ); ?></h2>
-			<p class="rwaq-search__cta-copy"><?php echo esc_html__( 'تصفح مكتبة رواق الكاملة وواصل رحلتك التعليمية مع مئات الدورات والبرامج في مختلف المجالات.', 'tutor-sso' ); ?></p>
+			<p class="rwaq-search__cta-copy"><?php echo esc_html__( 'تصفح المكتبة الكاملة وواصل رحلتك التعليمية مع مئات الدورات والبرامج في مختلف المجالات.', 'tutor-sso' ); ?></p>
 		</div>
 
 		<div class="rwaq-search__cta-actions">

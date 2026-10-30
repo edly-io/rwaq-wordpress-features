@@ -20,8 +20,8 @@
 	--rwaq-sub-warning-text: #9a5b00;
 	--rwaq-sub-danger-border: #c50f1f;
 	--rwaq-sub-danger-text: #b10e1c;
-	--rwaq-sub-badge-bg: #f7f7fb;
-	--rwaq-sub-badge-text: #1f1b3a;
+	--rwaq-sub-badge-bg: #f6fbff;
+	--rwaq-sub-badge-text: #161e2b;
 }
 
 /* The page is its own cards, so the shared content card steps aside. */

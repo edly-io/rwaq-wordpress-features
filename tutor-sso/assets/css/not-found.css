@@ -9,9 +9,9 @@
 .rwaq-404 {
 	/* Design tokens from the Figma library, mapped onto the plugin's --rwaq-*
 	   convention (see instructor.css / courses.css / programs.css). */
-	--rwaq-primary: #565199;          /* BrandBackground.Rest / Brand-80 */
-	--rwaq-primary-hover: #474377;    /* Brand-80 darkened for hover */
-	--rwaq-primary-soft: #F1F0F8;     /* Brand-10 */
+	--rwaq-primary: #6c98c9;          /* BrandBackground.Rest / Brand-80 */
+	--rwaq-primary-hover: #5a86b8;    /* Brand-80 darkened for hover */
+	--rwaq-primary-soft: #f6fbff;     /* Brand-10 */
 	--rwaq-text: #242424;             /* NeutralForeground1.Rest */
 	--rwaq-muted: #616161;            /* NeutralForeground3.Rest */
 	--rwaq-on-brand: #FFFFFF;         /* NeutralForegroundOnBrand.Rest */

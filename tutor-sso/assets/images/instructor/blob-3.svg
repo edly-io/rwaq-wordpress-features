@@ -2,7 +2,7 @@
 <circle id="Ellipse 5" opacity="0.1" cx="148.5" cy="148.5" r="148.5" fill="url(#paint0_radial_0_30)"/>
 <defs>
 <radialGradient id="paint0_radial_0_30" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(148.5 148.5) rotate(90) scale(148.5)">
-<stop stop-color="#565199"/>
+<stop stop-color="#6c98c9"/>
 <stop offset="1" stop-color="#FBFBFB"/>
 </radialGradient>
 </defs>

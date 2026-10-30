@@ -44,7 +44,7 @@ $rwaq_amb_groups = array(
 	),
 	array(
 		'icon'  => 'campus',
-		'title' => __( 'تمثيل رواق في الفعاليات', 'tutor-sso' ),
+		'title' => __( 'التمثيل في الفعاليات', 'tutor-sso' ),
 		'text'  => __( 'حضور المؤتمرات والملتقيات الجامعية، والتسويق لمفهوم التعليم المفتوح', 'tutor-sso' ),
 	),
 	array(
@@ -114,9 +114,9 @@ $rwaq_amb_reqs = array(
 
 		<div class="rwaq-amb__inner">
 			<div class="rwaq-amb__hero-inner">
-				<h1 class="rwaq-amb__hero-title"><?php esc_html_e( 'جامعتك تحتاج صوتاً يمثّل رواق', 'tutor-sso' ); ?></h1>
+				<h1 class="rwaq-amb__hero-title"><?php esc_html_e( 'جامعتك تحتاج صوتاً يمثّلنا', 'tutor-sso' ); ?></h1>
 				<p class="rwaq-amb__hero-text">
-					<?php esc_html_e( 'كن حلقة الوصل بين رواق وآلاف الطلاب والمحاضرين في جامعتك. لا حاجة لخبرة سابقة — فقط حماسك واهتمامك بالتعليم المفتوح.', 'tutor-sso' ); ?>
+					<?php esc_html_e( 'كن حلقة الوصل بيننا وبين آلاف الطلاب والمحاضرين في جامعتك. لا حاجة لخبرة سابقة — فقط حماسك واهتمامك بالتعليم المفتوح.', 'tutor-sso' ); ?>
 				</p>
 				<a class="rwaq-amb__cta" href="#rwaq-amb-apply"><?php esc_html_e( 'انضم كسفير', 'tutor-sso' ); ?></a>
 			</div>
@@ -205,7 +205,7 @@ $rwaq_amb_reqs = array(
 	<?php /* ---------- Gallery ---------- */ ?>
 	<section class="rwaq-amb__section rwaq-amb__section--surface">
 		<div class="rwaq-amb__inner">
-			<h2 class="rwaq-amb__title"><?php esc_html_e( 'لحظات من رحلة سفراء رواق', 'tutor-sso' ); ?></h2>
+			<h2 class="rwaq-amb__title"><?php esc_html_e( 'لحظات من رحلة سفرائنا', 'tutor-sso' ); ?></h2>
 			<p class="rwaq-amb__subtitle"><?php esc_html_e( 'من الملتقيات الجامعية إلى لقاءات الفريق — هذه رحلتك القادمة', 'tutor-sso' ); ?></p>
 
 			<div class="rwaq-amb__gallery">
@@ -221,19 +221,6 @@ $rwaq_amb_reqs = array(
 					// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 					?>
 				</div>
-			</div>
-
-			<div class="rwaq-amb__hashtag">
-				<?php echo \TutorSSO\ambassadors_icon( 'instagram' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-				<span>
-					<?php
-					printf(
-						/* translators: %s: the campaign hashtag, wrapped in <b>. */
-						esc_html__( 'شارك لحظاتك كسفير عبر %s وقد تظهر صورتك هنا', 'tutor-sso' ),
-						'<b>' . esc_html__( '#سفراء_رواق', 'tutor-sso' ) . '</b>'
-					);
-					?>
-				</span>
 			</div>
 		</div>
 	</section>

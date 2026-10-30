@@ -36,7 +36,7 @@
 .tutor-sso-enroll-btn--enroll,
 .tutor-sso-enroll-btn--login,
 .tutor-sso-enroll-btn--buy {
-	background-color: #565199;
+	background-color: #6c98c9;
 	/* .rwaq-pd a{color:var(--rwaq-primary)} (one more tag selector) outranks
 	   this on program-detail pages otherwise, leaving purple text on the
 	   purple fill. */
@@ -46,17 +46,17 @@
 .tutor-sso-enroll-btn--enroll:hover,
 .tutor-sso-enroll-btn--login:hover,
 .tutor-sso-enroll-btn--buy:hover {
-	background-color: #474293;
+	background-color: #5a86b8;
 	color: #ffffff !important;
 }
 
 .tutor-sso-enroll-btn--goto {
-	background-color: #565199;
+	background-color: #6c98c9;
 	color: #ffffff !important;
 }
 
 .tutor-sso-enroll-btn--goto:hover {
-	background-color: #474293;
+	background-color: #5a86b8;
 	color: #ffffff !important;
 }
 
@@ -116,7 +116,7 @@
 .tutor-sso-course-price__badge {
 	padding: 2px 10px;
 	border-radius: 999px;
-	background: #565199;
+	background: #6c98c9;
 	color: #fff;
 	font-size: 12px;
 	font-weight: 600;
@@ -132,7 +132,7 @@
 }
 
 .tutor-sso-course-price__now {
-	color: #565199;
+	color: #6c98c9;
 	font-size: 22px;
 	font-weight: 700;
 	line-height: 1.35;
@@ -260,7 +260,7 @@
 .tutor-sso-order-links__link,
 .tutor-sso-order-links__link:hover,
 .tutor-sso-order-links__link:focus {
-	color: #565199;
+	color: #6c98c9;
 	font-size: 14px;
 	font-weight: 600;
 	line-height: 22px;
@@ -268,7 +268,7 @@
 }
 
 .tutor-sso-order-links__link:hover {
-	color: #474293;
+	color: #5a86b8;
 }
 
 /* The per-row name, for screen readers only — see the renderer's note. */

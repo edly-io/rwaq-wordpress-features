@@ -13,9 +13,9 @@
 	--rwaq-plans-muted: #616161;
 	--rwaq-plans-border: #d1d1d1;
 	--rwaq-plans-divider: #e0e0e0;
-	--rwaq-plans-brand: #565199;
-	--rwaq-plans-brand-hover: #474293;
-	--rwaq-plans-tint: #f1f0f8;
+	--rwaq-plans-brand: #6c98c9;
+	--rwaq-plans-brand-hover: #5a86b8;
+	--rwaq-plans-tint: #f6fbff;
 
 	display: flex;
 	flex-direction: column;

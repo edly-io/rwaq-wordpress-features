@@ -661,7 +661,7 @@ function course_render_program_notice( $program_url ) {
  */
 function course_render_subscription_notice( $message = '' ) {
 	if ( '' === trim( (string) $message ) ) {
-		$message = __( 'هذا المساق جزء من اشتراك رواق، ويمكنك الوصول إليه عند الاشتراك.', 'tutor-sso' );
+		$message = __( 'هذا المساق ضمن باقة الاشتراك، ويمكنك الوصول إليه عند الاشتراك.', 'tutor-sso' );
 	}
 
 	// The page on the "Rwaq Subscription Plans" template; '' renders the

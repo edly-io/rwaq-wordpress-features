@@ -22,12 +22,12 @@
  */
 
 .woocommerce-order-received {
-	--rwaq-or-hero: #3a356e;
+	--rwaq-or-hero: #161e2b;
 	--rwaq-or-check-bg: #9bd9db;
 	--rwaq-or-border: #d1d1d1;
 	--rwaq-or-text: #242424;
 	--rwaq-or-muted: #616161;
-	--rwaq-or-brand: #565199;
+	--rwaq-or-brand: #6c98c9;
 	--rwaq-or-icon-bg: #fbe7f0;
 	--rwaq-or-icon: #d33b89;
 }
@@ -176,7 +176,7 @@
 	   white background (as happened above) goes white-on-white and vanishes.
 	   A background of its own means it stays visible regardless of what, if
 	   anything, is behind it. */
-	background: #4a4380;
+	background: #5a86b8;
 	color: #fff;
 	font-size: 13px;
 	white-space: nowrap;
