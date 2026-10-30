@@ -1419,6 +1419,9 @@ add_shortcode( 'tutor_sso_start_learning', function ( $atts ) {
         return '';
     }
 
+    // The button's colour lives in enroll.css.
+    wp_enqueue_style( 'tutor-sso-enroll' );
+
     return sprintf(
         '<a href="%s" class="tutor-sso-start-learning-btn">%s</a>',
         esc_url( $url ),

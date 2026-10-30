@@ -183,6 +183,20 @@
 	text-decoration: none;
 }
 
+/* Header "start learning" button ([tutor_sso_start_learning]). Only the colour
+   is set here; its size and type come from the header template. `body` lifts
+   the rule over the template's own `a.tutor-sso-start-learning-btn`. */
+body a.tutor-sso-start-learning-btn {
+	background-color: #6c98c9;
+	color: #fff;
+}
+
+body a.tutor-sso-start-learning-btn:hover,
+body a.tutor-sso-start-learning-btn:focus-visible {
+	background-color: #5a86b8;
+	color: #fff;
+}
+
 /* ---- Order page: what was bought ----
    Rendered on the order-received page and on a past order under My Account
    (see includes/orders/order-course-links.php), to the design at Figma
