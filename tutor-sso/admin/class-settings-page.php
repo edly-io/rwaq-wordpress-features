@@ -76,6 +76,7 @@ class Settings_Page {
 			'tutor_sso_client_id'           => 'sanitize_text_field',
 			'tutor_sso_client_secret'       => 'sanitize_text_field',
 			'tutor_sso_course_dashboard_url' => 'esc_url_raw',
+			'tutor_sso_studio_url'          => 'esc_url_raw',
 			'tutor_sso_jwt_auth_secret_key' => 'sanitize_text_field',
 			'tutor_sso_programs_per_page'   => 'absint',
 			'tutor_sso_blogs_per_page'      => 'absint',
@@ -237,6 +238,14 @@ class Settings_Page {
 			'tutor_sso_section_enrollment',
 			get_site_url(),
 			__( 'Base URL the "Go to Course" link points at. Leave empty to fall back to the LMS Base URL.', 'tutor-sso' )
+		);
+
+		$this->add_url_field(
+			'tutor_sso_studio_url',
+			__( 'Studio URL (optional)', 'tutor-sso' ),
+			'tutor_sso_section_enrollment',
+			'https://studio.example.com',
+			__( 'Shown as a link in the header account menu, to LMS staff only (as of their last sign-in). Leave empty to hide it for everyone.', 'tutor-sso' )
 		);
 
 		// ── Section 5: Programs API ──────────────────────────────────────────
