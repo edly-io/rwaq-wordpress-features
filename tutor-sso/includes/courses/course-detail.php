@@ -475,7 +475,8 @@ function course_render_enroll_card( $data ) {
  * Order of checks, each outranking the ones below it:
  *
  *   part_of_program + enrolled      go to course, no unenroll (see below)
- *   part_of_program + not enrolled  notice + go to program; no enroll/buy UI
+ *   part_of_program + not enrolled  notice + go to program; no enroll/buy UI,
+ *                                   even with has_paid_access
  *   enrolled                        go to course, no checkout
  *   has_paid_access                 bought it, or a live subscription covers
  *                                   it — enroll, never charge twice
@@ -516,17 +517,18 @@ function course_render_call_to_action( $post_id, $course_key, $paid = false, $pr
 	if ( $part_of_program ) {
 		$status = course_detail_status( $course_key );
 
-		// Enrolled via the program, or covered by a live subscription (a
-		// program-only course can sit inside a subscription program): into the
-		// course, with no unenroll action — the enrollment is not this page's
-		// to cancel.
-		if ( $status['enrolled'] || $status['has_paid_access'] ) {
+		// Enrolled via the program: into the course, with no unenroll action —
+		// the enrollment is not this page's to cancel.
+		if ( $status['enrolled'] ) {
 			$labels['show_unenroll'] = false;
 
 			return render_enroll_button( $course_key, $labels );
 		}
 
-		// Not enrolled: there is nothing to buy or enroll into here.
+		// Not enrolled: there is nothing to buy or enroll into here — not even
+		// for a subscriber whose plan covers the program (has_paid_access). A
+		// program-only course cannot be joined on its own, so an enroll button
+		// here fails on the LMS; joining the program enrolls its courses.
 		return course_render_program_notice( $program_url );
 	}
 

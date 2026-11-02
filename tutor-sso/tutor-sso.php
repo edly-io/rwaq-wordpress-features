@@ -3,7 +3,7 @@
  * Plugin Name:       Tutor LMS SSO
  * Plugin URI:        https://edly.io
  * Description:       Single Sign-On (SSO) between WordPress and Tutor LMS / Open edX via OAuth 2.0.
- * Version:           1.0.0
+ * Version:           3.0.0
  * Requires at least: 5.6
  * Requires PHP:      7.4
  * Author:            Edly Team
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'TUTOR_SSO_VERSION',  '1.0.0' );
+define( 'TUTOR_SSO_VERSION',  '3.0.0' );
 define( 'TUTOR_SSO_FILE',     __FILE__ );
 define( 'TUTOR_SSO_PATH',     plugin_dir_path( __FILE__ ) );
 define( 'TUTOR_SSO_URL',      plugin_dir_url( __FILE__ ) );
