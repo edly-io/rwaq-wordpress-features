@@ -631,6 +631,7 @@ function validate_sso_login() {
 	$user = get_user_by( 'id', $user_id );
 
 	link_user_to_blog( $user_id, $blog_id );
+	sso_sync_lms_staff( $user_id, $user_data );
 	wp_set_current_user( $user_id );
 	wp_set_auth_cookie( $user_id );
 	do_action( 'wp_login', $user->user_login, $user );
@@ -1093,15 +1094,27 @@ add_action( 'init', __NAMESPACE__ . '\\revoke_session_on_lms_logout', 25 );
  * look new, creation then failed on the duplicate email, and the learner was
  * locked out after their first ever sign-in.
  *
- * Email is the last resort and the authoritative one: it is the key this site
- * and the LMS already share (synced from the token on every login, and locked
- * on the account page), so an address match is the same identity.
+ * Email is looked up first, as the authoritative key: it is unique on both
+ * sides and already shared (synced from the token on every login, and locked
+ * on the account page), so an address match is the same identity. A username
+ * is not: the LMS can hand one to a different person (accounts swapped or
+ * re-created), and matching it first logged that person into the previous
+ * owner's account. The username lookups stay as the fallback for a learner
+ * who changed their email on the LMS, whose new address no account has yet.
  *
  * @param string $username LMS preferred_username.
  * @param string $email    LMS email, already sanitized.
  * @return \WP_User|false
  */
 function sso_find_existing_user( $username, $email ) {
+	if ( '' !== (string) $email ) {
+		$user = get_user_by( 'email', $email );
+
+		if ( $user ) {
+			return $user;
+		}
+	}
+
 	$user = get_user_by( 'login', $username );
 
 	if ( $user ) {
@@ -1113,14 +1126,6 @@ function sso_find_existing_user( $username, $email ) {
 
 	if ( '' !== $sanitized && $sanitized !== $username ) {
 		$user = get_user_by( 'login', $sanitized );
-
-		if ( $user ) {
-			return $user;
-		}
-	}
-
-	if ( '' !== (string) $email ) {
-		$user = get_user_by( 'email', $email );
 
 		if ( $user ) {
 			return $user;
@@ -1183,12 +1188,18 @@ function create_or_update_user( $username, $email, $role, $blog_id, $profile = a
 
 		// Keep the e-mail address in sync with the LMS.
 		if ( $email !== $user->user_email ) {
-			wp_update_user(
+			$updated = wp_update_user(
 				array(
 					'ID'         => $user_id,
 					'user_email' => $email,
 				)
 			);
+
+			// Refused when another account already holds the address. The login
+			// goes on with the old one, so leave a trace instead of failing quietly.
+			if ( is_wp_error( $updated ) ) {
+				error_log( sprintf( '[tutor-sso] Could not sync the LMS email to user #%d: %s', $user_id, $updated->get_error_message() ) );
+			}
 		}
 	}
 
@@ -1320,6 +1331,57 @@ function link_user_to_blog( $user_id, $blog_id, $role = 'subscriber' ) {
 	}
 }
 
+// ── 8b. LMS staff status ─────────────────────────────────────────────────────
+
+/**
+ * User option holding whether the account is staff on the LMS.
+ *
+ * A user option, not user meta: on multisite it is stored per site, so staff on
+ * one site's LMS is not taken as staff on another's.
+ */
+const LMS_STAFF_OPTION = 'tutor_sso_lms_staff';
+
+/**
+ * Record the id_token's staff claims on the account.
+ *
+ * Open edX puts `administrator` (is_staff) and `superuser` (is_superuser) in
+ * the token it issues. Re-applied on every login, so a change on the LMS
+ * reaches the site the next time the person signs in.
+ *
+ * @param int   $user_id User ID.
+ * @param array $claims  Decoded id_token payload.
+ * @return void
+ */
+function sso_sync_lms_staff( $user_id, $claims ) {
+	$is_staff = false;
+
+	foreach ( array( 'administrator', 'superuser' ) as $claim ) {
+		if ( isset( $claims[ $claim ] ) && in_array( $claims[ $claim ], array( true, 1, '1', 'true' ), true ) ) {
+			$is_staff = true;
+			break;
+		}
+	}
+
+	if ( $is_staff ) {
+		update_user_option( $user_id, LMS_STAFF_OPTION, '1' );
+	} else {
+		delete_user_option( $user_id, LMS_STAFF_OPTION );
+	}
+}
+
+/**
+ * Whether the current user is staff on the LMS, as of their last SSO login.
+ *
+ * @return bool
+ */
+function sso_current_user_is_lms_staff() {
+	if ( ! is_user_logged_in() ) {
+		return false;
+	}
+
+	return '1' === (string) get_user_option( LMS_STAFF_OPTION, get_current_user_id() );
+}
+
 // ── 9. Suppress the heartbeat auth-check modal ───────────────────────────────
 
 // Prevent the "You have been logged out" popup on the front end.
@@ -1336,6 +1398,8 @@ add_filter( 'wp_auth_check_load', '__return_false' );
  *   label         - Text for the login button    (default "Log in with LMS").
  *   logout_label  - Text for the logout item.
  *   account_label - Text for the settings item.
+ *   lms_label     - Text for the LMS dashboard item.
+ *   studio_label  - Text for the Studio item (LMS staff only).
  *   account_url   - Override for the settings destination (defaults to the
  *                   LMS's own account settings page).
  *
@@ -1352,6 +1416,8 @@ add_shortcode( 'tutor_sso_login', function ( $atts ) {
             'label'         => __( 'Log in with LMS', 'tutor-sso' ),
             'logout_label'  => __( 'تسجيل الخروج', 'tutor-sso' ),
             'account_label' => __( 'إعدادات الحساب', 'tutor-sso' ),
+            'lms_label'     => __( 'منصة التعلم', 'tutor-sso' ),
+            'studio_label'  => __( 'استوديو', 'tutor-sso' ),
             'account_url'   => '',
         ],
         $atts,
@@ -1363,6 +1429,8 @@ add_shortcode( 'tutor_sso_login', function ( $atts ) {
             [
                 'logout_label'  => $atts['logout_label'],
                 'account_label' => $atts['account_label'],
+                'lms_label'     => $atts['lms_label'],
+                'studio_label'  => $atts['studio_label'],
                 'account_url'   => $atts['account_url'],
             ]
         );
@@ -1378,6 +1446,19 @@ add_shortcode( 'tutor_sso_login', function ( $atts ) {
 } );
 
 // ── 11. Start-learning button shortcode ───────────────────────────────────────
+
+/**
+ * The learner's dashboard on the LMS: the course dashboard URL, else the LMS
+ * base URL, with /learner-dashboard/ appended.
+ *
+ * @return string URL, or '' when neither setting is filled.
+ */
+function sso_learner_dashboard_url() {
+    $base = sso_option( 'course_dashboard_url' ) ?: sso_option( 'lms_base_url' );
+    $base = rtrim( (string) $base, '/' );
+
+    return $base ? $base . '/learner-dashboard/' : '';
+}
 
 /**
  * Render a "Start learning" button that links to the LMS dashboard.
@@ -1407,13 +1488,7 @@ add_shortcode( 'tutor_sso_start_learning', function ( $atts ) {
         'tutor_sso_start_learning'
     );
 
-    $url = $atts['url'];
-
-    if ( empty( $url ) ) {
-        $base = sso_option( 'course_dashboard_url' ) ?: sso_option( 'lms_base_url' );
-        $base = rtrim( (string) $base, '/' );
-        $url  = $base ? $base . '/learner-dashboard/' : '';
-    }
+    $url = $atts['url'] ?: sso_learner_dashboard_url();
 
     if ( empty( $url ) ) {
         return '';
