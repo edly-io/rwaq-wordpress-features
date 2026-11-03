@@ -1094,15 +1094,27 @@ add_action( 'init', __NAMESPACE__ . '\\revoke_session_on_lms_logout', 25 );
  * look new, creation then failed on the duplicate email, and the learner was
  * locked out after their first ever sign-in.
  *
- * Email is the last resort and the authoritative one: it is the key this site
- * and the LMS already share (synced from the token on every login, and locked
- * on the account page), so an address match is the same identity.
+ * Email is looked up first, as the authoritative key: it is unique on both
+ * sides and already shared (synced from the token on every login, and locked
+ * on the account page), so an address match is the same identity. A username
+ * is not: the LMS can hand one to a different person (accounts swapped or
+ * re-created), and matching it first logged that person into the previous
+ * owner's account. The username lookups stay as the fallback for a learner
+ * who changed their email on the LMS, whose new address no account has yet.
  *
  * @param string $username LMS preferred_username.
  * @param string $email    LMS email, already sanitized.
  * @return \WP_User|false
  */
 function sso_find_existing_user( $username, $email ) {
+	if ( '' !== (string) $email ) {
+		$user = get_user_by( 'email', $email );
+
+		if ( $user ) {
+			return $user;
+		}
+	}
+
 	$user = get_user_by( 'login', $username );
 
 	if ( $user ) {
@@ -1114,14 +1126,6 @@ function sso_find_existing_user( $username, $email ) {
 
 	if ( '' !== $sanitized && $sanitized !== $username ) {
 		$user = get_user_by( 'login', $sanitized );
-
-		if ( $user ) {
-			return $user;
-		}
-	}
-
-	if ( '' !== (string) $email ) {
-		$user = get_user_by( 'email', $email );
 
 		if ( $user ) {
 			return $user;
@@ -1184,12 +1188,18 @@ function create_or_update_user( $username, $email, $role, $blog_id, $profile = a
 
 		// Keep the e-mail address in sync with the LMS.
 		if ( $email !== $user->user_email ) {
-			wp_update_user(
+			$updated = wp_update_user(
 				array(
 					'ID'         => $user_id,
 					'user_email' => $email,
 				)
 			);
+
+			// Refused when another account already holds the address. The login
+			// goes on with the old one, so leave a trace instead of failing quietly.
+			if ( is_wp_error( $updated ) ) {
+				error_log( sprintf( '[tutor-sso] Could not sync the LMS email to user #%d: %s', $user_id, $updated->get_error_message() ) );
+			}
 		}
 	}
 
