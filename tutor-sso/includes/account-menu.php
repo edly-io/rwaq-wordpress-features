@@ -3,8 +3,9 @@
  * Logged-in account menu — the header dropdown that replaced the bare logout
  * link (Figma 10529:104856).
  *
- * The panel shows who is signed in (display name + email) above two actions:
- * account settings on the LMS, and log out. It is rendered by the existing
+ * The panel shows who is signed in (display name + email) above its actions:
+ * account settings, the LMS dashboard, Studio (LMS staff only, when a Studio
+ * URL is set), and log out. It is rendered by the existing
  * [tutor_sso_login] shortcode's logged-in branch (see sso-functions.php §10),
  * so every place that already printed a logout button gets the dropdown with
  * no template change.
@@ -54,18 +55,38 @@ function account_settings_url() {
 }
 
 /**
+ * Destination of the "Studio" item, for LMS staff only.
+ *
+ * @return string URL, or '' when no Studio URL is set or the current user is
+ *                not staff on the LMS — the item is then skipped.
+ */
+function account_studio_url() {
+	$url = (string) sso_option( 'studio_url' );
+
+	if ( '' === $url || ! sso_current_user_is_lms_staff() ) {
+		return '';
+	}
+
+	return $url;
+}
+
+/**
  * Inline SVG for one menu item's icon.
  *
  * Inlined rather than referenced as a file so the icon inherits `currentColor`
  * and needs no extra request; both are 20x20 to match the design.
  *
- * @param string $name 'settings' or 'logout'.
+ * @param string $name 'settings', 'lms', 'studio' or 'logout'.
  * @return string SVG markup, or '' for an unknown name.
  */
 function account_menu_icon( $name ) {
 	$icons = array(
 		// Gear.
 		'settings' => '<circle cx="10" cy="10" r="2.9"/><path d="M16.1 12.3a1.3 1.3 0 0 0 .3 1.4l.1.1a1.5 1.5 0 1 1-2.2 2.2l-.1-.1a1.3 1.3 0 0 0-1.4-.3 1.3 1.3 0 0 0-.8 1.2v.2a1.5 1.5 0 1 1-3 0v-.1a1.3 1.3 0 0 0-.9-1.2 1.3 1.3 0 0 0-1.4.3l-.1.1a1.5 1.5 0 1 1-2.2-2.2l.1-.1a1.3 1.3 0 0 0 .3-1.4 1.3 1.3 0 0 0-1.2-.8h-.2a1.5 1.5 0 1 1 0-3h.1a1.3 1.3 0 0 0 1.2-.9 1.3 1.3 0 0 0-.3-1.4l-.1-.1a1.5 1.5 0 1 1 2.2-2.2l.1.1a1.3 1.3 0 0 0 1.4.3h.1a1.3 1.3 0 0 0 .8-1.2v-.2a1.5 1.5 0 1 1 3 0v.1a1.3 1.3 0 0 0 .8 1.2 1.3 1.3 0 0 0 1.4-.3l.1-.1a1.5 1.5 0 1 1 2.2 2.2l-.1.1a1.3 1.3 0 0 0-.3 1.4v.1a1.3 1.3 0 0 0 1.2.8h.2a1.5 1.5 0 1 1 0 3h-.1a1.3 1.3 0 0 0-1.2.8z"/>',
+		// Open book.
+		'lms'      => '<path d="M10 5.4C8.6 4.3 6.6 3.8 3 3.8v11.4c3.6 0 5.6.5 7 1.6 1.4-1.1 3.4-1.6 7-1.6V3.8c-3.6 0-5.6.5-7 1.6z"/><path d="M10 5.4v11.4"/>',
+		// Pencil.
+		'studio'   => '<path d="M14.2 2.9a1.8 1.8 0 0 1 2.5 2.5L6.4 15.8l-3.4.9.9-3.4z"/><path d="m12.5 4.6 2.9 2.9"/>',
 		// Door with an out-arrow.
 		'logout'   => '<path d="M7.5 17.5h-2a1.7 1.7 0 0 1-1.7-1.7V4.2a1.7 1.7 0 0 1 1.7-1.7h2"/><path d="M13.3 14.2 17.5 10l-4.2-4.2"/><path d="M17.5 10h-10"/>',
 	);
@@ -118,6 +139,8 @@ const ACCOUNT_MENU_NAME_LENGTH = 4;
  *
  * @param array $args {
  *     @type string $account_label Label of the settings item.
+ *     @type string $lms_label     Label of the LMS dashboard item.
+ *     @type string $studio_label  Label of the Studio item (LMS staff only).
  *     @type string $logout_label  Label of the logout item.
  *     @type string $account_url   Override for the My Account destination.
  * }
@@ -138,6 +161,8 @@ function render_account_menu( $args = array() ) {
 		$args,
 		array(
 			'account_label' => __( 'إعدادات الحساب', 'tutor-sso' ),
+			'lms_label'     => __( 'منصة التعلم', 'tutor-sso' ),
+			'studio_label'  => __( 'استوديو', 'tutor-sso' ),
 			'logout_label'  => __( 'تسجيل الخروج', 'tutor-sso' ),
 			'account_url'   => '',
 		)
@@ -149,6 +174,8 @@ function render_account_menu( $args = array() ) {
 	$email = trim( (string) $user->user_email );
 
 	$account_url = '' !== $args['account_url'] ? $args['account_url'] : account_settings_url();
+	$lms_url     = sso_learner_dashboard_url();
+	$studio_url  = account_studio_url();
 
 	// Each instance needs its own id so aria-controls stays unambiguous when
 	// the shortcode is used more than once (e.g. desktop + mobile headers).
@@ -186,6 +213,20 @@ function render_account_menu( $args = array() ) {
 				<a class="tutor-sso-account__item" href="<?php echo esc_url( $account_url ); ?>">
 					<?php echo account_menu_icon( 'settings' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 					<span class="tutor-sso-account__label"><?php echo esc_html( $args['account_label'] ); ?></span>
+				</a>
+			<?php endif; ?>
+
+			<?php if ( '' !== $lms_url ) : ?>
+				<a class="tutor-sso-account__item" href="<?php echo esc_url( $lms_url ); ?>">
+					<?php echo account_menu_icon( 'lms' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+					<span class="tutor-sso-account__label"><?php echo esc_html( $args['lms_label'] ); ?></span>
+				</a>
+			<?php endif; ?>
+
+			<?php if ( '' !== $studio_url ) : ?>
+				<a class="tutor-sso-account__item" href="<?php echo esc_url( $studio_url ); ?>" target="_blank" rel="noopener">
+					<?php echo account_menu_icon( 'studio' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+					<span class="tutor-sso-account__label"><?php echo esc_html( $args['studio_label'] ); ?></span>
 				</a>
 			<?php endif; ?>
 
