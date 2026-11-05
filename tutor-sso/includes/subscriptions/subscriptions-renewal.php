@@ -475,26 +475,26 @@ function subscription_renew( $subscription_id ) {
 /**
  * The plan price a renewal charges, before tax.
  *
- * The sign-up order's line for the plan: what was agreed then, after any
- * coupon and without its tax. The subscription's stored amount is that order's
+ * Stored on the subscription at sign-up (net_amount): what was agreed then,
+ * after any coupon and without its tax. The stored amount is that order's
  * total, tax included, so building a renewal from it would tax the tax.
+ *
+ * Rows from before net_amount was stored read the sign-up order's plan line
+ * instead, and failing that the amount: those subscriptions were taken before
+ * tax was charged, so their total has no tax in it.
  *
  * @param array          $row    Subscription row.
  * @param \WC_Order|null $parent The sign-up order, when it still exists.
  * @return float
  */
 function subscription_renewal_net_price( $row, $parent ) {
-	if ( $parent ) {
-		foreach ( $parent->get_items() as $item ) {
-			if ( method_exists( $item, 'get_product_id' ) && (int) $item->get_product_id() === (int) $row['product_id'] ) {
-				return (float) $parent->get_line_total( $item, false, false );
-			}
-		}
+	if ( isset( $row['net_amount'] ) && '' !== (string) $row['net_amount'] ) {
+		return (float) $row['net_amount'];
 	}
 
-	// No sign-up order to read. Subscriptions taken before tax was charged
-	// stored a total with no tax in it, so it is the price itself.
-	return (float) $row['amount'];
+	$net = $parent ? subscription_order_net_price( $parent, (int) $row['product_id'] ) : null;
+
+	return null !== $net ? $net : (float) $row['amount'];
 }
 
 /**

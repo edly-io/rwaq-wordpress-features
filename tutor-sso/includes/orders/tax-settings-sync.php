@@ -21,8 +21,9 @@
  * change in one save, so the changes are collected and posted once, at the end
  * of the request.
  *
- * The endpoint is idempotent, so the last body the LMS accepted is remembered
- * and an unchanged one is not sent again. When a post fails, the next admin
+ * The endpoint is idempotent, so the last body the LMS accepted is remembered,
+ * together with the LMS it went to, and an unchanged one is not sent again;
+ * pointing the plugin at another LMS sends it there. When a post fails, the next admin
  * page load retries it (at most once an hour), so the LMS catches up without
  * anyone saving the settings twice. That same check sends the first copy after
  * this is deployed.
@@ -117,6 +118,16 @@ function tax_sync_payload() {
 }
 
 /**
+ * Fingerprint of a body sent to the current LMS, to tell whether it has it.
+ *
+ * @param string $body JSON body.
+ * @return string
+ */
+function tax_sync_hash( $body ) {
+	return md5( orders_api_base() . '|' . $body );
+}
+
+/**
  * Post the current tax settings to the LMS, unless it already has them.
  *
  * @return true|\WP_Error
@@ -133,7 +144,7 @@ function tax_sync_send() {
 	}
 
 	$body = wp_json_encode( $payload );
-	$hash = md5( $body );
+	$hash = tax_sync_hash( $body );
 
 	if ( get_option( TAX_SYNC_SENT_OPTION ) === $hash ) {
 		return true;
@@ -171,7 +182,8 @@ function tax_sync_send() {
 
 	$status = (int) wp_remote_retrieve_response_code( $response );
 
-	if ( 200 === $status ) {
+	// 200 saved; 201 too, in case the LMS reports a first save as created.
+	if ( 200 === $status || 201 === $status ) {
 		update_option( TAX_SYNC_SENT_OPTION, $hash, false );
 		return true;
 	}
@@ -254,7 +266,7 @@ function tax_sync_catch_up() {
 
 	$payload = tax_sync_payload();
 
-	if ( null === $payload || get_option( TAX_SYNC_SENT_OPTION ) === md5( wp_json_encode( $payload ) ) ) {
+	if ( null === $payload || get_option( TAX_SYNC_SENT_OPTION ) === tax_sync_hash( wp_json_encode( $payload ) ) ) {
 		return;
 	}
 
