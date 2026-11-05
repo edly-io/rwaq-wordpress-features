@@ -63,6 +63,7 @@ require_once TUTOR_SSO_PATH . 'includes/programs/programs-price-migration.php';
 require_once TUTOR_SSO_PATH . 'includes/programs/programs-admin-fields.php';
 require_once TUTOR_SSO_PATH . 'includes/programs/programs-order-enrollment.php';
 require_once TUTOR_SSO_PATH . 'includes/orders/orders-api.php';
+require_once TUTOR_SSO_PATH . 'includes/orders/tax-settings-sync.php';
 require_once TUTOR_SSO_PATH . 'includes/orders/order-course-links.php';
 require_once TUTOR_SSO_PATH . 'includes/orders/cart-styles.php';
 require_once TUTOR_SSO_PATH . 'includes/orders/menu-cart.php';
