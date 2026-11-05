@@ -184,6 +184,41 @@ function orders_api_coupons( $order, $items ) {
 }
 
 /**
+ * The tax the order was charged: its label and rate, as WooCommerce recorded
+ * them on the order at checkout.
+ *
+ * Read from the order's own tax line rather than the current tax settings, so
+ * renaming the tax or changing its rate later does not rewrite past orders.
+ * Only VAT is charged, so an order has at most one tax line; were there more,
+ * the first one's label and rate are sent, and the amounts stay complete.
+ *
+ * @param \WC_Order $order Order.
+ * @return array{label:?string,rate:?string} Both null when no tax was charged.
+ */
+function orders_api_tax_line( $order ) {
+	$none = array(
+		'label' => null,
+		'rate'  => null,
+	);
+
+	foreach ( $order->get_items( 'tax' ) as $tax ) {
+		$rate = method_exists( $tax, 'get_rate_percent' ) ? $tax->get_rate_percent() : null;
+
+		// Orders from before WooCommerce stored the percent on the line.
+		if ( ( null === $rate || '' === $rate ) && class_exists( '\WC_Tax' ) ) {
+			$rate = \WC_Tax::get_rate_percent_value( $tax->get_rate_id() );
+		}
+
+		return array(
+			'label' => (string) $tax->get_label(),
+			'rate'  => number_format( (float) $rate, 2, '.', '' ),
+		);
+	}
+
+	return $none;
+}
+
+/**
  * Build the payload for an order, or explain why it has nothing to send.
  *
  * @param \WC_Order $order Order.
@@ -221,16 +256,24 @@ function orders_api_payload( $order ) {
 		}
 
 		// Subtotal is before discounts, total after — their difference is this
-		// line's share of every coupon, product and cart alike.
+		// line's share of every coupon, product and cart alike. Both exclude
+		// tax, which is the line's own figure on top of the total.
 		$subtotal = (float) $order->get_line_subtotal( $item, false, false );
 		$total    = (float) $order->get_line_total( $item, false, false );
+		$tax      = method_exists( $item, 'get_total_tax' ) ? (float) $item->get_total_tax() : 0.0;
+
+		$net_amount = orders_api_money( $total );
+		$tax_amount = orders_api_money( $tax );
 
 		$items[] = array_merge(
 			$identifier,
 			array(
 				'actual_price'    => orders_api_money( $subtotal ),
 				'discount_amount' => orders_api_money( $subtotal - $total ),
-				'price_paid'      => orders_api_money( $total ),
+				'net_amount'      => $net_amount,
+				'tax_amount'      => $tax_amount,
+				// From the two rounded figures, so it always equals their sum.
+				'amount_paid'     => orders_api_money( (float) $net_amount + (float) $tax_amount ),
 			)
 		);
 	}
@@ -247,15 +290,23 @@ function orders_api_payload( $order ) {
 
 	// The order totals are the items' own sums, so they agree with the per-item
 	// figures the API checks them against.
-	$actual = 0.0;
-	$paid   = 0.0;
+	$sums = array(
+		'actual_price' => 0.0,
+		'net_amount'   => 0.0,
+		'tax_amount'   => 0.0,
+		'amount_paid'  => 0.0,
+	);
 
 	foreach ( $items as $row ) {
-		$actual += (float) $row['actual_price'];
-		$paid   += (float) $row['price_paid'];
+		foreach ( array_keys( $sums ) as $field ) {
+			$sums[ $field ] += (float) $row[ $field ];
+		}
 	}
 
-	$created = $order->get_date_created();
+	$tax_line = orders_api_tax_line( $order );
+	$created  = $order->get_date_created();
+
+	$transaction_id = trim( (string) $order->get_transaction_id() );
 
 	$payload = array(
 		'wordpress_order_id' => (string) $order->get_id(),
@@ -263,8 +314,16 @@ function orders_api_payload( $order ) {
 		'order_date'         => $created ? $created->date( 'c' ) : gmdate( 'c' ),
 		'status'             => 'completed',
 		'currency'           => (string) $order->get_currency(),
-		'actual_price'       => orders_api_money( $actual ),
-		'price_paid'         => orders_api_money( $paid ),
+		'transaction_id'     => '' !== $transaction_id ? $transaction_id : null,
+		'prices_include_tax' => (bool) $order->get_prices_include_tax(),
+		'totals'             => array(
+			'actual_price' => orders_api_money( $sums['actual_price'] ),
+			'net_amount'   => orders_api_money( $sums['net_amount'] ),
+			'tax_label'    => $tax_line['label'],
+			'tax_rate'     => $tax_line['rate'],
+			'tax_amount'   => orders_api_money( $sums['tax_amount'] ),
+			'amount_paid'  => orders_api_money( $sums['amount_paid'] ),
+		),
 		'items'              => $items,
 		'coupons'            => orders_api_coupons( $order, $items ),
 	);
