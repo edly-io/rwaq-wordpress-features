@@ -473,6 +473,31 @@ function subscription_renew( $subscription_id ) {
 }
 
 /**
+ * The plan price a renewal charges, before tax.
+ *
+ * Stored on the subscription at sign-up (net_amount): what was agreed then,
+ * after any coupon and without its tax. The stored amount is that order's
+ * total, tax included, so building a renewal from it would tax the tax.
+ *
+ * Rows from before net_amount was stored read the sign-up order's plan line
+ * instead, and failing that the amount: those subscriptions were taken before
+ * tax was charged, so their total has no tax in it.
+ *
+ * @param array          $row    Subscription row.
+ * @param \WC_Order|null $parent The sign-up order, when it still exists.
+ * @return float
+ */
+function subscription_renewal_net_price( $row, $parent ) {
+	if ( isset( $row['net_amount'] ) && '' !== (string) $row['net_amount'] ) {
+		return (float) $row['net_amount'];
+	}
+
+	$net = $parent ? subscription_order_net_price( $parent, (int) $row['product_id'] ) : null;
+
+	return null !== $net ? $net : (float) $row['amount'];
+}
+
+/**
  * Renew one subscription. Only called with the renewal lock held.
  *
  * @param int $subscription_id Row id.
@@ -541,7 +566,8 @@ function subscription_renew_locked( $subscription_id ) {
 		return;
 	}
 
-	$amount = (float) $row['amount'];
+	$parent = wc_get_order( (int) $row['parent_order_id'] );
+	$net    = subscription_renewal_net_price( $row, $parent );
 
 	$order = wc_create_order(
 		array(
@@ -556,14 +582,24 @@ function subscription_renew_locked( $subscription_id ) {
 	}
 
 	// The price agreed at sign-up, not today's — a plan whose price changes
-	// should not silently re-price everyone already on it.
-	$order->add_product( $product, 1, array( 'subtotal' => $amount, 'total' => $amount ) );
+	// should not silently re-price everyone already on it. Before tax: the tax
+	// is added below, at the rate in force now.
+	$order->add_product( $product, 1, array( 'subtotal' => $net, 'total' => $net ) );
 	$order->set_currency( (string) $row['currency'] );
+
+	// The sign-up's billing address: WooCommerce taxes by it (and falls back
+	// to the store's country without one), and the invoice shows it.
+	if ( $parent ) {
+		$order->set_address( $parent->get_address( 'billing' ), 'billing' );
+	}
 
 	// The object, not the id: given a string WooCommerce sets the method but
 	// leaves the title empty, and the orders list shows "Unknown" for it.
 	$order->set_payment_method( $gateway );
-	$order->calculate_totals( false );
+	$order->calculate_totals( true );
+
+	// What the gateway charges: the price plus its tax.
+	$amount = (float) $order->get_total();
 
 	// Origin column. update, not add: renewed from the admin button,
 	// WooCommerce has already stamped "admin" on this order while creating it.

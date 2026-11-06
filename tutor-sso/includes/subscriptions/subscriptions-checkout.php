@@ -68,6 +68,25 @@ function subscription_order_product_id( $order ) {
 }
 
 /**
+ * The plan's price on an order, before tax: its line total, after any coupon.
+ *
+ * Stored on the subscription at sign-up and charged (plus tax) on renewal.
+ *
+ * @param \WC_Order $order      Order.
+ * @param int       $product_id Plan product ID.
+ * @return float|null Null when the order has no line for the plan.
+ */
+function subscription_order_net_price( $order, $product_id ) {
+	foreach ( $order->get_items() as $item ) {
+		if ( method_exists( $item, 'get_product_id' ) && (int) $item->get_product_id() === (int) $product_id ) {
+			return (float) $order->get_line_total( $item, false, false );
+		}
+	}
+
+	return null;
+}
+
+/**
  * Record a paid subscription order.
  *
  * Idempotent on the order's own record: both status hooks fire for an order
@@ -130,6 +149,7 @@ function subscription_capture_order( $order_id ) {
 			'status'          => 'active',
 			'period'          => $plan,
 			'amount'          => (float) $order->get_total(),
+			'net_amount'      => subscription_order_net_price( $order, $product_id ),
 			'currency'        => (string) $order->get_currency(),
 			'gateway_id'      => (string) $order->get_payment_method(),
 			'token_id'        => 0,
@@ -138,7 +158,7 @@ function subscription_capture_order( $order_id ) {
 			'failure_count'   => 0,
 			'created_at'      => gmdate( 'Y-m-d H:i:s' ),
 		),
-		array( '%s', '%d', '%d', '%d', '%s', '%s', '%f', '%s', '%s', '%d', '%s', '%s', '%d', '%s' )
+		array( '%s', '%d', '%d', '%d', '%s', '%s', '%f', '%f', '%s', '%s', '%d', '%s', '%s', '%d', '%s' )
 	);
 
 	if ( ! $inserted ) {
