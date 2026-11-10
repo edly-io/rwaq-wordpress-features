@@ -44,7 +44,7 @@
 			perPage: parseInt( $root.data( 'per-page' ), 10 ) || 6,
 			detailBase: $root.data( 'detail-base' ) || 'program',
 			search: '',
-			ordering: $sort.length ? $sort.val() : ( $root.data( 'default-sort' ) || '' ),
+			ordering: serverSort( $sort, String( $root.data( 'default-sort' ) || '' ) ),
 			filters: { org: [], featured: '', pricing: [] },
 			hasMore: toBool( $root.data( 'has-more' ) ),
 			loading: false
@@ -350,6 +350,47 @@
 			$btn.attr( 'aria-expanded', expanded ? 'false' : 'true' )
 				.text( expanded ? ( $btn.data( 'more-text' ) || '' ) : ( i18n.showLess || '' ) );
 		} );
+
+		// ── Back / forward navigation ───────────────────────────────────────────
+		// Coming back to this page, the browser restores the ticked filters and
+		// the chosen sort, but the grid is the server's unfiltered first page and
+		// the state above starts empty. Re-read the controls and reload whenever
+		// they no longer match what the grid shows. Run at start-up and again on
+		// pageshow, since browsers restore form fields at different moments; from
+		// the back/forward cache everything still matches, so nothing reloads.
+		function syncFromControls() {
+			var filters = readFilters();
+			var ordering = $sort.length ? String( $sort.val() ) : state.ordering;
+			var search = $search.length ? $.trim( $search.val() ) : state.search;
+
+			if ( JSON.stringify( filters ) === JSON.stringify( state.filters ) && ordering === state.ordering && search === state.search ) {
+				return;
+			}
+
+			state.filters = filters;
+			state.ordering = ordering;
+			state.search = search;
+			renderChips();
+			renderSortUI();
+			load( true );
+		}
+
+		syncFromControls();
+		$( window ).on( 'pageshow', syncFromControls );
+	}
+
+	// The sort the server rendered the grid with: the option marked selected in
+	// the markup, not the browser-restored value.
+	function serverSort( $sort, fallback ) {
+		var $option = $sort.find( 'option' ).filter( function () {
+			return this.defaultSelected;
+		} ).first();
+
+		if ( ! $option.length ) {
+			$option = $sort.find( 'option' ).first();
+		}
+
+		return $option.length ? String( $option.val() ) : fallback;
 	}
 
 	function toBool( value ) {
