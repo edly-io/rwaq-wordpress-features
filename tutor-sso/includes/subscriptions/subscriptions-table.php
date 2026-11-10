@@ -29,7 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Bump when the schema below changes, so dbDelta runs again.
  */
-const SUBSCRIPTIONS_DB_VERSION = '4';
+const SUBSCRIPTIONS_DB_VERSION = '5';
 
 /**
  * Option holding the installed schema version.
@@ -86,6 +86,10 @@ function subscriptions_install_table() {
 	// next_payment_at is only when the next charge is attempted: a day before
 	// paid_until normally (subscription_charge_at()), the retry date while a
 	// payment is failing, and cleared on cancel.
+	//
+	// amount is the sign-up total, tax included, as shown to the customer.
+	// net_amount is the plan price before tax that renewals charge (plus tax at
+	// the current rate); NULL on rows from before it was stored.
 	$sql = "CREATE TABLE {$table} (
 		id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 		external_id varchar(64) DEFAULT NULL,
@@ -95,6 +99,7 @@ function subscriptions_install_table() {
 		status varchar(20) NOT NULL DEFAULT 'active',
 		period varchar(20) NOT NULL DEFAULT 'monthly',
 		amount decimal(19,4) NOT NULL DEFAULT 0.0000,
+		net_amount decimal(19,4) DEFAULT NULL,
 		currency char(3) NOT NULL DEFAULT '',
 		gateway_id varchar(100) NOT NULL DEFAULT '',
 		token_id bigint(20) unsigned NOT NULL DEFAULT 0,
