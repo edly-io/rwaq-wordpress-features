@@ -182,6 +182,12 @@
 	color: var(--rwaq-plans-muted);
 }
 
+/* Business card: words instead of a figure, so smaller than a price. */
+.rwaq-plans .rwaq-plan__price--custom .rwaq-plan__amount {
+	font-size: 36px;
+	line-height: 1.2;
+}
+
 .rwaq-plans .rwaq-plan__was {
 	font-size: 14px;
 	line-height: 20px;
@@ -332,5 +338,9 @@
 
 	.rwaq-plans .rwaq-plan__amount {
 		font-size: 52px;
+	}
+
+	.rwaq-plans .rwaq-plan__price--custom .rwaq-plan__amount {
+		font-size: 32px;
 	}
 }

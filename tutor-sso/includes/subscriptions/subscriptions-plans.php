@@ -9,6 +9,8 @@
  *
  * The plans themselves are the Subscription products: one card each, grouped by
  * billing period, with a monthly / yearly toggle that shows one group at a time.
+ * A last "for businesses" tab is always there, with one card whose button goes
+ * to the contact page (subscription_plans_business()).
  * The same block is available anywhere as [rwaq_subscription_plans].
  *
  * Each card's text comes from its product: name, short description, price,
@@ -367,6 +369,80 @@ function subscription_plans_render_card( $product, $period, $active_plan ) {
 }
 
 /**
+ * Key of the business tab, alongside the billing periods.
+ */
+const SUBSCRIPTION_PLANS_BUSINESS = 'business';
+
+/**
+ * The business card's text and link.
+ *
+ * Not a product: there is nothing to buy, the button leads to the contact page.
+ * Everything can be changed with the `tutor_sso_business_plan` filter;
+ * `features` is a list of strings, shown like a plan's features.
+ *
+ * @return array{tab:string,name:string,description:string,price:string,cta:string,url:string,features:string[]}
+ */
+function subscription_plans_business() {
+	$plan = array(
+		'tab'         => __( 'للشركات', 'tutor-sso' ),
+		'name'        => __( 'باقة الشركات', 'tutor-sso' ),
+		'description' => __( 'حلول تعلّم لفريقك أو مؤسستك. تواصل معنا لنصمّم باقة تناسب احتياجاتكم.', 'tutor-sso' ),
+		'price'       => __( 'سعر مخصّص', 'tutor-sso' ),
+		'cta'         => __( 'تواصل معنا', 'tutor-sso' ),
+		'url'         => home_url( '/contact/' ),
+		'features'    => array(),
+	);
+
+	/**
+	 * Filter the business card on the plans page.
+	 *
+	 * @param array $plan tab, name, description, price, cta, url, features.
+	 */
+	return wp_parse_args( (array) apply_filters( 'tutor_sso_business_plan', $plan ), $plan );
+}
+
+/**
+ * The business card.
+ *
+ * @param array $plan From subscription_plans_business().
+ * @return string HTML.
+ */
+function subscription_plans_render_business_card( $plan ) {
+	$features = array_filter( array_map( 'trim', array_map( 'strval', (array) $plan['features'] ) ) );
+
+	ob_start();
+	?>
+	<article class="rwaq-plan rwaq-plan--business">
+		<h3 class="rwaq-plan__name"><?php echo esc_html( $plan['name'] ); ?></h3>
+
+		<?php if ( '' !== trim( (string) $plan['description'] ) ) : ?>
+			<p class="rwaq-plan__desc"><?php echo esc_html( $plan['description'] ); ?></p>
+		<?php endif; ?>
+
+		<p class="rwaq-plan__price rwaq-plan__price--custom">
+			<span class="rwaq-plan__amount"><?php echo esc_html( $plan['price'] ); ?></span>
+		</p>
+
+		<a class="rwaq-plan__cta" href="<?php echo esc_url( $plan['url'] ); ?>"><?php echo esc_html( $plan['cta'] ); ?></a>
+
+		<?php if ( ! empty( $features ) ) : ?>
+			<hr class="rwaq-plan__divider" />
+			<h4 class="rwaq-plan__features-title"><?php esc_html_e( 'ماذا تشمل الباقة', 'tutor-sso' ); ?></h4>
+			<ul class="rwaq-plan__features">
+				<?php foreach ( $features as $feature ) : ?>
+					<li>
+						<span class="rwaq-plan__check"><?php echo subscription_plans_check_icon(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static SVG. ?></span>
+						<span><?php echo esc_html( $feature ); ?></span>
+					</li>
+				<?php endforeach; ?>
+			</ul>
+		<?php endif; ?>
+	</article>
+	<?php
+	return (string) ob_get_clean();
+}
+
+/**
  * Whether the block has rendered on this request.
  *
  * Lets the page template add the plans after the page content only when the
@@ -416,11 +492,11 @@ function subscription_plans_shortcode( $atts = array() ) {
 	// else, where the page will already have its own h1.
 	$heading_tag = subscription_plans_is_template_page() ? 'h1' : 'h2';
 
-	$groups = subscription_plans_by_period();
+	// The business tab is always there, last, even when no plan is on sale.
+	$business = subscription_plans_business();
+	$groups   = subscription_plans_by_period();
 
-	if ( empty( $groups ) ) {
-		return '';
-	}
+	$groups[ SUBSCRIPTION_PLANS_BUSINESS ] = array();
 
 	subscription_plans_rendered( true );
 	wp_enqueue_style( SUBSCRIPTION_PLANS_ASSET );
@@ -429,6 +505,8 @@ function subscription_plans_shortcode( $atts = array() ) {
 	// Yearly first when there are yearly plans, as the design opens on it.
 	$default = isset( $groups['yearly'] ) ? 'yearly' : (string) array_key_first( $groups );
 	$labels  = subscription_periods();
+
+	$labels[ SUBSCRIPTION_PLANS_BUSINESS ] = $business['tab'];
 	$active  = is_user_logged_in() && function_exists( __NAMESPACE__ . '\\subscription_user_active_product' )
 		? subscription_user_active_product( get_current_user_id() )
 		: 0;
@@ -480,6 +558,10 @@ function subscription_plans_shortcode( $atts = array() ) {
 				<?php echo $period === $default ? '' : 'hidden'; ?>
 			>
 				<?php
+				if ( SUBSCRIPTION_PLANS_BUSINESS === $period ) {
+					echo subscription_plans_render_business_card( $business ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped within.
+				}
+
 				foreach ( $products as $product ) {
 					echo subscription_plans_render_card( $product, $period, (int) $active ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped within.
 				}
