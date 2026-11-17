@@ -137,13 +137,14 @@ function program_change_enrollment( $program_key, $action ) {
  * after they unenroll — so a buyer can re-enroll without paying again.
  *
  * @param string $program_key Program key.
- * @return array{enrolled:bool,has_paid_access:bool,subscription_ends_at:string}|\WP_Error
+ * @return array{enrolled:bool,has_paid_access:bool,enrollment_code_access:bool,subscription_ends_at:string}|\WP_Error
  */
 function program_enroll_status( $program_key ) {
 	$none = array(
-		'enrolled'             => false,
-		'has_paid_access'      => false,
-		'subscription_ends_at' => '',
+		'enrolled'               => false,
+		'has_paid_access'        => false,
+		'enrollment_code_access' => false,
+		'subscription_ends_at'   => '',
 	);
 
 	$base = enroll_lms_base_url();
@@ -190,12 +191,15 @@ function program_enroll_status( $program_key ) {
 		);
 	}
 
-	// { program_key, is_active, enrollment_date, completion_date, has_paid_access }
+	// { program_key, is_active, enrollment_date, completion_date, has_paid_access, enrollment_code_access }
 	return array(
 		'enrolled'              => ! empty( $body['is_active'] ),
 		// True when the learner bought this, and also while a subscription
 		// covering it is live.
 		'has_paid_access'       => ! empty( $body['has_paid_access'] ),
+		// Enrollment-code programs only: true once the learner has used a code
+		// that covers this program, so they may join with no code.
+		'enrollment_code_access' => ! empty( $body['enrollment_code_access'] ),
 		// For display only; decisions are made on has_paid_access alone.
 		'subscription_ends_at'  => isset( $body['subscription_ends_at'] ) ? (string) $body['subscription_ends_at'] : '',
 	);

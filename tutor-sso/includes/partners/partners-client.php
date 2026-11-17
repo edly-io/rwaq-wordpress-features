@@ -500,12 +500,33 @@ function partners_fetch( $page = 1, $per_page = 24, $args = array() ) {
 const PARTNER_DETAIL_ENDPOINT = '/rwaq/api/organizations/public/';
 
 /**
+ * The partner page's listing type, from its URL: `?type=enrollment_code`.
+ *
+ * The QR code for an organization's enrollment code opens the partner page with
+ * it, to list only that organization's enrollment-code courses and programs —
+ * hidden ones included. Anything else is the normal page.
+ *
+ * @return string 'enrollment_code', or ''.
+ */
+function partner_request_type() {
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only listing filter.
+	$type = isset( $_GET['type'] ) ? sanitize_key( wp_unslash( $_GET['type'] ) ) : '';
+
+	return 'enrollment_code' === $type ? $type : '';
+}
+
+/**
  * Fetch one organization's raw detail object by LMS id.
  *
- * @param int $lms_id Organization id on the LMS.
+ * With `$type = 'enrollment_code'` the API lists only the organization's
+ * enrollment-code courses and programs (hidden ones included); without it, it
+ * leaves them out.
+ *
+ * @param int    $lms_id Organization id on the LMS.
+ * @param string $type   '' or 'enrollment_code'.
  * @return array|\WP_Error Raw API object, or WP_Error on failure.
  */
-function partner_fetch_detail( $lms_id ) {
+function partner_fetch_detail( $lms_id, $type = '' ) {
 	$lms_id = (int) $lms_id;
 
 	if ( $lms_id <= 0 ) {
@@ -522,6 +543,11 @@ function partner_fetch_detail( $lms_id ) {
 	}
 
 	$url = $base . PARTNER_DETAIL_ENDPOINT . $lms_id . '/';
+
+	// Part of the URL, so of the cache key too: the two listings cache apart.
+	if ( 'enrollment_code' === $type ) {
+		$url = add_query_arg( 'type', 'enrollment_code', $url );
+	}
 
 	$body = partners_request( $url, partners_cache_key( $url ) );
 
@@ -581,14 +607,15 @@ function partners_map_instructor_card( $row, $partner ) {
  * `tutor_sso_partner_detail_source` is a short-circuit seam: return an array
  * from it to bypass the request entirely.
  *
- * @param int $lms_id Organization id on the LMS.
+ * @param int    $lms_id Organization id on the LMS.
+ * @param string $type   '' or 'enrollment_code' (see partner_fetch_detail()).
  * @return array{
  *     name:string, logo:string, bio:string, bio_html:string, stats:array[],
  *     totals:array{courses:int,programs:int,instructors:int},
  *     programs:array[], courses:array[], instructors:array[], error:string
  * }
  */
-function partner_fetch( $lms_id ) {
+function partner_fetch( $lms_id, $type = '' ) {
 	$empty = array(
 		'name'        => '',
 		'logo'        => '',
@@ -611,7 +638,7 @@ function partner_fetch( $lms_id ) {
 		return wp_parse_args( $external, $empty );
 	}
 
-	$body = partner_fetch_detail( $lms_id );
+	$body = partner_fetch_detail( $lms_id, $type );
 
 	if ( is_wp_error( $body ) ) {
 		$empty['error'] = $body->get_error_message();

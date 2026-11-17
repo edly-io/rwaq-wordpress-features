@@ -19,6 +19,16 @@
 		}, $wrap.data( 'enroll-message' ) );
 	} );
 
+	// ── Enrolled with a code (enrollment-code.js) ──────────────────────────────
+	$( document ).on( 'tutorsso:code-redeemed', '.tutor-sso-enroll-wrap', function ( e, data ) {
+		var $wrap = $( this );
+
+		$wrap.find( '.tutor-sso-enroll-message' ).first()
+			.removeClass( 'tutor-sso-enroll-message--error' )
+			.text( $wrap.data( 'enroll-message' ) || ( data && data.message ) || '' );
+		swapToEnrolled( $wrap, data || {} );
+	} );
+
 	// ── Unenroll ────────────────────────────────────────────────────────────────
 	$( document ).on( 'click', '.tutor-sso-unenroll', function ( e ) {
 		e.preventDefault();

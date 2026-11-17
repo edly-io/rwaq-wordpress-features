@@ -76,6 +76,8 @@ function render_enroll_button( $course_id, $args = array() ) {
 		'unenroll_message' => '', // Shown on successful unenroll; blank = server default.
 		'show_unenroll'    => true,
 		'show_goto'        => true,
+		// Enroll opens the enrollment-code form instead (enrollment-code.php).
+		'code_required'    => false,
 	);
 	$args = wp_parse_args( $args, $defaults );
 
@@ -129,6 +131,8 @@ function render_enroll_button( $course_id, $args = array() ) {
 					<?php echo esc_html( $args['unenroll_label'] ); ?>
 				</button>
 			<?php endif; ?>
+		<?php elseif ( ! empty( $args['code_required'] ) ) : ?>
+			<?php echo enrollment_code_button( 'course', $course_id, 'tutor-sso-enroll-btn tutor-sso-enroll-btn--enroll', $args['enroll_label'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped within. ?>
 		<?php else : ?>
 			<button type="button" class="tutor-sso-enroll-btn tutor-sso-enroll-btn--enroll tutor-sso-enroll">
 				<?php echo esc_html( $args['enroll_label'] ); ?>

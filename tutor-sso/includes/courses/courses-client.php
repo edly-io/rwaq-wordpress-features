@@ -394,6 +394,8 @@ function courses_normalize_course( $row ) {
 		// Subscription content has no price; the card says so instead.
 		'subscription' => sso_is_part_of_subscription( $row ),
 		'program_only' => sso_is_program_only( $row ),
+		// Free, but joined with a code: the card shows a lock instead of "free".
+		'enrollment_code' => sso_is_enrollment_code( $row ),
 		'regular'    => isset( $row['regular_price'] ) ? trim( (string) $row['regular_price'] ) : '',
 		'sale'       => isset( $row['sale_price'] ) ? trim( (string) $row['sale_price'] ) : '',
 		'discount'   => isset( $row['discount_percentage'] ) ? $row['discount_percentage'] : null,

@@ -93,6 +93,58 @@ function sso_render_subscription_price_html( $base_class ) {
 }
 
 /**
+ * Whether a course or program from the LMS API is joined with an enrollment code.
+ *
+ * The API marks it twice — `pricing_category: "is_enrollment_code"` and a
+ * boolean `is_enrollment_code` (detail endpoints) — either is enough. Such an
+ * item is free, with no price (regular/sale are ""), but a learner needs a code
+ * from the organization to join it.
+ *
+ * @param array $row Course or program object from the API.
+ * @return bool
+ */
+function sso_is_enrollment_code( $row ) {
+	if ( ! is_array( $row ) ) {
+		return false;
+	}
+
+	if ( ! empty( $row['is_enrollment_code'] ) ) {
+		return true;
+	}
+
+	$category = isset( $row['pricing_category'] ) ? strtolower( trim( (string) $row['pricing_category'] ) ) : '';
+
+	return 'is_enrollment_code' === $category;
+}
+
+/**
+ * The lock shown on cards and buttons of enrollment-code items.
+ *
+ * @return string SVG markup.
+ */
+function sso_lock_icon() {
+	return '<svg class="rwaq-lock-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="10.5" width="16" height="10.5" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>';
+}
+
+/**
+ * A card's price line for an enrollment-code item: a lock and "يتطلّب رمز تسجيل".
+ *
+ * Same markup shape as the subscription and program-only lines, with its own
+ * modifier class.
+ *
+ * @param string $base_class e.g. 'rwaq-course-card__price'.
+ * @return string HTML.
+ */
+function sso_render_enrollment_code_price_html( $base_class ) {
+	$base_class = (string) $base_class;
+
+	return '<p class="' . esc_attr( $base_class ) . ' ' . esc_attr( $base_class ) . '--enrollment-code">'
+		. sso_lock_icon()
+		. '<span>' . esc_html__( 'يتطلّب رمز تسجيل', 'tutor-sso' ) . '</span>'
+		. '</p>';
+}
+
+/**
  * Whether a course from the LMS API can only be taken through its program.
  *
  * `pricing_category: "is_program_only"`. Such a course has no price of its own
