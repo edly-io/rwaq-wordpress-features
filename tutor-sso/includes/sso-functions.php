@@ -41,11 +41,12 @@ function sso_option( $key, $default = '' ) {
  */
 function sso_pricing_label( $value, $fallback = '' ) {
 	$labels = array(
-		'free'         => __( 'مجاني', 'tutor-sso' ),
-		'paid'         => __( 'مدفوع', 'tutor-sso' ),
-		'program_only' => __( 'جزء من برنامج', 'tutor-sso' ),
+		'free'            => __( 'مجاني', 'tutor-sso' ),
+		'paid'            => __( 'مدفوع', 'tutor-sso' ),
+		'program_only'    => __( 'جزء من برنامج', 'tutor-sso' ),
 		// The filters API's own label is "Is part of Subscription".
-		'subscription' => __( 'ضمن الاشتراك', 'tutor-sso' ),
+		'subscription'    => __( 'ضمن الاشتراك', 'tutor-sso' ),
+		'enrollment_code' => __( 'يتطلّب رمز تسجيل', 'tutor-sso' ),
 	);
 
 	$value = (string) $value;
