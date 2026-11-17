@@ -331,16 +331,17 @@ function program_detail_program_url($program)
  * The current user's enrollment state for a program, asked once per render.
  *
  * @param string $program_key Program key.
- * @return array{enrolled:bool,has_paid_access:bool,subscription_ends_at:string}
+ * @return array{enrolled:bool,has_paid_access:bool,enrollment_code_access:bool,subscription_ends_at:string}
  */
 function program_detail_status($program_key)
 {
 	static $cache = array();
 
 	$none = array(
-		'enrolled'             => false,
-		'has_paid_access'      => false,
-		'subscription_ends_at' => '',
+		'enrolled'               => false,
+		'has_paid_access'        => false,
+		'enrollment_code_access' => false,
+		'subscription_ends_at'   => '',
 	);
 
 	if (! is_user_logged_in()) {
@@ -363,6 +364,8 @@ function program_detail_status($program_key)
  * Order matters, each step outranking the ones below it:
  *
  *   enrolled    already in the program — send them to it
+ *   enrollment_code  enroll once a code covers it (enrollment_code_access);
+ *                    otherwise enroll opens the code form
  *   has_paid_access  bought it, or a live subscription covers it, so enrolling
  *                    is free even after unenrolling
  *   paid        sell it
@@ -372,11 +375,33 @@ function program_detail_status($program_key)
  * @param string $program_key Program key.
  * @param string $program_url Learner program URL, shown once enrolled.
  * @param bool   $paid        Whether the LMS sells this program.
+ * @param bool   $part_of_subscription Whether a subscription plan unlocks it.
+ * @param bool   $enrollment_code      Whether joining needs an enrollment code.
  * @return string HTML.
  */
-function program_detail_call_to_action($post_id, $program_key, $program_url = '', $paid = false, $part_of_subscription = false)
+function program_detail_call_to_action($post_id, $program_key, $program_url = '', $paid = false, $part_of_subscription = false, $enrollment_code = false)
 {
 	$post_id = (int) $post_id;
+
+	// Enrollment-code program: free, but the first join needs a code. Once the
+	// learner has used a code that covers it — this program's own, or its
+	// organization's — enrollment_code_access is true and enroll is ordinary.
+	if ($enrollment_code) {
+		// Guests get the usual login button, which brings them back here.
+		if (! is_user_logged_in()) {
+			return program_detail_enroll_button($program_key, $program_url);
+		}
+
+		$status = program_detail_status($program_key);
+
+		return program_detail_enroll_button(
+			$program_key,
+			$program_url,
+			// Paid for, or a code already covers it: an ordinary enroll.
+			! $status['enrolled'] && empty($status['has_paid_access']) && empty($status['enrollment_code_access']),
+			$status['enrolled']
+		);
+	}
 
 	// Subscription content: there is no product to buy. A subscriber (or anyone
 	// already enrolled) joins as usual; anyone else is pointed at the plans —
@@ -462,10 +487,14 @@ function program_detail_render_buy_button($product_id, $args = array())
  * design's `.rwaq-pd__enroll` styling.
  *
  * @param string $program_key Program key (program-v1:Org+Program+Run).
- * @param string $program_url Learner program URL, shown once enrolled (optional).
+ * @param string $program_url   Learner program URL, shown once enrolled (optional).
+ * @param bool   $code_required Enroll opens the enrollment-code form instead
+ *                              (enrollment-code.php).
+ * @param bool   $enrolled      Known enrollment state, to skip a status call;
+ *                              null asks the LMS.
  * @return string HTML, or '' when no key is available.
  */
-function program_detail_enroll_button($program_key, $program_url = '')
+function program_detail_enroll_button($program_key, $program_url = '', $code_required = false, $enrolled = null)
 {
 	$program_key = trim((string) $program_key);
 
@@ -496,8 +525,12 @@ function program_detail_enroll_button($program_key, $program_url = '')
 		tutor_sso_program_enroll_enqueue_assets();
 	}
 
-	$status      = program_is_enrolled($program_key);
-	$is_enrolled = (true === $status); // WP_Error → treat as not enrolled.
+	if (null !== $enrolled) {
+		$is_enrolled = (bool) $enrolled;
+	} else {
+		$status      = program_is_enrolled($program_key);
+		$is_enrolled = (true === $status); // WP_Error → treat as not enrolled.
+	}
 
 	ob_start();
 ?>
@@ -513,6 +546,8 @@ function program_detail_enroll_button($program_key, $program_url = '')
 				<a class="rwaq-pd__enroll rwaq-pd__enroll--goto" href="<?php echo esc_url($program_url); ?>"><?php echo esc_html($goto_label); ?></a>
 			<?php endif; ?>
 			<button type="button" class="rwaq-pd__enroll rwaq-pd__enroll--unenroll rwaq-program-unenroll"><?php echo esc_html($unenroll_label); ?></button>
+		<?php elseif ($code_required) : ?>
+			<?php echo enrollment_code_button('program', $program_key, 'rwaq-pd__enroll', $enroll_label); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped within. ?>
 		<?php else : ?>
 			<button type="button" class="rwaq-pd__enroll rwaq-program-enroll"><?php echo esc_html($enroll_label); ?></button>
 		<?php endif; ?>
@@ -727,7 +762,8 @@ function program_detail_render($program, $program_key = '')
 							$program_key,
 							program_detail_program_url($program),
 							$program_paid,
-							sso_is_part_of_subscription($program)
+							sso_is_part_of_subscription($program),
+							sso_is_enrollment_code($program)
 						);
 						?>
 

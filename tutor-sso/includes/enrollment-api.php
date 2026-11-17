@@ -283,7 +283,7 @@ function enroll_change_enrollment( $course_id, $action ) {
  * buyer can re-enroll without paying again.
  *
  * @param string $course_id edX course id.
- * @return array{enrolled:bool,has_paid_access:bool,subscription_ends_at:string}|\WP_Error
+ * @return array{enrolled:bool,has_paid_access:bool,enrollment_code_access:bool,subscription_ends_at:string}|\WP_Error
  */
 function enroll_status( $course_id ) {
 	$base = enroll_lms_base_url();
@@ -294,9 +294,10 @@ function enroll_status( $course_id ) {
 
 	if ( ! enroll_has_edx_session() ) {
 		return array(
-			'enrolled'             => false,
-			'has_paid_access'      => false,
-			'subscription_ends_at' => '',
+			'enrolled'               => false,
+			'has_paid_access'        => false,
+			'enrollment_code_access' => false,
+			'subscription_ends_at'   => '',
 		);
 	}
 
@@ -341,6 +342,9 @@ function enroll_status( $course_id ) {
 		// True when the learner bought this, and also while a subscription
 		// covering it is live.
 		'has_paid_access'       => ! empty( $body['has_paid_access'] ),
+		// Enrollment-code courses only: true once the learner has used a code
+		// that covers this course, so they may join with no code.
+		'enrollment_code_access' => ! empty( $body['enrollment_code_access'] ),
 		// For display only; decisions are made on has_paid_access alone.
 		'subscription_ends_at'  => isset( $body['subscription_ends_at'] ) ? (string) $body['subscription_ends_at'] : '',
 	);
