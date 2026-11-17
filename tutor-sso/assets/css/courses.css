@@ -740,6 +740,19 @@
 	font-weight: 600;
 }
 
+/* Enrollment-code content: a lock and "يتطلّب رمز تسجيل", in the brand colour. */
+.rwaq-course-card__price--enrollment-code {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	color: #565199;
+	font-weight: 600;
+}
+
+.rwaq-course-card__price--enrollment-code .rwaq-lock-icon {
+	flex: none;
+}
+
 .rwaq-course-card__price-now {
 	font-weight: 600;
 	color: var(--rwaq-heading);

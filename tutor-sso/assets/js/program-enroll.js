@@ -19,6 +19,14 @@
 		} );
 	} );
 
+	// ── Enrolled with a code (enrollment-code.js) ──────────────────────────
+	$( document ).on( 'tutorsso:code-redeemed', '.rwaq-pd__enroll-wrap', function ( e, data ) {
+		var $wrap = $( this );
+
+		$wrap.find( '.rwaq-pd__enroll-message' ).first().text( ( data && data.message ) || '' );
+		swapToEnrolled( $wrap );
+	} );
+
 	// ── Unenroll ────────────────────────────────────────────────────────────
 	$( document ).on( 'click', '.rwaq-program-unenroll', function ( e ) {
 		e.preventDefault();

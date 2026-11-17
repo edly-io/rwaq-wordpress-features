@@ -154,7 +154,10 @@ function partner_icon( $name ) {
 function partner_detail_data( $post_id ) {
 	$lms_id = (int) partner_field( $post_id, PARTNER_LMS_ID_FIELD );
 
-	$remote = partner_fetch( $lms_id );
+	// The enrollment-code QR link (?type=enrollment_code): the API then lists
+	// only the organization's enrollment-code programs and courses (hidden ones
+	// included), shown in the usual sections.
+	$remote = partner_fetch( $lms_id, partner_request_type() );
 
 	// Fall back to the WordPress post for the two fields it can supply itself, so
 	// a failed request still renders a recognisable page.

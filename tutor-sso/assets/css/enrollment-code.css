@@ -1,0 +1,72 @@
+/**
+ * Enrollment-code form (assets/js/enrollment-code.js).
+ *
+ * The dialog itself reuses confirm-dialog.css (.rwaq-confirm); this adds the
+ * code field, its error line, and the lock on the button that opens it.
+ */
+
+.rwaq-code-dialog .rwaq-code-dialog__input {
+	box-sizing: border-box;
+	display: block;
+	width: 100%;
+	min-height: 44px;
+	margin: 16px 0 0;
+	padding: 10px 14px;
+	border: 1px solid #d1d1d1;
+	border-radius: 8px;
+	background: #fff;
+	color: #242424;
+	font: inherit;
+	font-size: 16px;
+	line-height: 22px;
+	letter-spacing: 0.04em;
+	text-align: left;
+	box-shadow: none;
+}
+
+.rwaq-code-dialog .rwaq-code-dialog__input::placeholder {
+	color: #8a8a8a;
+	letter-spacing: normal;
+	text-align: right;
+}
+
+.rwaq-code-dialog .rwaq-code-dialog__input:focus {
+	border-color: #565199;
+	outline: 2px solid rgba(86, 81, 153, 0.25);
+	outline-offset: 0;
+}
+
+.rwaq-code-dialog .rwaq-code-dialog__input[aria-invalid="true"] {
+	border-color: #b42318;
+}
+
+.rwaq-code-dialog .rwaq-code-dialog__error {
+	margin: 8px 0 0;
+	font-size: 14px;
+	line-height: 20px;
+	color: #b42318;
+}
+
+.rwaq-code-dialog .rwaq-code-dialog__error[hidden] {
+	display: none;
+}
+
+.rwaq-code-dialog .rwaq-confirm__btn:disabled {
+	opacity: 0.7;
+	cursor: progress;
+}
+
+/* The button that opens the form: the usual enroll button, with a lock. Flex
+   rather than the program button's block, so the lock sits beside the label;
+   still block-level, so the button keeps its full width. */
+.tutor-sso-enroll-btn.rwaq-enrollment-code-open,
+.rwaq-pd__enroll.rwaq-enrollment-code-open {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+}
+
+.rwaq-enrollment-code-open .rwaq-lock-icon {
+	flex: none;
+}

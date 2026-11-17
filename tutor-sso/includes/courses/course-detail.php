@@ -458,7 +458,8 @@ function course_render_enroll_card( $data ) {
 				$part_of_program,
 				isset( $data['program_url'] ) ? (string) $data['program_url'] : '',
 				! empty( $data['enrollment_closed'] ),
-				! empty( $data['part_of_subscription'] )
+				! empty( $data['part_of_subscription'] ),
+				! empty( $data['enrollment_code'] )
 			);
 		}
 		?>
@@ -482,6 +483,9 @@ function course_render_enroll_card( $data ) {
  *                                   it — enroll, never charge twice
  *   part_of_subscription            a live subscription enrolls; otherwise a
  *                                   "subscribe" notice, never a buy button
+ *   enrollment_code                 enroll once a code covers it
+ *                                   (enrollment_code_access); otherwise enroll
+ *                                   opens the code form
  *   enrollment_closed               notice, no enroll/buy UI
  *   paid                            buy
  *   otherwise                       free course — enroll
@@ -504,9 +508,11 @@ function course_render_enroll_card( $data ) {
  * @param bool   $part_of_program   Whether the course belongs to a program.
  * @param string $program_url       The program's detail page, when it does.
  * @param bool   $enrollment_closed Whether the LMS has closed new enrollment.
+ * @param bool   $part_of_subscription Whether a subscription plan unlocks it.
+ * @param bool   $enrollment_code   Whether joining needs an enrollment code.
  * @return string HTML.
  */
-function course_render_call_to_action( $post_id, $course_key, $paid = false, $price = array(), $part_of_program = false, $program_url = '', $enrollment_closed = false, $part_of_subscription = false ) {
+function course_render_call_to_action( $post_id, $course_key, $paid = false, $price = array(), $part_of_program = false, $program_url = '', $enrollment_closed = false, $part_of_subscription = false, $enrollment_code = false ) {
 	$labels = array(
 		'enroll_label'   => __( 'سجّل الآن', 'tutor-sso' ),
 		'login_label'    => __( 'سجّل الآن', 'tutor-sso' ),
@@ -546,6 +552,42 @@ function course_render_call_to_action( $post_id, $course_key, $paid = false, $pr
 		}
 
 		return course_render_subscription_notice();
+	}
+
+	// Enrollment-code course: free, but the first join needs a code. Once the
+	// learner has used a code that covers it — this course's own, or its
+	// organization's — enrollment_code_access is true and enroll is ordinary.
+	if ( $enrollment_code ) {
+		// Guests get the usual login button, which brings them back here.
+		if ( ! is_user_logged_in() ) {
+			return render_enroll_button( $course_key, $labels );
+		}
+
+		$status = course_detail_status( $course_key );
+
+		if ( $status['enrolled'] ) {
+			return render_enroll_button( $course_key, $labels + array( 'enrolled' => true ) );
+		}
+
+		// Paid for (directly or through a program): enroll as usual, no code,
+		// and honoured even once enrollment is closed — same as a paid course.
+		if ( $status['has_paid_access'] ) {
+			return render_enroll_button( $course_key, $labels + array( 'enrolled' => false ) );
+		}
+
+		// Closed or full blocks a new join, code or not — same as a free course,
+		// so the code form is never offered for a course that cannot take one.
+		if ( $enrollment_closed ) {
+			return course_render_enrollment_closed_notice();
+		}
+
+		return render_enroll_button(
+			$course_key,
+			$labels + array(
+				'enrolled'      => false,
+				'code_required' => empty( $status['enrollment_code_access'] ),
+			)
+		);
 	}
 
 	// Free course: unchanged behaviour, except when enrollment is closed — in
@@ -718,9 +760,10 @@ function course_detail_status( $course_key ) {
 	static $cache = array();
 
 	$none = array(
-		'enrolled'             => false,
-		'has_paid_access'      => false,
-		'subscription_ends_at' => '',
+		'enrolled'               => false,
+		'has_paid_access'        => false,
+		'enrollment_code_access' => false,
+		'subscription_ends_at'   => '',
 	);
 
 	if ( ! is_user_logged_in() || ! function_exists( __NAMESPACE__ . '\\enroll_status' ) ) {
