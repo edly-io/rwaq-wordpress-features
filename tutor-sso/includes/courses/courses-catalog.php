@@ -219,6 +219,10 @@ function courses_render_card( $course ) {
  * @return string HTML, or '' when there's no usable price to show.
  */
 function courses_render_card_price( $course ) {
+	if ( ! empty( $course['enrollment_code'] ) ) {
+		return sso_render_enrollment_code_price_html( 'rwaq-course-card__price' );
+	}
+
 	if ( ! empty( $course['subscription'] ) ) {
 		return sso_render_subscription_price_html( 'rwaq-course-card__price' );
 	}

@@ -184,6 +184,36 @@ function orders_api_coupons( $order, $items ) {
 }
 
 /**
+ * How the order was paid: the payment type and card brand Moyasar recorded on
+ * the order (e.g. creditcard / mada), where `paid_via` only names the gateway.
+ *
+ * Brand is read from `_moyasar_source_company`, falling back to
+ * `_moyasar_source_brand`; Moyasar writes the same value to both.
+ *
+ * @param \WC_Order $order Order.
+ * @return array{type:string,brand:?string}|null Null when no payment type was recorded
+ *                                                (free orders, other gateways).
+ */
+function orders_api_payment_method( $order ) {
+	$type = strtolower( trim( (string) $order->get_meta( '_moyasar_source_type' ) ) );
+
+	if ( '' === $type ) {
+		return null;
+	}
+
+	$brand = strtolower( trim( (string) $order->get_meta( '_moyasar_source_company' ) ) );
+
+	if ( '' === $brand ) {
+		$brand = strtolower( trim( (string) $order->get_meta( '_moyasar_source_brand' ) ) );
+	}
+
+	return array(
+		'type'  => $type,
+		'brand' => '' !== $brand ? $brand : null,
+	);
+}
+
+/**
  * The tax the order was charged: its label and rate, as WooCommerce recorded
  * them on the order at checkout.
  *
@@ -332,6 +362,12 @@ function orders_api_payload( $order ) {
 
 	if ( '' !== $paid_via ) {
 		$payload['paid_via'] = $paid_via;
+	}
+
+	$payment_method = orders_api_payment_method( $order );
+
+	if ( null !== $payment_method ) {
+		$payload['payment_method'] = $payment_method;
 	}
 
 	/**

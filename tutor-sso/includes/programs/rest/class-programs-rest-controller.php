@@ -28,6 +28,8 @@
  *   - program_regular_price → ACF field (text)
  *   - program_sale_price    → ACF field (text)
  *   - is_part_of_subscription → ACF field (true/false), stored as 1 / 0
+ *   - is_enrollment_code   → ACF field (true/false), stored as 1 / 0; joined
+ *                            with an enrollment code, free otherwise
  *   - status               → post status (publish|draft)
  *   - featured_image_url   → sideloaded + set as the post's featured image
  *
@@ -101,6 +103,7 @@ class Programs_REST_Controller extends \WP_REST_Controller {
 				'course_regular_price'  => 'program_regular_price',
 				'course_sale_price'     => 'program_sale_price',
 				'is_part_of_subscription' => 'is_part_of_subscription',
+				'is_enrollment_code'    => 'is_enrollment_code',
 			)
 		);
 	}
@@ -189,6 +192,12 @@ class Programs_REST_Controller extends \WP_REST_Controller {
 			),
 			'is_part_of_subscription' => array(
 				'description'       => __( 'Whether the program is included in a subscription plan. Accepts true/false, 1/0 or "yes"/"no"; stored as 1 / 0.', 'tutor-sso' ),
+				'type'              => 'boolean',
+				'required'          => false,
+				'sanitize_callback' => array( $this, 'sanitize_bool_flag' ),
+			),
+			'is_enrollment_code'   => array(
+				'description'       => __( 'Whether learners need an enrollment code to join. Accepts true/false, 1/0 or "yes"/"no"; stored as 1 / 0.', 'tutor-sso' ),
 				'type'              => 'boolean',
 				'required'          => false,
 				'sanitize_callback' => array( $this, 'sanitize_bool_flag' ),
