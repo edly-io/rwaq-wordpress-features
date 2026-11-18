@@ -60,7 +60,7 @@
 			badgeTax: $root.data( 'badge-tax' ) || '',
 			taxonomy: String( $root.data( 'taxonomy' ) || '' ),
 			search: '',
-			ordering: $sort.length ? $sort.val() : ( $root.data( 'default-sort' ) || '' ),
+			ordering: serverSort( $sort, String( $root.data( 'default-sort' ) || '' ) ),
 			categories: [], // applied category slugs
 			featured: false, // applied featured flag
 			hasMore: toBool( $root.data( 'has-more' ) ),
@@ -419,6 +419,53 @@
 				closeFilter();
 			}
 		} );
+
+		// ── Back / forward navigation ───────────────────────────────────────────
+		// Coming back to this page, the browser restores the ticked filters and
+		// the chosen sort, but the grid is the server's unfiltered first page and
+		// the state above starts empty. Re-read the controls and reload whenever
+		// they no longer match what the grid shows. Run at start-up and again on
+		// pageshow, since browsers restore form fields at different moments; from
+		// the back/forward cache everything still matches, so nothing reloads.
+		function syncFromControls() {
+			var featured = !! featuredInput().prop( 'checked' );
+			var categories = [];
+			termInputs().filter( ':checked' ).each( function () {
+				categories.push( String( $( this ).val() ) );
+			} );
+			var ordering = $sort.length ? String( $sort.val() ) : state.ordering;
+			var search = $search.length ? $.trim( $search.val() ) : state.search;
+
+			if ( featured === state.featured && JSON.stringify( categories ) === JSON.stringify( state.categories ) && ordering === state.ordering && search === state.search ) {
+				return;
+			}
+
+			state.featured = featured;
+			state.categories = categories;
+			state.ordering = ordering;
+			state.search = search;
+			syncCheckboxesToApplied();
+			reflectApplied();
+			renderSortUI();
+			load( true );
+		}
+
+		syncFromControls();
+		$( window ).on( 'pageshow', syncFromControls );
+	}
+
+	// The sort the server rendered the grid with: the option marked selected in
+	// the markup, not the browser-restored value.
+	function serverSort( $sort, fallback ) {
+		var $option = $sort.find( 'option' ).filter( function () {
+			return this.defaultSelected;
+		} ).first();
+
+		if ( ! $option.length ) {
+			$option = $sort.find( 'option' ).first();
+		}
+
+		return $option.length ? String( $option.val() ) : fallback;
 	}
 
 	function toBool( value ) {
