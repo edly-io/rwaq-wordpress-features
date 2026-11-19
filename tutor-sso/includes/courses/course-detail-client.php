@@ -155,8 +155,8 @@ function course_absolutize_overview( $html ) {
 /**
  * Whether a `pricing_category` means the course or program is sold.
  *
- * `is_paid` is the value today. Anything that is not explicitly free counts as
- * paid, so a new category the LMS introduces cannot give a paid course away.
+ * `is_paid` is the value today. Anything that is not explicitly free (or an
+ * enrollment-code item, which is free behind a code) counts as paid, so a new category the LMS introduces cannot give a paid course away.
  *
  * @param string $category Value of `pricing_category`.
  * @return bool
@@ -164,7 +164,8 @@ function course_absolutize_overview( $html ) {
 function course_pricing_is_paid( $category ) {
 	$category = strtolower( trim( (string) $category ) );
 
-	return '' !== $category && ! in_array( $category, array( 'is_free', 'free' ), true );
+	// An enrollment-code item is free too: what it asks for is a code, not money.
+	return '' !== $category && ! in_array( $category, array( 'is_free', 'free', 'is_enrollment_code' ), true );
 }
 
 /**
@@ -198,6 +199,7 @@ function course_detail_data_remote( $course_key ) {
 		'part_of_program' => false,
 		'program_url'     => '',
 		'part_of_subscription' => false,
+		'enrollment_code'      => false,
 		'enrollment_closed' => false,
 		'video'       => '',
 		'enrolled'    => 0,
@@ -297,6 +299,8 @@ function course_detail_data_remote( $course_key ) {
 		// Subscription content is never sold on its own — the plan unlocks it,
 		// the same way a program unlocks the courses inside it.
 		'part_of_subscription' => ! empty( $row['is_part_of_subscription'] ),
+		// Free, but joined with a code from the organization (enrollment-code.php).
+		'enrollment_code'      => sso_is_enrollment_code( $row ),
 		'enrollment_closed' => ! empty( $row['is_enrollment_full'] ) || ! empty( $row['is_enrollment_closed'] ),
 		'video'       => course_youtube_embed_url( isset( $row['youtube_intro_video_link'] ) ? $row['youtube_intro_video_link'] : '' ),
 		'enrolled'    => isset( $row['enrollment_count'] ) ? (int) $row['enrollment_count'] : 0,
